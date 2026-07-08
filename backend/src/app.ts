@@ -4,7 +4,7 @@ import helmet from "helmet";
 import compression from "compression";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
-
+import routes from "./routes/index.js";
 import { notFoundHandler } from "./common/middleware/notFoundHandler.js";
 import { errorHandler } from "./common/middleware/errorHandler.js";
 
@@ -29,7 +29,7 @@ app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
 
-app.get("/", (_req, res) => {
+app.use("/api", routes, (_req, res) => {
   res.json({
     success: true,
     message: "🚀 Firecracker Management API",
