@@ -34,6 +34,14 @@ const navItems = [
 
 export default function BottomNavigation() {
   const pathname = usePathname();
+  const hideBottomNav =
+    pathname.endsWith("/new") ||
+    pathname.endsWith("/edit") ||
+    /^\/products\/[^/]+$/.test(pathname);
+
+  if (hideBottomNav) {
+    return null;
+  }
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-50 flex justify-center border-t border-slate-200 bg-white/95 backdrop-blur-md">
