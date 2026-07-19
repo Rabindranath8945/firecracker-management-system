@@ -1,64 +1,47 @@
-import { Product } from "../types/product.types";
+import type { Product } from "../types/product.types";
 
-export const products: Product[] = [
+export const MOCK_PRODUCTS: Product[] = [
   {
-    id: "1",
-    sku: "FR0001",
+    _id: "1",
+    sku: "FP001",
     barcode: "890000001",
-    name: "Rocket Bomb 120",
-    category: "Rocket",
-    purchasePrice: 220,
-    sellingPrice: 310,
-    stock: 85,
-    minimumStock: 10,
-    status: "ACTIVE",
-  },
-  {
-    id: "2",
-    sku: "FR0002",
-    barcode: "890000002",
-    name: "Chocolate Bomb",
-    category: "Bomb",
-    purchasePrice: 95,
-    sellingPrice: 140,
-    stock: 3,
-    minimumStock: 10,
-    status: "ACTIVE",
-  },
-  {
-    id: "3",
-    sku: "FR0003",
-    barcode: "890000003",
-    name: "Flower Pot Deluxe",
+
+    name: "Flower Pot Big",
     category: "Flower Pot",
-    purchasePrice: 180,
-    sellingPrice: 260,
-    stock: 45,
+
+    purchasePrice: 120,
+    sellingPrice: 150,
+    mrp: 160,
+
+    stock: 100,
     minimumStock: 10,
+
+    unit: "Box",
+
+    gst: 18,
+
     status: "ACTIVE",
   },
+
   {
-    id: "4",
-    sku: "FR0004",
-    barcode: "890000004",
-    name: "Color Sparklers",
-    category: "Sparklers",
-    purchasePrice: 35,
-    sellingPrice: 60,
-    stock: 150,
-    minimumStock: 20,
-    status: "ACTIVE",
-  },
-  {
-    id: "5",
-    sku: "FR0005",
-    barcode: "890000005",
-    name: "Sky Shot 25",
-    category: "Fancy",
-    purchasePrice: 420,
-    sellingPrice: 590,
-    stock: 8,
-    minimumStock: 15,
+    _id: "2",
+    sku: "RK001",
+    barcode: "890000002",
+
+    name: "Rocket Deluxe",
+    category: "Rocket",
+
+    purchasePrice: 220,
+    sellingPrice: 260,
+    mrp: 280,
+
+    stock: 50,
+    minimumStock: 5,
+
+    unit: "Box",
+
+    gst: 18,
+
     status: "ACTIVE",
   },
 ];
