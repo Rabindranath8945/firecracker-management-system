@@ -11,7 +11,7 @@ export default function ProductList({ products }: Props) {
   return (
     <div className="space-y-3">
       {products.map((product) => (
-        <ProductListItem key={product.id} product={product} />
+        <ProductListItem key={product._id} product={product} />
       ))}
     </div>
   );

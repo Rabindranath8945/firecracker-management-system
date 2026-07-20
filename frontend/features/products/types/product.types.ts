@@ -1,23 +1,29 @@
+export type ProductStatus = "ACTIVE" | "INACTIVE";
+
 export interface Product {
-  id: string;
+  _id: string;
 
   sku: string;
-
-  barcode: string;
+  barcode?: string;
 
   name: string;
-
   category: string;
 
   purchasePrice: number;
-
   sellingPrice: number;
+  mrp: number;
 
   stock: number;
-
   minimumStock: number;
 
-  status: "ACTIVE" | "INACTIVE";
+  unit: string;
+
+  brand?: string;
+  hsn?: string;
+
+  gst: number;
 
   image?: string;
+
+  status: ProductStatus;
 }

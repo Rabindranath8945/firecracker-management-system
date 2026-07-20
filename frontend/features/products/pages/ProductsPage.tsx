@@ -11,7 +11,10 @@ import ProductList from "../components/list/ProductList";
 import FilterSheet from "../components/filter/FilterSheet";
 import CategorySheet from "../components/filter/CategorySheet";
 
-import { products } from "../mock/products";
+import { MOCK_PRODUCTS } from "../mock/products";
+import Link from "next/link";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function ProductsPage() {
   const [search, setSearch] = useState("");
@@ -21,7 +24,7 @@ export default function ProductsPage() {
   const [stockFilter, setStockFilter] = useState("All");
   const [sortBy, setSortBy] = useState("A-Z");
   const filteredProducts = useMemo(() => {
-    let data = [...products];
+    let data = [...MOCK_PRODUCTS];
 
     // Category
 
@@ -38,7 +41,7 @@ export default function ProductsPage() {
         (item) =>
           item.name.toLowerCase().includes(keyword) ||
           item.sku.toLowerCase().includes(keyword) ||
-          item.barcode.includes(keyword),
+          (item.barcode ?? "").includes(keyword),
       );
     }
 
@@ -92,35 +95,58 @@ export default function ProductsPage() {
   }, [search, category, stockFilter, sortBy]);
 
   return (
-    <div className="space-y-5 px-4 pt-4 pb-24">
-      <ProductTopBar />
+    <>
+      <div className="space-y-5 px-4 pt-4 pb-24">
+        <ProductTopBar />
 
-      <ProductSearchBar value={search} onChange={setSearch} />
+        <ProductSearchBar value={search} onChange={setSearch} />
 
-      <ProductActionBar
-        onFilterClick={() => setFilterOpen(true)}
-        onCategoryClick={() => setCategoryOpen(true)}
-      />
+        <ProductActionBar
+          onFilterClick={() => setFilterOpen(true)}
+          onCategoryClick={() => setCategoryOpen(true)}
+        />
 
-      <ProductSummaryBar totalProducts={filteredProducts.length} />
+        <ProductSummaryBar totalProducts={filteredProducts.length} />
 
-      <ProductList products={filteredProducts} />
+        <ProductList products={filteredProducts} />
 
-      <FilterSheet
-        open={filterOpen}
-        onOpenChange={setFilterOpen}
-        stockFilter={stockFilter}
-        onStockFilterChange={setStockFilter}
-        sortBy={sortBy}
-        onSortChange={setSortBy}
-      />
+        <FilterSheet
+          open={filterOpen}
+          onOpenChange={setFilterOpen}
+          stockFilter={stockFilter}
+          onStockFilterChange={setStockFilter}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+        />
 
-      <CategorySheet
-        open={categoryOpen}
-        onOpenChange={setCategoryOpen}
-        value={category}
-        onSelect={setCategory}
-      />
-    </div>
+        <CategorySheet
+          open={categoryOpen}
+          onOpenChange={setCategoryOpen}
+          value={category}
+          onSelect={setCategory}
+        />
+      </div>
+
+      {/* Floating Add Product Button */}
+
+      <Link href="/products/new">
+        <Button
+          size="lg"
+          className="
+fixed
+bottom-24
+right-5
+z-[100]
+h-14
+rounded-full
+px-5
+shadow-xl
+"
+        >
+          <Plus className="mr-2 h-5 w-5" />
+          Add Product
+        </Button>
+      </Link>
+    </>
   );
 }

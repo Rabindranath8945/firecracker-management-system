@@ -1,20 +1,26 @@
 "use client";
 
 import { toast } from "sonner";
-
 import { productApi } from "../api/product.api";
+import type { ProductFormData } from "../schemas/product.schema";
 
-export function useCreateProduct() {
-  async function createProduct(data: any) {
+interface Props {
+  onSuccess?: (product: { name: string; sku: string }) => void;
+}
+
+export function useCreateProduct({ onSuccess }: Props) {
+  async function createProduct(data: ProductFormData) {
     try {
       console.log("Creating Product...");
 
-      // Later
-      // await productApi.create(data);
+      // const product = await productApi.create(data);
 
-      console.log(data);
+      onSuccess?.({
+        name: data.name,
+        sku: data.sku,
+      });
 
-      toast.success("Product saved successfully");
+      toast.success("Product created successfully");
     } catch {
       toast.error("Unable to save product");
     }
