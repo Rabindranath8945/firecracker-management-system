@@ -19,6 +19,7 @@ export default async function CustomerEditRoute({ params }: Props) {
 
   return (
     <EditCustomerPage
+      customerId={customer.id}
       defaultValues={{
         name: customer.name,
         mobile: customer.mobile,
