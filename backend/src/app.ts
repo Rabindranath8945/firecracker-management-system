@@ -4,9 +4,13 @@ import helmet from "helmet";
 import compression from "compression";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
+
 import routes from "./routes/index.js";
+
 import { notFoundHandler } from "./common/middleware/notFoundHandler.js";
 import { errorHandler } from "./common/middleware/errorHandler.js";
+
+import path from "path";
 
 const app = express();
 
@@ -29,13 +33,20 @@ app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/api", routes, (_req, res) => {
-  res.json({
+// Upload API
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+
+// Root API
+app.get("/api", (_req, res) => {
+  res.status(200).json({
     success: true,
-    message: "🚀 Firecracker Management API",
+    message: "🚀 OneHub System API",
     version: "1.0.0",
   });
 });
+
+// Main Routes
+app.use("/api", routes);
 
 // 404
 app.use(notFoundHandler);

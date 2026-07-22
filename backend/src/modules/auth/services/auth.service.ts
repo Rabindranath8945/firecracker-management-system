@@ -5,7 +5,7 @@ import { userService } from "../users/user.service.js";
 
 import { sessionRepository } from "../repositories/session.repository.js";
 
-class AuthService {
+export default class AuthService {
   async googleLogin(credential: string, deviceId: string) {
     // Verify Google Account
     const googleUser = await verifyGoogleToken(credential);

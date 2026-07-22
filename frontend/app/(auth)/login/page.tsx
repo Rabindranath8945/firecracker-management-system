@@ -1,39 +1,67 @@
 "use client";
 
-import { GoogleSignInButton } from "@/features/auth/components/GoogleSignInButton";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import Image from "next/image";
+
+import { Card, CardContent } from "@/components/ui/card";
+
+import { GoogleSignInButton } from "@/features/auth/components/GoogleSignInButton";
 
 export default function LoginPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background p-6">
-      <Card className="w-full max-w-md rounded-3xl shadow-xl border-0">
-        <CardContent className="space-y-8 p-10">
-          <div className="space-y-3 text-center">
-            <div className="text-6xl">🔥</div>
+    <main className="flex min-h-screen items-center justify-center bg-background px-6 py-10">
+      <Card className="w-full max-w-md rounded-3xl border shadow-2xl">
+        <CardContent className="flex flex-col items-center p-10">
+          {/* Logo */}
+          <Image
+            src="/logo.png"
+            alt="OneHub"
+            width={140}
+            height={140}
+            priority
+            className="mb-6 h-32 w-32 object-contain"
+          />
 
-            <h1 className="text-3xl font-bold tracking-tight">Firecracker</h1>
+          {/* Heading */}
+          <h1 className="text-3xl font-bold tracking-tight">
+            Welcome to OneHub
+          </h1>
 
-            <p className="text-lg text-muted-foreground">Management System</p>
-          </div>
-
-          <div className="space-y-2 text-center">
-            <p className="text-base font-medium">
-              Smart • Secure • Offline First
-            </p>
-
-            <p className="text-sm text-muted-foreground leading-6">
-              Manage inventory, sales, purchases, reports and stock from
-              anywhere.
-            </p>
-          </div>
-
-          <GoogleSignInButton />
-
-          <p className="text-center text-xs text-muted-foreground">
-            Version 1.0.0
+          <p className="mt-2 text-center text-muted-foreground">
+            One Place. Every Business.
           </p>
+
+          {/* Description */}
+          <div className="mt-8 space-y-2 text-center">
+            <p className="font-medium">Smart • Secure • Offline First</p>
+
+            <p className="text-sm leading-6 text-muted-foreground">
+              Manage inventory, sales, purchases, customers, suppliers and
+              reports from anywhere.
+            </p>
+          </div>
+
+          {/* Google Login */}
+          <div className="mt-10 w-full">
+            <GoogleSignInButton />
+          </div>
+
+          {/* Terms */}
+          <p className="mt-6 text-center text-xs leading-5 text-muted-foreground">
+            By continuing, you agree to OneHub's Terms of Service and Privacy
+            Policy.
+          </p>
+
+          {/* Footer */}
+          <div className="mt-10 flex flex-col items-center gap-1 text-center">
+            <p className="text-xs text-muted-foreground">Version 1.0.0</p>
+
+            <p className="text-xs text-muted-foreground">
+              Built by{" "}
+              <span className="font-medium text-foreground">
+                ❤️ Mahendra Tech Solutions
+              </span>
+            </p>
+          </div>
         </CardContent>
       </Card>
     </main>

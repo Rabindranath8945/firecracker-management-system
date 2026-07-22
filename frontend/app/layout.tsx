@@ -4,8 +4,9 @@ import { Toaster } from "sonner";
 import Providers from "./providers";
 
 export const metadata: Metadata = {
-  title: "Firecracker Management System",
-  description: "Enterprise Firecracker Management",
+  title: "OneHub | One Place. Every Business.",
+  description:
+    "Modern ERP for inventory, sales, purchases, accounting and reports.",
 };
 
 export default function RootLayout({

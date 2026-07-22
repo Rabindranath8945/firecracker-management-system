@@ -1,4 +1,4 @@
-import { SplashScreen } from "@/features/auth/components/SplashScreen";
+import SplashScreen from "@/features/onboarding/components/SplashScreen";
 
 export default function HomePage() {
   return <SplashScreen />;
