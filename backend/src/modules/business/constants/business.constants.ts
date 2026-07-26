@@ -1,0 +1,13 @@
+export const BUSINESS_STATUS = ["ACTIVE", "INACTIVE", "SUSPENDED"] as const;
+
+export const BUSINESS_TYPES = [
+  "GENERAL_STORE",
+  "MEDICAL",
+  "GROCERY",
+  "HARDWARE",
+  "STATIONERY",
+  "ELECTRONICS",
+  "CLOTHING",
+  "RESTAURANT",
+  "OTHER",
+] as const;

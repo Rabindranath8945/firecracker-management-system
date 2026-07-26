@@ -2,19 +2,11 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import {
-  ArrowRight,
-  Store,
-  Pill,
-  Bike,
-  Shirt,
-  Hammer,
-  UtensilsCrossed,
-} from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
+
 import { BUSINESSES } from "../constants/businesses";
 
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 interface BusinessSelectionScreenProps {
@@ -27,68 +19,132 @@ export default function BusinessSelectionScreen({
   const [selected, setSelected] = useState("general");
 
   return (
-    <main className="relative flex min-h-screen flex-col bg-background">
-      <div className="flex flex-1 items-center justify-center px-6 py-10">
+    <main className="relative flex min-h-screen flex-col overflow-hidden bg-white">
+      {/* Background */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -right-28 -top-20 h-72 w-72 rotate-12 rounded-[90px] bg-sky-100/70 blur-sm" />
+
+        <div className="absolute -bottom-24 -left-24 h-72 w-72 -rotate-12 rounded-[90px] bg-sky-100/70 blur-sm" />
+
+        <div className="absolute left-5 top-44 h-20 w-20 rotate-12 border border-sky-200 opacity-60 [clip-path:polygon(25%_6.7%,75%_6.7%,100%_50%,75%_93.3%,25%_93.3%,0%_50%)]" />
+
+        <div className="absolute bottom-44 right-5 h-20 w-20 rotate-12 border border-sky-200 opacity-60 [clip-path:polygon(25%_6.7%,75%_6.7%,100%_50%,75%_93.3%,25%_93.3%,0%_50%)]" />
+      </div>
+
+      <div className="relative z-10 flex flex-1 items-center justify-center px-6 py-10">
         <div className="w-full max-w-md">
+          {/* Step */}
           <div className="flex justify-center">
+            <div className="rounded-full bg-sky-100 px-4 py-2 text-sm font-semibold text-sky-700">
+              Step 1 of 3
+            </div>
+          </div>
+
+          {/* Logo */}
+          <div className="mt-6 flex justify-center">
             <Image
-              src="/logo.png"
+              src="/onehub.png"
               alt="OneHub"
               width={120}
               height={120}
-              className="h-28 w-28 object-contain"
               priority
+              className="h-28 w-28 object-contain"
             />
           </div>
 
+          {/* Heading */}
           <div className="mt-6 text-center">
-            <h1 className="text-3xl font-bold">Choose Your Business</h1>
+            <h1 className="text-4xl font-bold tracking-tight text-slate-900">
+              Choose Your
+              <br />
+              Business Type
+            </h1>
 
-            <p className="mt-2 text-muted-foreground">
-              Select your business type to get the best experience.
+            <p className="mt-3 text-base leading-7 text-slate-500">
+              Select the business you want to set up in OneHub.
             </p>
           </div>
 
-          <div className="mt-8 space-y-3">
+          {/* Business List */}
+          <div className="mt-10 space-y-4">
             {BUSINESSES.map((business) => {
               const Icon = business.icon;
 
+              const isSelected = selected === business.id;
+
               return (
-                <Card
+                <button
                   key={business.id}
-                  onClick={() => business.available && setSelected(business.id)}
-                  className={`cursor-pointer rounded-2xl p-4 transition-all ${
-                    selected === business.id
-                      ? "border-primary ring-2 ring-primary"
-                      : ""
-                  } ${
-                    !business.available
-                      ? "opacity-60 cursor-not-allowed"
-                      : "hover:shadow-md"
+                  type="button"
+                  disabled={!business.available}
+                  onClick={() => setSelected(business.id)}
+                  className={`w-full rounded-3xl border p-5 text-left transition-all duration-300 ${
+                    business.available
+                      ? isSelected
+                        ? "border-sky-500 bg-gradient-to-r from-sky-50 to-white shadow-lg shadow-sky-100"
+                        : "border-slate-200 bg-white hover:border-sky-300 hover:shadow-md"
+                      : "cursor-not-allowed border-slate-200 bg-slate-50 opacity-60"
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                      <div className="rounded-xl bg-primary/10 p-3">
-                        <Icon className="h-6 w-6 text-primary" />
+                      <div
+                        className={`rounded-2xl p-4 ${
+                          isSelected
+                            ? "bg-sky-500 text-white"
+                            : "bg-sky-100 text-sky-600"
+                        }`}
+                      >
+                        <Icon className="h-6 w-6" />
                       </div>
 
-                      <span className="font-medium">{business.title}</span>
+                      <div>
+                        <h3 className="text-lg font-semibold text-slate-900">
+                          {business.title}
+                        </h3>
+
+                        <p className="mt-1 text-sm text-slate-500">
+                          {business.available
+                            ? "Ready to use"
+                            : "Coming in future updates"}
+                        </p>
+                      </div>
                     </div>
 
                     {business.available ? (
-                      <Badge>Available</Badge>
+                      isSelected ? (
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-500">
+                          <Check className="h-5 w-5 text-white" />
+                        </div>
+                      ) : (
+                        <Badge className="rounded-full bg-sky-100 text-sky-700 hover:bg-sky-100">
+                          Available
+                        </Badge>
+                      )
                     ) : (
-                      <Badge variant="secondary">Coming Soon</Badge>
+                      <Badge variant="secondary" className="rounded-full px-3">
+                        Coming Soon
+                      </Badge>
                     )}
                   </div>
-                </Card>
+                </button>
               );
             })}
           </div>
 
+          {/* Info */}
+          <div className="mt-6 rounded-2xl border border-sky-100 bg-sky-50 p-4">
+            <p className="text-center text-sm leading-6 text-slate-600">
+              <span className="font-semibold text-sky-700">General Store</span>{" "}
+              is available in Version 1.0.
+              <br />
+              More business categories will be added soon.
+            </p>
+          </div>
+
+          {/* Continue */}
           <Button
-            className="mt-8 h-12 w-full rounded-xl"
+            className="mt-8 h-14 w-full rounded-2xl bg-sky-600 text-base font-semibold hover:bg-sky-700"
             onClick={() => onNext(selected)}
           >
             Continue
@@ -97,15 +153,21 @@ export default function BusinessSelectionScreen({
         </div>
       </div>
 
-      <footer className="pb-8 text-center">
-        <p className="text-xs text-muted-foreground">Version 1.0.0</p>
+      {/* Footer */}
+      <footer className="relative z-10 pb-8 text-center">
+        <p className="text-sm text-slate-500">Version 1.0.0</p>
 
-        <p className="mt-1 text-xs text-muted-foreground">
-          Built by{" "}
-          <span className="font-medium text-foreground">
+        <div className="mt-2 flex items-center justify-center gap-1 text-sm">
+          <span className="text-slate-500">Built with</span>
+
+          <span className="text-red-500">❤️</span>
+
+          <span className="text-slate-500">by</span>
+
+          <span className="font-semibold text-sky-600">
             Mahendra Tech Solutions
           </span>
-        </p>
+        </div>
       </footer>
     </main>
   );

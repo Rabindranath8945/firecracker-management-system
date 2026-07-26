@@ -5,102 +5,115 @@ import Image from "next/image";
 import { CheckCircle2, Loader2 } from "lucide-react";
 
 interface ProgressScreenProps {
-  onComplete: () => void;
+  onComplete: () => Promise<void> | void;
 }
 
 const STEPS = [
-  "Preparing Workspace",
-  "Creating Local Database",
-  "Saving Business Type",
-  "Saving Language",
-  "Creating Default Settings",
-  "Finalizing Setup",
+  "Creating your business...",
+  "Generating Business ID...",
+  "Configuring workspace...",
+  "Preparing dashboard...",
 ];
 
 export default function ProgressScreen({ onComplete }: ProgressScreenProps) {
+  const [currentStep, setCurrentStep] = useState(0);
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(timer);
+    let mounted = true;
 
-          setTimeout(() => {
-            onComplete();
-          }, 500);
+    async function runSetup() {
+      for (let i = 0; i < STEPS.length; i++) {
+        if (!mounted) return;
 
-          return 100;
-        }
+        setCurrentStep(i);
 
-        return prev + 2;
-      });
-    }, 40);
+        await new Promise((resolve) => setTimeout(resolve, 700));
 
-    return () => clearInterval(timer);
+        setProgress(Math.round(((i + 1) / STEPS.length) * 100));
+      }
+
+      await onComplete();
+    }
+
+    runSetup();
+
+    return () => {
+      mounted = false;
+    };
   }, [onComplete]);
 
-  const currentStep =
-    STEPS[
-      Math.min(Math.floor(progress / (100 / STEPS.length)), STEPS.length - 1)
-    ];
-
   return (
-    <main className="relative flex min-h-screen flex-col bg-background">
-      <div className="flex flex-1 items-center justify-center px-6">
-        <div className="w-full max-w-md text-center">
-          <Image
-            src="/logo.png"
-            alt="OneHub"
-            width={140}
-            height={140}
-            priority
-            className="mx-auto h-36 w-36 object-contain"
-          />
-
-          <h1 className="mt-8 text-3xl font-bold">Setting Up OneHub</h1>
-
-          <p className="mt-2 text-muted-foreground">
-            Please wait while we prepare your workspace.
-          </p>
-
-          <div className="mt-10">
-            <div className="h-3 overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-primary transition-all duration-300"
-                style={{
-                  width: `${progress}%`,
-                }}
-              />
-            </div>
-
-            <div className="mt-3 flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">{progress}%</span>
-
-              <Loader2 className="h-4 w-4 animate-spin text-primary" />
-            </div>
-          </div>
-
-          <div className="mt-10 rounded-2xl border bg-card p-5 text-left">
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className="h-5 w-5 text-primary" />
-
-              <span className="font-medium">{currentStep}</span>
-            </div>
-          </div>
-        </div>
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-white px-6">
+      {/* Background */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -right-32 -top-20 h-80 w-80 rounded-[100px] bg-sky-100/70 blur-sm" />
+        <div className="absolute -bottom-28 -left-28 h-80 w-80 rounded-[100px] bg-sky-100/70 blur-sm" />
       </div>
 
-      <footer className="pb-8 text-center">
-        <p className="text-xs text-muted-foreground">Version 1.0.0</p>
+      <div className="relative z-10 w-full max-w-md">
+        <div className="flex justify-center">
+          <Image
+            src="/onehub.png"
+            alt="OneHub"
+            width={110}
+            height={110}
+            priority
+          />
+        </div>
 
-        <p className="mt-1 text-xs text-muted-foreground">
-          Built by{" "}
-          <span className="font-medium text-foreground">
-            Mahendra Tech Solutions
-          </span>
+        <h1 className="mt-8 text-center text-3xl font-bold text-slate-900">
+          Setting up OneHub
+        </h1>
+
+        <p className="mt-3 text-center text-slate-500">
+          Please wait while we prepare your workspace.
         </p>
-      </footer>
+
+        {/* Progress */}
+        <div className="mt-10 h-3 overflow-hidden rounded-full bg-slate-200">
+          <div
+            className="h-full rounded-full bg-sky-500 transition-all duration-500"
+            style={{
+              width: `${progress}%`,
+            }}
+          />
+        </div>
+
+        <p className="mt-3 text-center text-sm font-medium text-sky-600">
+          {progress}% Completed
+        </p>
+
+        {/* Steps */}
+        <div className="mt-10 space-y-4">
+          {STEPS.map((step, index) => (
+            <div
+              key={step}
+              className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4"
+            >
+              {index < currentStep ? (
+                <CheckCircle2 className="h-6 w-6 text-green-500" />
+              ) : index === currentStep ? (
+                <Loader2 className="h-6 w-6 animate-spin text-sky-500" />
+              ) : (
+                <div className="h-6 w-6 rounded-full border-2 border-slate-300" />
+              )}
+
+              <span
+                className={`font-medium ${
+                  index <= currentStep ? "text-slate-900" : "text-slate-400"
+                }`}
+              >
+                {step}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        <p className="mt-10 text-center text-xs text-slate-400">
+          This usually takes only a few seconds.
+        </p>
+      </div>
     </main>
   );
 }

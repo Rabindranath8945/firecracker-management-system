@@ -3,6 +3,9 @@ import { Request, Response } from "express";
 import ProductService from "../services/product.service.js";
 import { uploadService } from "../../../common/uploads/index.js";
 import { excelService } from "../../../common/excel/index.js";
+import { ProductExcelRow } from "../../../common/excel/types/excel-row.types.js";
+import { transformProductRows } from "../excel/product-transformer.js";
+import { validateProductRows } from "../excel/product-validator.js";
 
 class ProductController {
   create = async (req: Request, res: Response) => {
@@ -121,6 +124,19 @@ class ProductController {
           type: "string",
         },
         {
+          header: "HSN Code",
+          key: "hsnCode",
+          width: 15,
+          type: "string",
+        },
+
+        {
+          header: "Brand",
+          key: "brand",
+          width: 20,
+          type: "string",
+        },
+        {
           header: "Unit",
           key: "unit",
           width: 12,
@@ -213,23 +229,30 @@ class ProductController {
       });
     }
 
-    const result = await excelService.import(req.file, {
-      "Product Code": "productCode",
-      "Product Name": "name",
-      Category: "category",
-      "Sub Category": "subCategory",
-      Barcode: "barcode",
-      Unit: "unit",
-      "Purchase Price": "purchasePrice",
-      "Selling Price": "sellingPrice",
-      "Current Stock": "stock",
-      "Minimum Stock": "minimumStock",
-      "GST (%)": "tax",
-      Status: "status",
-      Description: "description",
-      "Created At": "createdAt",
-      "Updated At": "updatedAt",
-    });
+    const result = await excelService.import<ProductExcelRow>(
+      req.file,
+      {
+        "Product Code": "productCode",
+        "Product Name": "name",
+        Category: "category",
+        "Sub Category": "subCategory",
+        Barcode: "barcode",
+        "HSN Code": "hsnCode",
+        Brand: "brand",
+        Unit: "unit",
+        "Purchase Price": "purchasePrice",
+        "Selling Price": "sellingPrice",
+        "Current Stock": "stock",
+        "Minimum Stock": "minimumStock",
+        "GST (%)": "tax",
+        Status: "status",
+        Description: "description",
+        "Created At": "createdAt",
+        "Updated At": "updatedAt",
+      },
+      transformProductRows,
+      validateProductRows,
+    );
 
     if (!result.success) {
       return res.status(400).json({

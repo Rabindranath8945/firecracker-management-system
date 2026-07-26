@@ -7,7 +7,9 @@ export const authApi = {
     return apiClient.post<ApiResponse<AuthResponse>>("/auth/google", payload);
   },
 
-  refresh(refreshToken: string) {
+  refresh() {
+    const refreshToken = localStorage.getItem("refreshToken") ?? "";
+
     return apiClient.post<ApiResponse<{ accessToken: string }>>(
       "/auth/refresh",
       {
@@ -16,17 +18,15 @@ export const authApi = {
     );
   },
 
-  logout(refreshToken: string) {
+  logout() {
+    const refreshToken = localStorage.getItem("refreshToken") ?? "";
+
     return apiClient.post<ApiResponse<null>>("/auth/logout", {
       refreshToken,
     });
   },
 
-  me(accessToken: string) {
-    return apiClient.get<ApiResponse<AuthResponse["user"]>>("/auth/me", {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+  me() {
+    return apiClient.get<ApiResponse<AuthResponse["user"]>>("/auth/me");
   },
 };

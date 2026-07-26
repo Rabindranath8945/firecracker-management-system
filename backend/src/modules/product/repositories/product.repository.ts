@@ -1,5 +1,6 @@
 import Product from "../models/product.model.js";
 import { IProduct } from "../interfaces/product.interface.js";
+import { ClientSession } from "mongoose";
 
 interface ProductQueryOptions {
   page?: number;
@@ -17,6 +18,18 @@ interface ProductQueryOptions {
 class ProductRepository {
   async create(data: Partial<IProduct>) {
     return Product.create(data);
+  }
+
+  async find() {
+    return Product.find()
+      .populate("category", "categoryCode name")
+      .populate("subCategory", "subCategoryCode name");
+  }
+
+  async findByName(name: string) {
+    return Product.findOne({
+      name: new RegExp(`^${name}$`, "i"),
+    });
   }
 
   async findById(id: string) {
@@ -151,6 +164,61 @@ class ProductRepository {
   async bulkCreate(products: Partial<IProduct>[]) {
     return Product.insertMany(products, {
       ordered: false,
+    });
+  }
+  async increaseStock(
+    productId: string,
+    quantity: number,
+    session?: ClientSession,
+  ) {
+    return Product.findByIdAndUpdate(
+      productId,
+      {
+        $inc: {
+          stock: quantity,
+        },
+      },
+      {
+        new: true,
+        session,
+      },
+    );
+  }
+
+  async decreaseStock(
+    productId: string,
+    quantity: number,
+    session?: ClientSession,
+  ) {
+    return Product.findByIdAndUpdate(
+      productId,
+      {
+        $inc: {
+          stock: -quantity,
+        },
+      },
+      {
+        new: true,
+        session,
+      },
+    );
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*                                  Restore                                   */
+  /* -------------------------------------------------------------------------- */
+
+  async bulkReplace(businessId: string, data: Partial<IProduct>[]) {
+    await Product.deleteMany({
+      businessId,
+    });
+
+    return Product.insertMany(data);
+  }
+
+  async clearBusinessData(businessId: string) {
+    return Product.deleteMany({
+      businessId,
     });
   }
 }

@@ -17,6 +17,10 @@ export const createProductSchema = z
 
     barcode: z.string().trim().optional(),
 
+    hsnCode: z.string().trim().optional(),
+
+    brand: z.string().trim().optional(),
+
     unit: z.string().trim().min(1, "Unit is required."),
 
     purchasePrice: z.number().min(0, "Purchase price cannot be negative."),

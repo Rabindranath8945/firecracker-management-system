@@ -1,6 +1,12 @@
 "use client";
 
-import { IndianRupee, Package, Boxes, TriangleAlert } from "lucide-react";
+import {
+  IndianRupee,
+  Boxes,
+  TriangleAlert,
+  Users,
+  Package,
+} from "lucide-react";
 
 import KPIStatCard from "./KPIStatCard";
 
@@ -9,6 +15,8 @@ interface KPIGridProps {
   todayProfit: number;
   totalProducts: number;
   lowStock: number;
+  totalCustomers: number;
+  totalSuppliers: number;
 }
 
 export default function KPIGrid({
@@ -16,44 +24,62 @@ export default function KPIGrid({
   todayProfit,
   totalProducts,
   lowStock,
+  totalCustomers,
+  totalSuppliers,
 }: KPIGridProps) {
+  const stats = [
+    {
+      title: "Today's Sales",
+      value: `₹${todaySales.toLocaleString("en-IN")}`,
+      icon: IndianRupee,
+      color: "sky" as const,
+      trend: "+12%",
+    },
+    {
+      title: "Today's Profit",
+      value: `₹${todayProfit.toLocaleString("en-IN")}`,
+      icon: IndianRupee,
+      color: "emerald" as const,
+      trend: "+8%",
+    },
+    {
+      title: "Products",
+      value: totalProducts.toLocaleString(),
+      icon: Boxes,
+      color: "violet" as const,
+    },
+    {
+      title: "Low Stock",
+      value: lowStock.toLocaleString(),
+      icon: TriangleAlert,
+      color: "amber" as const,
+    },
+    {
+      title: "Customers",
+      value: totalCustomers.toLocaleString(),
+      icon: Users,
+      color: "blue" as const,
+    },
+    {
+      title: "Suppliers",
+      value: totalSuppliers.toLocaleString(),
+      icon: Package,
+      color: "indigo" as const,
+    },
+  ];
+
   return (
-    <div className="grid grid-cols-2 gap-4">
-      <KPIStatCard
-        title="Today's Sales"
-        value={`₹${todaySales.toLocaleString()}`}
-        icon={IndianRupee}
-        change="+12%"
-        positive
-        iconBgClass="bg-blue-100"
-        iconTextClass="text-blue-600"
-      />
-
-      <KPIStatCard
-        title="Today's Profit"
-        value={`₹${todayProfit.toLocaleString()}`}
-        icon={IndianRupee}
-        change="+8%"
-        positive
-        iconBgClass="bg-emerald-100"
-        iconTextClass="text-emerald-600"
-      />
-
-      <KPIStatCard
-        title="Products"
-        value={totalProducts.toString()}
-        icon={Boxes}
-        iconBgClass="bg-violet-100"
-        iconTextClass="text-violet-600"
-      />
-
-      <KPIStatCard
-        title="Low Stock"
-        value={lowStock.toString()}
-        icon={TriangleAlert}
-        iconBgClass="bg-orange-100"
-        iconTextClass="text-orange-600"
-      />
-    </div>
+    <section className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
+      {stats.map((stat) => (
+        <KPIStatCard
+          key={stat.title}
+          title={stat.title}
+          value={stat.value}
+          icon={stat.icon}
+          color={stat.color}
+          {...(stat.trend && { trend: stat.trend })}
+        />
+      ))}
+    </section>
   );
 }

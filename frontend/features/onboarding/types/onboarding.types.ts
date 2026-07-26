@@ -1,9 +1,18 @@
 export type OnboardingStep =
   | "welcome"
-  | "setup"
   | "business"
-  | "language"
   | "progress"
   | "business-info"
-  | "tour"
-  | "login";
+  | "tour";
+
+export interface BusinessInfo {
+  businessName: string;
+
+  ownerName: string;
+
+  mobile: string;
+
+  gstNo: string;
+
+  address: string;
+}

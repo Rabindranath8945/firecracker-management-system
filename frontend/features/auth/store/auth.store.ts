@@ -7,19 +7,29 @@ interface AuthStore extends AuthState {
   setAccessToken: (token: string | null) => void;
   setRefreshToken: (token: string | null) => void;
   setLoading: (loading: boolean) => void;
+  initialize: () => void;
   logout: () => void;
 }
 
 export const useAuthStore = create<AuthStore>((set) => ({
   user: null,
 
-  accessToken: null,
+  accessToken:
+    typeof window !== "undefined" ? localStorage.getItem("accessToken") : null,
 
-  refreshToken: null,
+  refreshToken:
+    typeof window !== "undefined" ? localStorage.getItem("refreshToken") : null,
 
-  isAuthenticated: false,
+  isAuthenticated:
+    typeof window !== "undefined"
+      ? Boolean(localStorage.getItem("accessToken"))
+      : false,
 
-  isLoading: true,
+  isLoading: false,
+
+  /* -------------------------------------------------------------------------- */
+  /*                                 Set User                                   */
+  /* -------------------------------------------------------------------------- */
 
   setUser: (user) =>
     set({
@@ -27,27 +37,89 @@ export const useAuthStore = create<AuthStore>((set) => ({
       isAuthenticated: user !== null,
     }),
 
-  setAccessToken: (accessToken) =>
+  /* -------------------------------------------------------------------------- */
+  /*                            Set Access Token                                */
+  /* -------------------------------------------------------------------------- */
+
+  setAccessToken: (accessToken) => {
+    if (typeof window !== "undefined") {
+      if (accessToken) {
+        localStorage.setItem("accessToken", accessToken);
+      } else {
+        localStorage.removeItem("accessToken");
+      }
+    }
+
     set({
       accessToken,
-    }),
+    });
+  },
 
-  setRefreshToken: (refreshToken) =>
+  /* -------------------------------------------------------------------------- */
+  /*                           Set Refresh Token                                */
+  /* -------------------------------------------------------------------------- */
+
+  setRefreshToken: (refreshToken) => {
+    if (typeof window !== "undefined") {
+      if (refreshToken) {
+        localStorage.setItem("refreshToken", refreshToken);
+      } else {
+        localStorage.removeItem("refreshToken");
+      }
+    }
+
     set({
       refreshToken,
-    }),
+    });
+  },
+
+  /* -------------------------------------------------------------------------- */
+  /*                               Set Loading                                  */
+  /* -------------------------------------------------------------------------- */
 
   setLoading: (isLoading) =>
     set({
       isLoading,
     }),
 
-  logout: () =>
+  /* -------------------------------------------------------------------------- */
+  /*                               Initialize                                   */
+  /* -------------------------------------------------------------------------- */
+
+  initialize: () =>
+    set({
+      accessToken:
+        typeof window !== "undefined"
+          ? localStorage.getItem("accessToken")
+          : null,
+
+      refreshToken:
+        typeof window !== "undefined"
+          ? localStorage.getItem("refreshToken")
+          : null,
+
+      isAuthenticated:
+        typeof window !== "undefined"
+          ? Boolean(localStorage.getItem("accessToken"))
+          : false,
+    }),
+
+  /* -------------------------------------------------------------------------- */
+  /*                                  Logout                                    */
+  /* -------------------------------------------------------------------------- */
+
+  logout: () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+    }
+
     set({
       user: null,
       accessToken: null,
       refreshToken: null,
       isAuthenticated: false,
       isLoading: false,
-    }),
+    });
+  },
 }));

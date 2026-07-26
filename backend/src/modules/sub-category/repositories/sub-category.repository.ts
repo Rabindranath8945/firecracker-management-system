@@ -18,6 +18,22 @@ class SubCategoryRepository {
     return SubCategory.create(data);
   }
 
+  async find() {
+    return SubCategory.find();
+  }
+
+  async bulkCreate(data: Partial<ISubCategory>[]) {
+    return SubCategory.insertMany(data, {
+      ordered: false,
+    });
+  }
+
+  async clearBusinessData(businessId: string) {
+    return SubCategory.deleteMany({
+      businessId,
+    });
+  }
+
   async findById(id: string) {
     return SubCategory.findById(id).populate("category", "categoryCode name");
   }

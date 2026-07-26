@@ -33,6 +33,19 @@ const ProductSchema = new Schema<IProduct>(
       trim: true,
     },
 
+    hsnCode: {
+      type: String,
+      default: "",
+      trim: true,
+      uppercase: true,
+    },
+
+    brand: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
     unit: {
       type: String,
       required: true,

@@ -15,6 +15,22 @@ class CategoryRepository {
     return Category.create(data);
   }
 
+  async find() {
+    return Category.find();
+  }
+
+  async bulkCreate(data: Partial<ICategory>[]) {
+    return Category.insertMany(data, {
+      ordered: false,
+    });
+  }
+
+  async clearBusinessData(businessId: string) {
+    return Category.deleteMany({
+      businessId,
+    });
+  }
+
   async findById(id: string) {
     return Category.findById(id);
   }

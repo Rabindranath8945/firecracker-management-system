@@ -4,7 +4,11 @@ import { GoogleLogin } from "@react-oauth/google";
 
 import { useAuth } from "../hooks/useAuth";
 
-export function GoogleSignInButton() {
+interface GoogleSignInButtonProps {
+  flow: "create" | "join";
+}
+
+export function GoogleSignInButton({ flow }: GoogleSignInButtonProps) {
   const { loginWithGoogle } = useAuth();
 
   return (
@@ -13,11 +17,14 @@ export function GoogleSignInButton() {
         theme="outline"
         size="large"
         shape="pill"
-        text="signin_with"
+        text="continue_with"
         width="320"
         useOneTap={false}
         onSuccess={async (credentialResponse) => {
           if (!credentialResponse.credential) return;
+
+          // Save selected flow
+          sessionStorage.setItem("auth-flow", flow);
 
           await loginWithGoogle(credentialResponse.credential);
         }}

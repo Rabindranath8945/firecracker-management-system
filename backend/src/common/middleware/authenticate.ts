@@ -31,10 +31,10 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
     req.user = payload;
 
     next();
-  } catch {
+  } catch (_error) {
     return res.status(401).json({
       success: false,
-      message: "Invalid or expired token",
+      message: "Invalid or expired token.",
     });
   }
 }

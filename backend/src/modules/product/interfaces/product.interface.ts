@@ -11,6 +11,10 @@ export interface IProduct extends Document {
 
   barcode?: string;
 
+  hsnCode?: string;
+
+  brand?: string;
+
   unit: string;
 
   purchasePrice: number;

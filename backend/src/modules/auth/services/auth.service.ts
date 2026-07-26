@@ -1,22 +1,26 @@
 import { verifyGoogleToken } from "../providers/google.provider.js";
 import { jwtProvider } from "../providers/jwt.providers.js";
 
-import { userService } from "../users/user.service.js";
+import UserService from "../../user/services/user.service.js";
 
 import { sessionRepository } from "../repositories/session.repository.js";
 
 export default class AuthService {
   async googleLogin(credential: string, deviceId: string) {
-    // Verify Google Account
+    /* -------------------------------------------------------------------------- */
+    /*                           Verify Google Account                            */
+    /* -------------------------------------------------------------------------- */
+
     const googleUser = await verifyGoogleToken(credential);
 
-    // Only one owner allowed
-    const owner = await userService.getUserByGoogleId(googleUser.googleId);
+    /* -------------------------------------------------------------------------- */
+    /*                           Find / Create Owner                              */
+    /* -------------------------------------------------------------------------- */
 
-    let user = owner;
+    let user = await UserService.getUserByGoogleId(googleUser.googleId);
 
     if (!user) {
-      user = await userService.createUser({
+      user = await UserService.createUser({
         googleId: googleUser.googleId,
         email: googleUser.email,
         profilePicture: googleUser.picture,
@@ -24,8 +28,15 @@ export default class AuthService {
       });
     }
 
-    // One active device
+    /* -------------------------------------------------------------------------- */
+    /*                            Single Active Session                           */
+    /* -------------------------------------------------------------------------- */
+
     await sessionRepository.deleteByUserId(user._id.toString());
+
+    /* -------------------------------------------------------------------------- */
+    /*                              Generate Tokens                               */
+    /* -------------------------------------------------------------------------- */
 
     const payload = {
       userId: user._id.toString(),
@@ -41,6 +52,10 @@ export default class AuthService {
 
     expiresAt.setDate(expiresAt.getDate() + 30);
 
+    /* -------------------------------------------------------------------------- */
+    /*                              Save Session                                  */
+    /* -------------------------------------------------------------------------- */
+
     await sessionRepository.create({
       userId: user._id,
       deviceId,
@@ -48,19 +63,40 @@ export default class AuthService {
       expiresAt,
     });
 
-    await userService.updateLastLogin(user._id.toString());
+    /* -------------------------------------------------------------------------- */
+    /*                           Update Last Login                                */
+    /* -------------------------------------------------------------------------- */
+
+    await UserService.updateLastLogin(user._id.toString());
+
+    /* -------------------------------------------------------------------------- */
+    /*                                Response                                    */
+    /* -------------------------------------------------------------------------- */
+
     return {
       user: {
         id: user._id.toString(),
+
         email: user.email,
+
         role: user.role,
+
+        business: user.business ?? null,
+
         profilePicture: user.profilePicture,
+
+        onboardingCompleted: user.onboardingCompleted,
+
+        appLockEnabled: user.appLockEnabled,
+
+        isActive: user.isActive,
       },
+
       accessToken,
+
       refreshToken,
     };
   }
-
   async refresh(refreshToken: string) {
     // 1. Verify refresh token
     const payload = jwtProvider.verifyRefreshToken(refreshToken);
@@ -91,7 +127,21 @@ export default class AuthService {
   }
 
   async me(userId: string) {
-    return userService.getUserById(userId);
+    return UserService.getUserById(userId);
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*                     Complete Onboarding                                    */
+  /* -------------------------------------------------------------------------- */
+
+  async completeOnboarding(userId: string) {
+    const user = await UserService.completeOnboarding(userId);
+
+    if (!user) {
+      throw new Error("User not found.");
+    }
+
+    return user;
   }
 }
 
