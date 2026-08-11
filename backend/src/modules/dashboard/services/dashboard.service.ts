@@ -22,15 +22,18 @@ class DashboardService {
       /* KPI                                                                     */
       /* ---------------------------------------------------------------------- */
 
-      todaySales: 0,
-      todayProfit: 0,
+      todaySales: data.todaySales,
+      todayProfit: data.todayProfit,
+      monthlyProfit: data.monthlyProfit,
+
+      monthlyRevenue: data.monthlyRevenue,
+      outstandingPayments: 0,
+
+      totalCustomers: data.totalCustomers,
+      lowStock: data.lowStock,
+
       weeklySales: 0,
       salesGrowth: 0,
-
-      totalProducts: data.totalProducts,
-      totalCustomers: data.totalCustomers,
-      totalSuppliers: data.totalSuppliers,
-      lowStock: 0,
 
       /* ---------------------------------------------------------------------- */
       /* Sales Chart                                                             */

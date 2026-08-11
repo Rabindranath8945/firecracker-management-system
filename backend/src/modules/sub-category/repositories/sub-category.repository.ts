@@ -18,8 +18,8 @@ class SubCategoryRepository {
     return SubCategory.create(data);
   }
 
-  async find() {
-    return SubCategory.find();
+  async findCodes() {
+    return SubCategory.find().select("subCategoryCode");
   }
 
   async bulkCreate(data: Partial<ISubCategory>[]) {
@@ -48,6 +48,22 @@ class SubCategoryRepository {
     return SubCategory.find({
       isActive: true,
     }).select("_id name category");
+  }
+
+  async generateNextCode() {
+    const last = await SubCategory.findOne()
+      .sort({ createdAt: -1 })
+      .select("subCategoryCode");
+
+    if (!last?.subCategoryCode) {
+      return "SUBCAT-000001";
+    }
+
+    const match = last.subCategoryCode.match(/\d+$/);
+
+    const lastNumber = match ? parseInt(match[0], 10) : 0;
+
+    return `SUBCAT-${String(lastNumber + 1).padStart(6, "0")}`;
   }
 
   async findAll(options: SubCategoryQueryOptions = {}) {

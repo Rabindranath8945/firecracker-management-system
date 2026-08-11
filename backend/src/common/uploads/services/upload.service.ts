@@ -1,20 +1,39 @@
 import { Express } from "express";
+import path from "path";
 
 class UploadService {
-  uploadImage(file?: Express.Multer.File) {
+  getFile(file?: Express.Multer.File) {
     if (!file) {
-      throw new Error("Image file is required.");
+      throw new Error("File is required.");
     }
 
-    const folder = file.destination.split(/[\\/]/).pop();
+    const folder = path.basename(file.destination);
 
     return {
       filename: file.filename,
+
       originalName: file.originalname,
+
       mimeType: file.mimetype,
+
       size: file.size,
+
+      folder,
+
       path: `/uploads/${folder}/${file.filename}`,
     };
+  }
+
+  getImage(file?: Express.Multer.File) {
+    return this.getFile(file);
+  }
+
+  getExcel(file?: Express.Multer.File) {
+    return this.getFile(file);
+  }
+
+  getOcr(file?: Express.Multer.File) {
+    return this.getFile(file);
   }
 }
 

@@ -9,7 +9,7 @@ export type SalesPaymentMethod =
   | "CREDIT"
   | "MIXED";
 
-export type SalesPaymentStatus = "PAID" | "PARTIAL" | "UNPAID";
+export type SalesPaymentStatus = "PAID" | "PARTIAL" | "DUE";
 
 export interface ISaleItem {
   product: Types.ObjectId;

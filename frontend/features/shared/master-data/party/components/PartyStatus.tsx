@@ -2,18 +2,17 @@
 
 import {
   BadgeCheck,
+  History,
+  Receipt,
+  Settings2,
   ShieldCheck,
   ShieldX,
-  Settings2,
-  Receipt,
-  History,
 } from "lucide-react";
 import { Controller, useFormContext } from "react-hook-form";
 
 import type { PartyFormValues } from "../lib/party-schema";
 
 import { Card } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
 export default function PartyStatus() {
@@ -22,20 +21,22 @@ export default function PartyStatus() {
   const isActive = watch("isActive");
 
   return (
-    <Card className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <Card className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
       {/* Header */}
 
-      <div className="border-b border-slate-100 px-5 py-4">
+      <div className="border-b border-slate-100 px-6 py-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-md">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
             <Settings2 className="h-5 w-5" />
           </div>
 
           <div>
-            <h2 className="text-lg font-bold text-slate-900">Status</h2>
+            <h2 className="text-lg font-bold text-slate-900">
+              Status & Permissions
+            </h2>
 
             <p className="mt-1 text-sm text-slate-500">
-              Control whether this party can be used in future transactions.
+              Enable or disable this party for future business transactions.
             </p>
           </div>
         </div>
@@ -43,42 +44,40 @@ export default function PartyStatus() {
 
       {/* Body */}
 
-      <div className="space-y-5 p-5">
-        {/* Active Card */}
+      <div className="space-y-6 p-6">
+        {/* Active Status */}
 
         <div
-          className={`rounded-2xl border p-5 transition-all ${
+          className={`rounded-3xl border p-5 transition-all ${
             isActive
               ? "border-emerald-200 bg-emerald-50"
               : "border-red-200 bg-red-50"
           }`}
         >
-          <div className="flex items-center justify-between gap-4">
-            {/* Left */}
-
-            <div className="flex items-start gap-4">
+          <div className="flex items-center justify-between gap-5">
+            <div className="flex flex-1 items-start gap-4">
               <div
-                className={`flex h-12 w-12 items-center justify-center rounded-xl ${
+                className={`flex h-14 w-14 items-center justify-center rounded-2xl ${
                   isActive
-                    ? "bg-emerald-100 text-emerald-600"
-                    : "bg-red-100 text-red-600"
+                    ? "bg-emerald-100 text-emerald-700"
+                    : "bg-red-100 text-red-700"
                 }`}
               >
                 {isActive ? (
-                  <ShieldCheck className="h-6 w-6" />
+                  <ShieldCheck className="h-7 w-7" />
                 ) : (
-                  <ShieldX className="h-6 w-6" />
+                  <ShieldX className="h-7 w-7" />
                 )}
               </div>
 
-              <div>
+              <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-slate-900">
+                  <h3 className="text-lg font-bold text-slate-900">
                     {isActive ? "Active" : "Inactive"}
                   </h3>
 
                   <BadgeCheck
-                    className={`h-4 w-4 ${
+                    className={`h-5 w-5 ${
                       isActive ? "text-emerald-600" : "text-red-600"
                     }`}
                   />
@@ -86,13 +85,11 @@ export default function PartyStatus() {
 
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   {isActive
-                    ? "This party will be available for sales, purchases and all business operations."
-                    : "The party will remain in records but cannot be selected for new transactions."}
+                    ? "This party can be selected in Sales, Purchases, Payments and all business operations."
+                    : "This party will remain in history but cannot be selected for new transactions."}
                 </p>
               </div>
             </div>
-
-            {/* Switch */}
 
             <Controller
               control={control}
@@ -107,38 +104,36 @@ export default function PartyStatus() {
           </div>
         </div>
 
-        {/* Info Cards */}
+        {/* Information */}
 
-        <div className="grid gap-3 md:grid-cols-3">
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <Receipt className="mb-2 h-5 w-5 text-blue-600" />
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 transition-all hover:border-slate-300 hover:bg-white">
+            <Receipt className="mb-3 h-6 w-6 text-blue-600" />
 
-            <h4 className="text-sm font-semibold text-slate-900">
-              Transactions
-            </h4>
+            <h3 className="font-semibold text-slate-900">Transactions</h3>
 
-            <p className="mt-1 text-xs leading-5 text-slate-500">
-              Available in Sales, Purchases and Payments.
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Available for Sales, Purchases, Payments and Ledger entries.
             </p>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <BadgeCheck className="mb-2 h-5 w-5 text-emerald-600" />
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 transition-all hover:border-slate-300 hover:bg-white">
+            <BadgeCheck className="mb-3 h-6 w-6 text-emerald-600" />
 
-            <h4 className="text-sm font-semibold text-slate-900">Reports</h4>
+            <h3 className="font-semibold text-slate-900">Reports</h3>
 
-            <p className="mt-1 text-xs leading-5 text-slate-500">
-              Included in analytics, ledgers and reports.
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Included in dashboards, analytics, statements and reports.
             </p>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <History className="mb-2 h-5 w-5 text-violet-600" />
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 transition-all hover:border-slate-300 hover:bg-white">
+            <History className="mb-3 h-6 w-6 text-violet-600" />
 
-            <h4 className="text-sm font-semibold text-slate-900">History</h4>
+            <h3 className="font-semibold text-slate-900">History</h3>
 
-            <p className="mt-1 text-xs leading-5 text-slate-500">
-              Existing records are always preserved.
+            <p className="mt-2 text-sm leading-6 text-slate-500">
+              Existing invoices and transactions are permanently preserved.
             </p>
           </div>
         </div>

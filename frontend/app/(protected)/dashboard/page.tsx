@@ -9,6 +9,7 @@ import RecentActivityWidget from "@/features/dashboard/components/RecentActivity
 import BusinessInsightsWidget from "@/features/dashboard/components/BusinessInsightsWidget";
 
 import { useDashboard } from "@/features/dashboard/hooks/useDashboard";
+import Header from "@/components/layout/Header";
 
 export default function DashboardPage() {
   const { dashboard, loading, error } = useDashboard();
@@ -31,34 +32,20 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 p-4">
-      <ExecutiveHero
-        userName={dashboard.owner.name}
-        businessName={dashboard.business.name}
-        businessId={dashboard.business.businessId}
-      />
+      <Header dashboard={dashboard} />
+      <ExecutiveHero dashboard={dashboard} />
 
-      <KPIGrid
-        todaySales={dashboard.todaySales}
-        todayProfit={dashboard.todayProfit}
-        totalProducts={dashboard.totalProducts}
-        lowStock={dashboard.lowStock}
-        totalCustomers={dashboard.totalCustomers}
-        totalSuppliers={dashboard.totalSuppliers}
-      />
+      <KPIGrid dashboard={dashboard} />
 
       <QuickActions />
 
-      <SalesChart
-        data={dashboard.salesChart}
-        totalSales={dashboard.weeklySales}
-        growth={dashboard.salesGrowth}
-      />
+      <SalesChart dashboard={dashboard} />
 
-      <LowStockWidget products={dashboard.lowStockProducts} />
+      <LowStockWidget dashboard={dashboard} />
 
-      <RecentActivityWidget activities={dashboard.recentActivities} />
+      <RecentActivityWidget dashboard={dashboard} />
 
-      <BusinessInsightsWidget insights={dashboard.insights} />
+      <BusinessInsightsWidget dashboard={dashboard} />
     </div>
   );
 }

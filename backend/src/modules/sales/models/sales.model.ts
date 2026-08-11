@@ -102,6 +102,13 @@ const saleItemSchema = new Schema(
       required: true,
       min: 0,
     },
+
+    profit: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+    },
   },
   {
     _id: false,

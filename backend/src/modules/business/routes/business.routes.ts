@@ -20,4 +20,6 @@ router.get("/search", authenticate, asyncHandler(BusinessController.search));
 
 router.put("/:id", authenticate, asyncHandler(BusinessController.update));
 
+router.patch("/:id/switch", authenticate, BusinessController.switchBusiness);
+
 export default router;

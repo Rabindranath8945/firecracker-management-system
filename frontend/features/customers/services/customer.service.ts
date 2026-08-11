@@ -1,49 +1,68 @@
-import type { Customer } from "../types/customer";
+import api from "@/lib/api";
 
-export const customers: Customer[] = [
-  {
-    id: "1",
-    customerNo: "CUS001",
-    name: "Rahul Das",
-    mobile: "9876543210",
-    email: "rahul@gmail.com",
-    address: "Haldia",
-    gstNo: "",
-    openingBalance: 0,
-    balance: 1200,
-    type: "CUSTOMER",
-    isActive: true,
-    createdAt: "",
-    updatedAt: "",
-  },
-  {
-    id: "2",
-    customerNo: "CUS002",
-    name: "Suman Roy",
-    mobile: "9007008000",
-    email: "suman@gmail.com",
-    address: "Kolkata",
-    gstNo: "",
-    openingBalance: 0,
-    balance: 0,
-    type: "CUSTOMER",
-    isActive: true,
-    createdAt: "",
-    updatedAt: "",
-  },
-  {
-    id: "3",
-    customerNo: "CUS003",
-    name: "Amit Paul",
-    mobile: "8912345678",
-    email: "",
-    address: "Durgapur",
-    gstNo: "",
-    openingBalance: 0,
-    balance: 550,
-    type: "CUSTOMER",
-    isActive: false,
-    createdAt: "",
-    updatedAt: "",
-  },
-];
+import type {
+  Customer,
+  CustomerFormData,
+  CustomerListResponse,
+} from "../types/customer";
+
+interface GetCustomersParams {
+  search?: string;
+  status?: string;
+  sort?: string;
+  page?: number;
+  limit?: number;
+}
+
+class CustomerService {
+  async getCustomers(
+    params: GetCustomersParams = {},
+  ): Promise<CustomerListResponse> {
+    const response = await api.get("/customers", {
+      params: {
+        page: params.page ?? 1,
+        limit: params.limit ?? 20,
+
+        search:
+          params.search && params.search.trim() !== ""
+            ? params.search
+            : undefined,
+
+        isActive:
+          params.status === "ALL" ? undefined : params.status === "ACTIVE",
+
+        sort:
+          params.sort && params.sort !== "NAME_ASC" ? params.sort : undefined,
+      },
+    });
+
+    return response.data.data;
+  }
+
+  async getCustomer(id: string): Promise<Customer> {
+    const response = await api.get(`/customers/${id}`);
+
+    return response.data.data;
+  }
+
+  async createCustomer(payload: CustomerFormData): Promise<Customer> {
+    const response = await api.post("/customers", payload);
+
+    return response.data.data;
+  }
+
+  async updateCustomer(
+    id: string,
+    payload: CustomerFormData,
+  ): Promise<Customer> {
+    const response = await api.put(`/customers/${id}`, payload);
+
+    return response.data.data;
+  }
+
+  async deleteCustomer(id: string): Promise<void> {
+    await api.delete(`/customers/${id}`);
+  }
+}
+
+export default new CustomerService();

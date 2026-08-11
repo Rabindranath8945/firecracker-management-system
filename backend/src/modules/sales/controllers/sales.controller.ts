@@ -63,6 +63,26 @@ class SalesController {
     });
   };
 
+  getSummary = async (_req: Request, res: Response) => {
+    const summary = await SalesService.getSummary();
+
+    return res.status(200).json({
+      success: true,
+      data: summary,
+    });
+  };
+
+  getNextCode = async (_req: Request, res: Response) => {
+    const saleNo = await SalesService.getNextCode();
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        saleNo,
+      },
+    });
+  };
+
   getById = async (req: Request, res: Response) => {
     const sale = await SalesService.getById(String(req.params.id));
 

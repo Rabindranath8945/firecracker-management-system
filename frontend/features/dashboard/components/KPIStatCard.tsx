@@ -9,7 +9,7 @@ interface KPIStatCardProps {
   title: string;
   value: string;
   icon: LucideIcon;
-  color: "sky" | "emerald" | "violet" | "amber" | "blue" | "indigo";
+  color: "sky" | "emerald" | "violet" | "amber" | "blue" | "red";
   trend?: string;
 }
 
@@ -19,32 +19,37 @@ const COLORS = {
     text: "text-sky-600",
     badge: "bg-sky-50 text-sky-700",
   },
+
   emerald: {
     bg: "bg-emerald-100",
     text: "text-emerald-600",
     badge: "bg-emerald-50 text-emerald-700",
   },
+
   violet: {
     bg: "bg-violet-100",
     text: "text-violet-600",
     badge: "bg-violet-50 text-violet-700",
   },
+
   amber: {
     bg: "bg-amber-100",
     text: "text-amber-600",
     badge: "bg-amber-50 text-amber-700",
   },
+
   blue: {
     bg: "bg-blue-100",
     text: "text-blue-600",
     badge: "bg-blue-50 text-blue-700",
   },
-  indigo: {
-    bg: "bg-indigo-100",
-    text: "text-indigo-600",
-    badge: "bg-indigo-50 text-indigo-700",
+
+  red: {
+    bg: "bg-red-100",
+    text: "text-red-600",
+    badge: "bg-red-50 text-red-700",
   },
-} as const;
+};
 
 export default function KPIStatCard({
   title,

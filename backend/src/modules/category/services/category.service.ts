@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
 
 import CategoryRepository from "../repositories/category.repository.js";
+import { generateSequenceCode } from "../../../common/utils/generate-code.js";
 
 import {
   CreateCategoryDto,
@@ -22,14 +23,11 @@ class CategoryService {
       throw new Error("Invalid user.");
     }
 
-    const exists = await CategoryRepository.findByCode(data.categoryCode);
-
-    if (exists) {
-      throw new Error("Category code already exists.");
-    }
+    const categoryCode = await this.generateCategoryCode();
 
     return CategoryRepository.create({
       ...data,
+      categoryCode,
       createdBy: new Types.ObjectId(userId),
     });
   }
@@ -57,6 +55,15 @@ class CategoryService {
     }
 
     return category;
+  }
+
+  private async generateCategoryCode() {
+    const categories = await CategoryRepository.findCodes();
+
+    return generateSequenceCode(
+      categories.map((item) => item.categoryCode),
+      "CAT",
+    );
   }
 
   async update(id: string, data: UpdateCategoryDto, userId: string) {

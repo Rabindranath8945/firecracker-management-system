@@ -77,11 +77,11 @@ class UserService {
   /*                           Assign Business                                  */
   /* -------------------------------------------------------------------------- */
 
-  async assignBusiness(
+  async setCurrentBusiness(
     userId: string,
     businessId: string,
   ): Promise<IUser | null> {
-    return userRepository.assignBusiness(userId, businessId);
+    return userRepository.setCurrentBusiness(userId, businessId);
   }
 
   /* -------------------------------------------------------------------------- */

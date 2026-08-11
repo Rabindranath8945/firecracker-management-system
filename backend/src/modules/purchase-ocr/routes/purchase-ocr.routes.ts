@@ -3,14 +3,14 @@ import { Router } from "express";
 import PurchaseOcrController from "../controllers/purchase-ocr.controller.js";
 
 import { authenticate } from "../../../common/middleware/authenticate.js";
-import { imageUpload } from "../../../common/middleware/upload.middleware.js";
+import { ocrUpload } from "../../../common/uploads/middleware/ocr-upload.middleware.js";
 
 const router = Router();
 
 router.post(
   "/scan",
   authenticate,
-  imageUpload.single("invoice"),
+  ocrUpload.single("invoice"),
   PurchaseOcrController.scan,
 );
 

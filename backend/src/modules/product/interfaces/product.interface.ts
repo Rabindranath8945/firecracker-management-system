@@ -31,11 +31,25 @@ export interface IProduct extends Document {
 
   image?: string;
 
+  /* -------------------------------------------------------------------------- */
+  /*                                   Status                                   */
+  /* -------------------------------------------------------------------------- */
+
   isActive: boolean;
+
+  isDeleted: boolean;
+
+  deletedAt?: Date | null;
+
+  deletedBy?: Types.ObjectId | null;
+
+  /* -------------------------------------------------------------------------- */
+  /*                                  Audit                                     */
+  /* -------------------------------------------------------------------------- */
 
   createdBy: Types.ObjectId;
 
-  updatedBy?: Types.ObjectId;
+  updatedBy?: Types.ObjectId | null;
 
   createdAt: Date;
 

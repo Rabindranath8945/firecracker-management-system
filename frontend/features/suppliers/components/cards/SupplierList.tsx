@@ -34,7 +34,7 @@ export default function SupplierList({
     <div className="space-y-6">
       {suppliers.map((supplier) => (
         <SupplierListCard
-          key={supplier.id}
+          key={supplier._id}
           supplier={supplier}
           onDelete={onDelete}
         />

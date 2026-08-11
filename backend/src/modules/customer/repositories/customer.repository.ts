@@ -1,3 +1,4 @@
+import { ClientSession } from "mongoose";
 import Customer from "../models/customer.model.js";
 import { ICustomer } from "../interfaces/customer.interface.js";
 
@@ -63,6 +64,14 @@ class CustomerRepository {
     });
   }
 
+  async findLastCustomer() {
+    return Customer.findOne()
+      .sort({
+        createdAt: -1,
+      })
+      .select("customerCode");
+  }
+
   async findAll(options: CustomerQueryOptions = {}) {
     const {
       page = 1,
@@ -125,6 +134,22 @@ class CustomerRepository {
       new: true,
       runValidators: true,
     });
+  }
+
+  async increaseBalance(id: string, amount: number, session?: ClientSession) {
+    return Customer.findByIdAndUpdate(
+      id,
+      {
+        $inc: {
+          openingBalance: amount,
+        },
+      },
+      {
+        returnDocument: "after",
+        runValidators: true,
+        session,
+      },
+    );
   }
 
   async delete(id: string) {

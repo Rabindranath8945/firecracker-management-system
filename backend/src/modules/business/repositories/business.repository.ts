@@ -16,18 +16,34 @@ class BusinessRepository {
   /* -------------------------------------------------------------------------- */
 
   findById(id: string) {
-    return Business.findById(id).exec();
+    return Business.findById(id).lean().exec();
   }
 
   findByBusinessId(businessId: string) {
-    return Business.findOne({ businessId }).exec();
+    return Business.findOne({ businessId }).lean().exec();
   }
 
   findByOwner(ownerId: string) {
-    return Business.findOne({ owner: ownerId }).exec();
+    return Business.find({
+      owner: ownerId,
+      isActive: true,
+    })
+      .sort({ createdAt: 1 })
+      .lean()
+      .exec();
   }
 
-  async search(query: string) {
+  findByIdAndOwner(id: string, ownerId: string) {
+    return Business.findOne({
+      _id: id,
+      owner: ownerId,
+      isActive: true,
+    })
+      .lean()
+      .exec();
+  }
+
+  search(query: string) {
     return Business.findOne({
       $or: [
         {
@@ -43,7 +59,9 @@ class BusinessRepository {
           },
         },
       ],
-    });
+    })
+      .lean()
+      .exec();
   }
 
   /* -------------------------------------------------------------------------- */
@@ -52,8 +70,10 @@ class BusinessRepository {
 
   update(id: string, data: Partial<IBusiness>) {
     return Business.findByIdAndUpdate(id, data, {
-      new: true,
-    }).exec();
+      returnDocument: "after",
+    })
+      .lean()
+      .exec();
   }
 
   /* -------------------------------------------------------------------------- */

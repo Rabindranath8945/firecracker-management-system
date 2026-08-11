@@ -2,6 +2,7 @@ import { Types } from "mongoose";
 
 import SubCategoryRepository from "../repositories/sub-category.repository.js";
 import CategoryRepository from "../../category/repositories/category.repository.js";
+import { generateSequenceCode } from "../../../common/utils/generate-code.js";
 
 import {
   CreateSubCategoryDto,
@@ -44,16 +45,22 @@ class SubCategoryService {
       throw new Error("Category not found.");
     }
 
-    const exists = await SubCategoryRepository.findByCode(data.subCategoryCode);
-
-    if (exists) {
-      throw new Error("Sub category code already exists.");
-    }
+    const subCategoryCode = await this.generateSubCategoryCode();
 
     return SubCategoryRepository.create({
       ...this.mapDto(data),
+      subCategoryCode,
       createdBy: new Types.ObjectId(userId),
     });
+  }
+
+  private async generateSubCategoryCode() {
+    const subCategories = await SubCategoryRepository.findCodes();
+
+    return generateSequenceCode(
+      subCategories.map((item) => item.subCategoryCode),
+      "SUB",
+    );
   }
 
   async getAll(query: SubCategoryQuery) {
@@ -130,10 +137,7 @@ class SubCategoryService {
       throw new Error("Sub category not found.");
     }
 
-    return SubCategoryRepository.update(id, {
-      isActive: false,
-      updatedBy: new Types.ObjectId(userId),
-    });
+    return SubCategoryRepository.delete(id);
   }
 }
 

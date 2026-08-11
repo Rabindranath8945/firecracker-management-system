@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 
 import authService from "../services/auth.service";
+import bootstrapService from "../services/bootstrap.service";
 import { useAuthStore } from "../store/auth.store";
 
 export function useAuth() {
@@ -21,7 +22,7 @@ export function useAuth() {
       const result = await authService.googleLogin(credential);
 
       /* ---------------------------------------------------------------------- */
-      /*                           Save Authentication                           */
+      /*                           Save Authentication                          */
       /* ---------------------------------------------------------------------- */
 
       store.setUser(result.user);
@@ -31,52 +32,32 @@ export function useAuth() {
       store.setRefreshToken(result.refreshToken);
 
       /* ---------------------------------------------------------------------- */
-      /*                           Selected Flow                                */
+      /*                           Bootstrap App                                */
       /* ---------------------------------------------------------------------- */
 
-      const flow = sessionStorage.getItem("auth-flow");
+      const next = await bootstrapService.initialize();
 
-      /* ---------------------------------------------------------------------- */
-      /*                         Create Business Flow                           */
-      /* ---------------------------------------------------------------------- */
+      switch (next.type) {
+        case "ONBOARDING":
+          router.replace("/onboarding?step=business");
+          return;
 
-      if (flow === "create") {
-        sessionStorage.removeItem("auth-flow");
+        case "SELECT_BUSINESS":
+          router.replace("/business/select");
+          return;
 
-        router.replace("/onboarding?step=business");
-
-        return;
-      }
-
-      /* ---------------------------------------------------------------------- */
-      /*                          Join Business Flow                            */
-      /* ---------------------------------------------------------------------- */
-
-      if (flow === "join") {
-        sessionStorage.removeItem("auth-flow");
-
-        if (result.user.business) {
+        case "DASHBOARD":
           router.replace("/dashboard");
-        } else {
-          router.replace("/join-business/search");
-        }
+          return;
 
-        return;
+        default:
+          router.replace("/dashboard");
+          return;
       }
-
-      /* ---------------------------------------------------------------------- */
-      /*                           Default Flow                                 */
-      /* ---------------------------------------------------------------------- */
-
-      sessionStorage.removeItem("auth-flow");
-
-      router.replace("/dashboard");
     } catch (error) {
       console.error("Google login failed:", error);
 
       store.logout();
-
-      sessionStorage.removeItem("auth-flow");
 
       throw error;
     } finally {
@@ -93,8 +74,6 @@ export function useAuth() {
       await authService.logout();
     } finally {
       store.logout();
-
-      sessionStorage.removeItem("auth-flow");
 
       router.replace("/login");
     }

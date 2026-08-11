@@ -7,6 +7,8 @@ import SubCategoryRepository from "../../sub-category/repositories/sub-category.
 import { IProduct } from "../interfaces/product.interface.js";
 import { ProductExcelRow } from "../../../common/excel/types/excel-row.types.js";
 
+import { generateSequenceCode } from "../../../common/utils/generate-code.js";
+
 import {
   CreateProductDto,
   UpdateProductDto,
@@ -15,12 +17,25 @@ import {
 interface ProductQuery {
   page?: number;
   limit?: number;
+
   search?: string;
-  sort?: string;
-  order?: "asc" | "desc";
+
+  sort?:
+    | "NAME_ASC"
+    | "NAME_DESC"
+    | "PRICE_ASC"
+    | "PRICE_DESC"
+    | "STOCK_ASC"
+    | "STOCK_DESC";
+
   category?: string;
+
+  subCategory?: string;
+
   isActive?: boolean;
-  stock?: "low" | "available" | "out";
+
+  stock?: "IN_STOCK" | "LOW_STOCK" | "OUT_OF_STOCK";
+
   minPrice?: number;
   maxPrice?: number;
 }
@@ -112,11 +127,13 @@ class ProductService {
       search: query.search,
 
       sort: query.sort,
-      order: query.order,
 
       category: query.category,
 
-      isActive: query.isActive ?? true,
+      subCategory: query.subCategory,
+
+      // Don't force active products
+      isActive: query.isActive,
 
       stock: query.stock,
 
@@ -137,6 +154,14 @@ class ProductService {
     }
 
     return product;
+  }
+  async getNextCode() {
+    const products = await ProductRepository.findCodes();
+
+    return generateSequenceCode(
+      products.map((item) => item.productCode),
+      "PRD",
+    );
   }
 
   async update(id: string, data: UpdateProductDto, userId: string) {
@@ -177,10 +202,7 @@ class ProductService {
       throw new Error("Product not found.");
     }
 
-    return ProductRepository.update(id, {
-      isActive: false,
-      updatedBy: new Types.ObjectId(userId),
-    });
+    return ProductRepository.delete(id);
   }
 
   // Part 2 starts here

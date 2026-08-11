@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   AlertTriangle,
   ArrowRight,
@@ -9,14 +10,14 @@ import {
   TrendingUp,
   Trophy,
 } from "lucide-react";
-import Link from "next/link";
 
 import DashboardWidget from "./DashboardWidget";
 import { Button } from "@/components/ui/button";
-import type { BusinessInsight } from "../types/dashboard.type";
+
+import type { DashboardSummary } from "../types/dashboard.type";
 
 interface BusinessInsightsWidgetProps {
-  insights: BusinessInsight[];
+  dashboard: DashboardSummary;
 }
 
 const COLORS = {
@@ -49,8 +50,10 @@ const ICONS = {
 } as const;
 
 export default function BusinessInsightsWidget({
-  insights,
+  dashboard,
 }: BusinessInsightsWidgetProps) {
+  const { insights } = dashboard;
+
   if (insights.length === 0) {
     return (
       <DashboardWidget
@@ -70,6 +73,7 @@ export default function BusinessInsightsWidget({
       </DashboardWidget>
     );
   }
+
   return (
     <DashboardWidget
       title="OneHub AI Insights"
@@ -107,7 +111,6 @@ export default function BusinessInsightsWidget({
       <div className="space-y-4">
         {insights.map((item) => {
           const Icon = ICONS[item.type];
-
           const styles = COLORS[item.type];
 
           return (

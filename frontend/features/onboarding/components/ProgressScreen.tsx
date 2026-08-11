@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { CheckCircle2, Loader2 } from "lucide-react";
 
@@ -18,8 +18,15 @@ const STEPS = [
 export default function ProgressScreen({ onComplete }: ProgressScreenProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [progress, setProgress] = useState(0);
+  const hasStarted = useRef(false);
 
   useEffect(() => {
+    if (hasStarted.current) {
+      return;
+    }
+
+    hasStarted.current = true;
+
     let mounted = true;
 
     async function runSetup() {
@@ -33,7 +40,9 @@ export default function ProgressScreen({ onComplete }: ProgressScreenProps) {
         setProgress(Math.round(((i + 1) / STEPS.length) * 100));
       }
 
-      await onComplete();
+      if (mounted) {
+        await onComplete();
+      }
     }
 
     runSetup();
@@ -41,7 +50,7 @@ export default function ProgressScreen({ onComplete }: ProgressScreenProps) {
     return () => {
       mounted = false;
     };
-  }, [onComplete]);
+  }, []);
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-white px-6">

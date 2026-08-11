@@ -34,7 +34,7 @@ export default function ProductAdditionalCard() {
             <Label>HSN Code</Label>
 
             <Input
-              {...register("hsn")}
+              {...register("hsnCode")}
               placeholder="36041000"
               className="h-11 rounded-xl"
             />
@@ -44,7 +44,7 @@ export default function ProductAdditionalCard() {
             <Label>GST %</Label>
 
             <Input
-              {...register("gst", {
+              {...register("tax", {
                 valueAsNumber: true,
               })}
               type="number"
@@ -79,7 +79,7 @@ export default function ProductAdditionalCard() {
 
           <Controller
             control={control}
-            name="active"
+            name="isActive"
             render={({ field }) => (
               <Switch checked={field.value} onCheckedChange={field.onChange} />
             )}

@@ -1,4 +1,4 @@
-import { apiClient } from "@/services/http";
+import api from "@/lib/api";
 
 import type { ApiResponse } from "@/types/api.types";
 
@@ -10,15 +10,19 @@ import type {
 
 export const businessApi = {
   create(payload: CreateBusinessRequest) {
-    return apiClient.post<ApiResponse<Business>>("/business", payload);
+    return api.post<ApiResponse<Business>>("/business", payload);
   },
 
   getMine() {
-    return apiClient.get<ApiResponse<Business>>("/business/me");
+    return api.get<ApiResponse<Business[]>>("/business/me");
+  },
+
+  switchBusiness(id: string) {
+    return api.patch<ApiResponse<Business>>(`/business/${id}/switch`);
   },
 
   search(query: string) {
-    return apiClient.get(`/business/search`, {
+    return api.get<ApiResponse<Business[]>>("/business/search", {
       params: {
         query,
       },
@@ -26,6 +30,6 @@ export const businessApi = {
   },
 
   update(id: string, payload: UpdateBusinessRequest) {
-    return apiClient.put<ApiResponse<Business>>(`/business/${id}`, payload);
+    return api.put<ApiResponse<Business>>(`/business/${id}`, payload);
   },
 };

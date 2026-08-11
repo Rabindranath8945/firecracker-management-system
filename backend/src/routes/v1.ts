@@ -23,6 +23,7 @@ import userRoutes from "../modules/user/routes/user.routes.js";
 import businessRoutes from "../modules/business/routes/business.routes.js";
 import joinRequestRoutes from "../modules/join-request/routes/join-request.routes.js";
 import dashboardRoutes from "../modules/dashboard/routes/dashboard.routes.js";
+import customerPaymentRoutes from "../modules/customer/routes/customer-payment.routes.js";
 
 const router = Router();
 
@@ -37,6 +38,8 @@ router.use("/categories", categoryRoutes);
 router.use("/sub-categories", subCategoryRoutes);
 // Customer
 router.use("/customers", customerRoutes);
+// Customer Payment Routes
+router.use("/customer-payments", customerPaymentRoutes);
 // Supplier Routes
 router.use("/suppliers", supplierRoutes);
 // Reports Routes

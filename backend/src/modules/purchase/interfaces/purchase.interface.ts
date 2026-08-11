@@ -9,7 +9,7 @@ export type PurchasePaymentMethod =
   | "CHEQUE"
   | "CREDIT";
 
-export type PurchaseStatus = "PAID" | "PARTIAL" | "UNPAID";
+export type PurchaseStatus = "PAID" | "PARTIAL" | "DUE";
 
 export interface IPurchaseItem {
   product: Types.ObjectId;

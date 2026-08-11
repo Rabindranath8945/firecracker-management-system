@@ -20,7 +20,7 @@ export interface CreatePurchaseRequest {
   purchaseDate: string;
   dueDate?: string;
 
-  paymentStatus: "PAID" | "PARTIAL" | "UNPAID";
+  paymentStatus: "PAID" | "PARTIAL" | "DUE";
 
   transportCharge: number;
 

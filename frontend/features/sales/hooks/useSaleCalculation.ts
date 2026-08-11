@@ -22,7 +22,7 @@ export function useSaleCalculation() {
     const changeAmount = Math.max(0, paidAmount - grandTotal);
 
     const paidStatus =
-      dueAmount === 0 ? "PAID" : paidAmount === 0 ? "UNPAID" : "PARTIAL";
+      dueAmount === 0 ? "PAID" : paidAmount === 0 ? "DUE" : "PARTIAL";
 
     return {
       totalItems,

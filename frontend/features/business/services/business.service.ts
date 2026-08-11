@@ -7,29 +7,57 @@ import type {
 } from "../types/business.types";
 
 class BusinessService {
+  /* -------------------------------------------------------------------------- */
+  /*                                  Create                                    */
+  /* -------------------------------------------------------------------------- */
+
   async create(payload: CreateBusinessRequest): Promise<Business> {
-    const response = await businessApi.create(payload);
+    const { data } = await businessApi.create(payload);
 
-    return response.data.data;
+    return data.data;
   }
 
-  async getMine(): Promise<Business> {
-    const response = await businessApi.getMine();
+  /* -------------------------------------------------------------------------- */
+  /*                            My Businesses                                   */
+  /* -------------------------------------------------------------------------- */
 
-    return response.data.data;
+  async getMine(): Promise<Business[]> {
+    const { data } = await businessApi.getMine();
+
+    return data.data;
   }
 
-  async search(query: string): Promise<Business> {
-    const response = await businessApi.search(query);
+  /* -------------------------------------------------------------------------- */
+  /*                            Switch Business                                 */
+  /* -------------------------------------------------------------------------- */
 
-    return response.data.data;
+  async switchBusiness(id: string): Promise<Business> {
+    const { data } = await businessApi.switchBusiness(id);
+
+    return data.data;
   }
+
+  /* -------------------------------------------------------------------------- */
+  /*                               Search                                       */
+  /* -------------------------------------------------------------------------- */
+
+  async search(query: string): Promise<Business[]> {
+    const { data } = await businessApi.search(query);
+
+    return data.data;
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*                                Update                                      */
+  /* -------------------------------------------------------------------------- */
 
   async update(id: string, payload: UpdateBusinessRequest): Promise<Business> {
-    const response = await businessApi.update(id, payload);
+    const { data } = await businessApi.update(id, payload);
 
-    return response.data.data;
+    return data.data;
   }
 }
 
-export default new BusinessService();
+const businessService = new BusinessService();
+
+export default businessService;

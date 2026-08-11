@@ -1,9 +1,4 @@
-export type OnboardingStep =
-  | "welcome"
-  | "business"
-  | "progress"
-  | "business-info"
-  | "tour";
+export type OnboardingStep = "business" | "progress" | "business-info";
 
 export interface BusinessInfo {
   businessName: string;

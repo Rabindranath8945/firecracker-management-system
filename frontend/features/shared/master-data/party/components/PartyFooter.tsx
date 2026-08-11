@@ -18,17 +18,26 @@ export default function PartyFooter({
   onCancel,
 }: PartyFooterProps) {
   return (
-    <div className="sticky bottom-0 z-40 -mx-4 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
-      <div className="flex gap-3">
+    <div className="sticky bottom-0 z-20 -mx-4 border-t border-slate-200 bg-white/95 px-4 py-4 backdrop-blur sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+      <div className="mx-auto flex max-w-4xl gap-3">
         {/* Cancel */}
 
         <Button
           type="button"
           variant="outline"
+          disabled={loading}
           onClick={onCancel}
-          className="h-11 flex-1 rounded-xl border-slate-200"
+          className="
+            h-14
+            flex-1
+            rounded-2xl
+            border-slate-200
+            text-slate-700
+            transition-all
+            hover:bg-slate-100
+          "
         >
-          <X className="mr-2 h-4 w-4" />
+          <X className="mr-2 h-5 w-5" />
           {cancelLabel}
         </Button>
 
@@ -37,16 +46,30 @@ export default function PartyFooter({
         <Button
           type="submit"
           disabled={loading}
-          className="h-11 flex-[2] rounded-xl bg-gradient-to-r from-slate-900 to-slate-700 shadow-lg transition-all hover:shadow-xl"
+          className="
+            h-14
+            flex-[2]
+            rounded-2xl
+            bg-gradient-to-r
+            from-slate-900
+            via-slate-800
+            to-slate-700
+            text-white
+            shadow-lg
+            transition-all
+            hover:scale-[1.02]
+            hover:shadow-xl
+            active:scale-[0.98]
+          "
         >
           {loading ? (
             <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               Saving...
             </>
           ) : (
             <>
-              <Save className="mr-2 h-4 w-4" />
+              <Save className="mr-2 h-5 w-5" />
               {saveLabel}
             </>
           )}

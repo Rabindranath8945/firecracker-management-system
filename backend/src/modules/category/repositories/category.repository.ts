@@ -15,8 +15,8 @@ class CategoryRepository {
     return Category.create(data);
   }
 
-  async find() {
-    return Category.find();
+  async findCodes() {
+    return Category.find().select("categoryCode");
   }
 
   async bulkCreate(data: Partial<ICategory>[]) {

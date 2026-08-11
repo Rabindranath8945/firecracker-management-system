@@ -3,6 +3,7 @@ import mongoose, { Types } from "mongoose";
 import SalesRepository from "../repositories/sales.repository.js";
 import InventoryService from "../../inventory/index.js";
 import NotificationEngine from "../../notification/engines/notification.engine.js";
+import CustomerRepository from "../../customer/repositories/customer.repository.js";
 
 import { buildSale } from "../builders/sale.builder.js";
 
@@ -13,82 +14,258 @@ import {
 
 import { validatePayment } from "../helpers/payment-validator.js";
 
-import { CreateSaleInput } from "../validators/sales.validator.js";
+import type { CreateSaleInput } from "../validators/sales.validator.js";
 
 export async function createSaleWorkflow(
   data: CreateSaleInput,
   userId: string,
 ) {
-  const sequence = await SalesRepository.getNextSequence();
+  const session = await mongoose.startSession();
 
-  const saleNo = generateSaleNumber(sequence);
+  try {
+    const transactionResult = await session.withTransaction(async () => {
+      /* ------------------------------------------------------------------ */
+      /* Generate Sale & Invoice Numbers                                    */
+      /* ------------------------------------------------------------------ */
 
-  const invoiceNo = generateInvoiceNumber(sequence);
+      const saleCodes = await SalesRepository.getSaleCodes(session);
 
-  validatePayment(data.payment, data.paidAmount);
+      const sequence =
+        saleCodes.length === 0
+          ? 1
+          : Math.max(
+              ...saleCodes.map(
+                (sale) => Number(sale.saleNo.replace("SAL-", "")) || 0,
+              ),
+            ) + 1;
 
-  const { saleItems, totals } = await buildSale(data.items);
+      const saleNo = generateSaleNumber(sequence);
 
-  const sale = await SalesRepository.create({
-    ...data,
+      const invoiceNo = generateInvoiceNumber(sequence);
 
-    saleNo,
+      /* ------------------------------------------------------------------ */
+      /* Build Sale Items & Totals                                          */
+      /* ------------------------------------------------------------------ */
 
-    invoiceNo,
+      const { saleItems, totals } = await buildSale(data.items, data.discount);
 
-    customer: data.customer ? new Types.ObjectId(data.customer) : undefined,
+      /* ------------------------------------------------------------------ */
+      /* Paid Amount                                                        */
+      /* ------------------------------------------------------------------ */
 
-    items: saleItems,
+      const paidAmount = Math.max(0, data.paidAmount);
 
-    subtotal: totals.subtotal,
+      if (paidAmount > totals.grandTotal) {
+        throw new Error("Paid amount cannot be greater than grand total.");
+      }
 
-    discount: totals.discount,
+      /* ------------------------------------------------------------------ */
+      /* Due Amount                                                         */
+      /* ------------------------------------------------------------------ */
 
-    taxAmount: totals.taxAmount,
+      const dueAmount = Math.max(0, totals.grandTotal - paidAmount);
 
-    grandTotal: totals.grandTotal,
+      /* ------------------------------------------------------------------ */
+      /* Payment Status                                                     */
+      /* ------------------------------------------------------------------ */
 
-    createdBy: new Types.ObjectId(userId),
-  });
+      const paymentStatus =
+        paidAmount >= totals.grandTotal
+          ? "PAID"
+          : paidAmount > 0
+            ? "PARTIAL"
+            : "DUE";
 
-  for (const item of saleItems) {
-    await InventoryService.decreaseStock(
-      item.product.toString(),
-      item.quantity,
-      {
-        type: "SALE",
-        referenceId: sale._id.toString(),
-        referenceNo: sale.saleNo,
-        createdBy: userId,
-      },
-    );
-  }
+      /* ------------------------------------------------------------------ */
+      /* Payment Breakdown                                                  */
+      /* ------------------------------------------------------------------ */
 
-  const createdSale = await SalesRepository.findById(sale.id);
+      const payment = {
+        method: data.paymentMethod,
 
-  if (createdSale) {
-    try {
-      await NotificationEngine.saleCreated({
-        userId,
+        cash: data.paymentMethod === "CASH" ? paidAmount : 0,
 
-        saleId: createdSale.id,
+        upi: data.paymentMethod === "UPI" ? paidAmount : 0,
 
-        invoiceNo: createdSale.invoiceNo,
+        card: data.paymentMethod === "CARD" ? paidAmount : 0,
 
-        customer:
-          createdSale.customer instanceof Types.ObjectId
-            ? "Walk-in Customer"
-            : (createdSale.customer?.name ?? "Walk-in Customer"),
+        bank: data.paymentMethod === "BANK" ? paidAmount : 0,
 
-        total: createdSale.grandTotal,
-      });
-    } catch (error) {
-      console.error("Failed to create sale notification:", error);
+        /*
+         * For CREDIT sale, paidAmount should normally be 0.
+         *
+         * The actual outstanding amount is stored
+         * in sale.dueAmount.
+         */
+        credit: data.paymentMethod === "CREDIT" ? paidAmount : 0,
+      };
+
+      /* ------------------------------------------------------------------ */
+      /* Validate Payment                                                   */
+      /* ------------------------------------------------------------------ */
+
+      validatePayment(payment, paidAmount);
+
+      /* ------------------------------------------------------------------ */
+      /* Create Sale                                                        */
+      /* ------------------------------------------------------------------ */
+
+      const createdSale = await SalesRepository.create(
+        {
+          saleNo,
+
+          invoiceNo,
+
+          saleDate: new Date(),
+
+          customer: data.customer
+            ? new Types.ObjectId(data.customer)
+            : undefined,
+
+          items: saleItems,
+
+          subtotal: totals.subtotal,
+
+          discount: totals.discount,
+
+          taxAmount: totals.taxAmount,
+
+          grandTotal: totals.grandTotal,
+
+          paidAmount,
+
+          dueAmount,
+
+          payment,
+
+          paymentStatus,
+
+          notes: data.notes,
+
+          createdBy: new Types.ObjectId(userId),
+        },
+        session,
+      );
+
+      /* ------------------------------------------------------------------ */
+      /* Update Inventory                                                   */
+      /* ------------------------------------------------------------------ */
+
+      await Promise.all(
+        saleItems.map((item) =>
+          InventoryService.decreaseStock(
+            item.product.toString(),
+            item.quantity,
+            {
+              type: "SALE",
+
+              referenceId: createdSale._id.toString(),
+
+              referenceNo: saleNo,
+
+              createdBy: userId,
+            },
+            session,
+          ),
+        ),
+      );
+
+      /* ------------------------------------------------------------------ */
+      /* Update Customer Due                                                */
+      /* ------------------------------------------------------------------ */
+      /*
+       * IMPORTANT:
+       *
+       * Only the NEW SALE'S due is added here.
+       *
+       * Example:
+       *
+       * Existing customer balance = ₹900
+       * New sale                  = ₹295
+       * Paid                      = ₹0
+       *
+       * New customer balance      = ₹1,195
+       *
+       * If CASH sale is fully paid:
+       *
+       * Existing balance = ₹900
+       * New sale due      = ₹0
+       * Customer balance  = ₹900
+       *
+       * Previous due collection is handled separately
+       * by CustomerPaymentService.
+       */
+
+      if (data.customer && dueAmount > 0) {
+        await CustomerRepository.increaseBalance(
+          data.customer,
+          dueAmount,
+          session,
+        );
+      }
+
+      /* ------------------------------------------------------------------ */
+      /* Transaction Result                                                 */
+      /* ------------------------------------------------------------------ */
+
+      return {
+        createdSale,
+        totals,
+      };
+    });
+
+    /* -------------------------------------------------------------------- */
+    /* Transaction Check                                                    */
+    /* -------------------------------------------------------------------- */
+
+    if (!transactionResult) {
+      throw new Error("Sale transaction failed.");
     }
-  }
 
-  return {
-    sale: createdSale ?? sale,
-    totals,
-  };
+    const { createdSale, totals } = transactionResult;
+
+    /* -------------------------------------------------------------------- */
+    /* Load Complete Sale                                                   */
+    /* -------------------------------------------------------------------- */
+
+    const sale = await SalesRepository.findById(createdSale.id);
+
+    /* -------------------------------------------------------------------- */
+    /* Notification                                                         */
+    /* -------------------------------------------------------------------- */
+
+    if (sale) {
+      queueMicrotask(() => {
+        void NotificationEngine.saleCreated({
+          userId,
+
+          saleId: sale.id,
+
+          invoiceNo: sale.invoiceNo,
+
+          customer:
+            sale.customer &&
+            typeof sale.customer === "object" &&
+            "name" in sale.customer
+              ? sale.customer.name
+              : "Walk-in Customer",
+
+          total: sale.grandTotal,
+        }).catch((error) => {
+          console.error("Sale notification failed:", error);
+        });
+      });
+    }
+
+    /* -------------------------------------------------------------------- */
+    /* Response                                                             */
+    /* -------------------------------------------------------------------- */
+
+    return {
+      sale: sale ?? createdSale,
+      totals,
+    };
+  } finally {
+    await session.endSession();
+  }
 }

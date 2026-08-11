@@ -10,48 +10,64 @@ import {
 } from "lucide-react";
 
 interface Props {
-  openingBalance: number;
-  outstanding: number;
+  openingBalance?: number;
+  outstanding?: number;
+  lifetimePurchases?: number;
+  totalBills?: number;
+  totalPayments?: number;
+  lastPurchaseDate?: string;
 }
 
 export default function SupplierBusinessSummary({
-  openingBalance,
-  outstanding,
+  openingBalance = 0,
+  outstanding = 0,
+  lifetimePurchases = 0,
+  totalBills = 0,
+  totalPayments = 0,
+  lastPurchaseDate,
 }: Props) {
+  const formattedDate = lastPurchaseDate
+    ? new Intl.DateTimeFormat("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }).format(new Date(lastPurchaseDate))
+    : "-";
+
   const cards = [
     {
       title: "Opening Balance",
-      value: `₹${openingBalance.toLocaleString("en-IN")}`,
+      value: `₹${Number(openingBalance).toLocaleString("en-IN")}`,
       icon: Wallet,
       color: "bg-blue-100 text-blue-700",
     },
     {
       title: "Outstanding Payable",
-      value: `₹${outstanding.toLocaleString("en-IN")}`,
+      value: `₹${Number(outstanding).toLocaleString("en-IN")}`,
       icon: IndianRupee,
       color: "bg-red-100 text-red-700",
     },
     {
       title: "Lifetime Purchases",
-      value: "₹24,500",
+      value: `₹${Number(lifetimePurchases).toLocaleString("en-IN")}`,
       icon: ShoppingBag,
       color: "bg-emerald-100 text-emerald-700",
     },
     {
       title: "Bills",
-      value: "18",
+      value: totalBills.toLocaleString("en-IN"),
       icon: FileText,
       color: "bg-violet-100 text-violet-700",
     },
     {
       title: "Payments",
-      value: "16",
+      value: totalPayments.toLocaleString("en-IN"),
       icon: CreditCard,
       color: "bg-orange-100 text-orange-700",
     },
     {
       title: "Last Purchase",
-      value: "12 Jul",
+      value: formattedDate,
       icon: Calendar,
       color: "bg-cyan-100 text-cyan-700",
     },
@@ -59,14 +75,12 @@ export default function SupplierBusinessSummary({
 
   return (
     <div className="rounded-3xl border bg-white p-6 shadow-sm">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold">Business Summary</h2>
+      <div className="mb-6">
+        <h2 className="text-xl font-bold">Business Summary</h2>
 
-          <p className="mt-1 text-sm text-slate-500">
-            Supplier financial overview
-          </p>
-        </div>
+        <p className="mt-1 text-sm text-slate-500">
+          Supplier financial overview
+        </p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-3">
@@ -86,7 +100,9 @@ export default function SupplierBusinessSummary({
                 </div>
               </div>
 
-              <h3 className="break-all text-xl font-bold">{card.value}</h3>
+              <h3 className="break-all text-xl font-bold text-slate-900">
+                {card.value}
+              </h3>
 
               <p className="mt-2 text-sm text-slate-500">{card.title}</p>
             </div>

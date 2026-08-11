@@ -1,60 +1,78 @@
 "use client";
 
 import {
+  BadgeIndianRupee,
+  Calendar,
   Mail,
   MapPin,
   Phone,
-  Wallet,
-  BadgeIndianRupee,
-  Calendar,
+  CreditCard,
 } from "lucide-react";
 
 import type { Customer } from "../../types/customer";
 
-interface Props {
+interface CustomerContactCardProps {
   customer: Customer;
 }
 
-export default function CustomerContactCard({ customer }: Props) {
+export default function CustomerContactCard({
+  customer,
+}: CustomerContactCardProps) {
+  const createdDate = new Intl.DateTimeFormat("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(customer.createdAt));
+
   const items = [
     {
       icon: Phone,
-      label: "Mobile",
+      label: "Mobile Number",
       value: customer.mobile,
+      color: "bg-emerald-100 text-emerald-700",
     },
     {
       icon: Mail,
-      label: "Email",
+      label: "Email Address",
       value: customer.email || "-",
+      color: "bg-blue-100 text-blue-700",
     },
     {
       icon: MapPin,
       label: "Address",
-      value: customer.address || "-",
+      value: customer.address || customer.city || customer.state || "-",
+      color: "bg-orange-100 text-orange-700",
     },
     {
       icon: BadgeIndianRupee,
       label: "Opening Balance",
-      value: `₹${customer.openingBalance.toLocaleString("en-IN")}`,
+      value: `₹${(customer.openingBalance ?? 0).toLocaleString("en-IN")}`,
+      color: "bg-violet-100 text-violet-700",
     },
     {
-      icon: Wallet,
-      label: "Current Balance",
-      value: `₹${customer.balance.toLocaleString("en-IN")}`,
+      icon: CreditCard,
+      label: "Credit Limit",
+      value: `₹${(customer.creditLimit ?? 0).toLocaleString("en-IN")}`,
+      color: "bg-cyan-100 text-cyan-700",
     },
     {
       icon: Calendar,
       label: "Customer Since",
-      value: "15 Jul 2026",
+      value: createdDate,
+      color: "bg-slate-100 text-slate-700",
     },
   ];
 
   return (
-    <div className="rounded-3xl border bg-white p-6 shadow-sm">
+    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="mb-6">
-        <h2 className="text-xl font-bold">Contact Information</h2>
+        <h2 className="text-xl font-bold text-slate-900">
+          Contact Information
+        </h2>
 
-        <p className="mt-1 text-sm text-slate-500">Customer profile details</p>
+        <p className="mt-1 text-sm text-slate-500">
+          Customer profile and account details.
+        </p>
       </div>
 
       <div className="space-y-5">
@@ -63,14 +81,18 @@ export default function CustomerContactCard({ customer }: Props) {
 
           return (
             <div key={item.label} className="flex items-start gap-4">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100">
-                <Icon className="h-5 w-5 text-slate-600" />
+              <div
+                className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${item.color}`}
+              >
+                <Icon className="h-5 w-5" />
               </div>
 
               <div className="min-w-0 flex-1">
-                <p className="text-sm text-slate-500">{item.label}</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                  {item.label}
+                </p>
 
-                <p className="break-words font-semibold text-slate-900">
+                <p className="mt-1 break-words text-[15px] font-semibold text-slate-900">
                   {item.value}
                 </p>
               </div>
@@ -78,6 +100,6 @@ export default function CustomerContactCard({ customer }: Props) {
           );
         })}
       </div>
-    </div>
+    </section>
   );
 }

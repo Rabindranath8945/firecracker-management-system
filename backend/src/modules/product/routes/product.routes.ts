@@ -32,6 +32,8 @@ router.post(
   ProductController.uploadImage,
 );
 
+router.get("/next-code", authenticate, ProductController.getNextCode);
+
 router.get(
   "/:id",
   authenticate,
@@ -44,10 +46,6 @@ router.put(
   ProductController.update.bind(ProductController),
 );
 
-router.delete(
-  "/:id",
-  authenticate,
-  ProductController.delete.bind(ProductController),
-);
+router.delete("/:id", authenticate, ProductController.delete);
 
 export default router;

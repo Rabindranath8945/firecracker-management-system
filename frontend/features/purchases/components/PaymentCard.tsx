@@ -16,8 +16,8 @@ interface PaymentCardProps {
 function getPaymentStatus(
   paid: number,
   total: number,
-): "PAID" | "PARTIAL" | "UNPAID" {
-  if (paid <= 0) return "UNPAID";
+): "PAID" | "PARTIAL" | "DUE" {
+  if (paid <= 0) return "DUE";
 
   if (paid >= total) return "PAID";
 

@@ -1,19 +1,33 @@
+"use client";
+
+import { usePathname } from "next/navigation";
 import Header from "./Header";
-import PageContainer from "./PageContainer";
 import BottomNavigation from "./BottomNavigation";
+import PageContainer from "./PageContainer";
+
+import { useDashboard } from "@/features/dashboard/hooks/useDashboard";
 
 interface AppShellProps {
   children: React.ReactNode;
 }
 
 export default function AppShell({ children }: AppShellProps) {
+  const pathname = usePathname();
+  const { dashboard, loading } = useDashboard();
+
+  const hideBottomNavigation = [
+    "/sales/review",
+    "/sales/payment",
+    "/sales/success",
+  ].includes(pathname);
+
   return (
     <>
-      <Header />
+      {!loading && dashboard && <Header dashboard={dashboard} />}
 
       <PageContainer>{children}</PageContainer>
 
-      <BottomNavigation />
+      {!hideBottomNavigation && <BottomNavigation />}
     </>
   );
 }

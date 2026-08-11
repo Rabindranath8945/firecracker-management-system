@@ -13,7 +13,7 @@ export enum UserRole {
 export interface IUser extends Document {
   googleId: string;
 
-  business?: Types.ObjectId;
+  currentBusiness?: Types.ObjectId;
 
   email: string;
 
@@ -48,9 +48,10 @@ const UserSchema = new Schema<IUser>(
       trim: true,
     },
 
-    business: {
+    currentBusiness: {
       type: Schema.Types.ObjectId,
       ref: "Business",
+      default: null,
     },
 
     email: {

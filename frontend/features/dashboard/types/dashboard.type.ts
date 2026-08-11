@@ -10,13 +10,15 @@ export interface DashboardSummary {
 
   todaySales: number;
   todayProfit: number;
+
+  monthlyRevenue: number;
+  outstandingPayments: number;
+
+  totalCustomers: number;
+  lowStock: number;
+
   weeklySales: number;
   salesGrowth: number;
-
-  totalProducts: number;
-  totalCustomers: number;
-  totalSuppliers: number;
-  lowStock: number;
 
   salesChart: SalesChartItem[];
 

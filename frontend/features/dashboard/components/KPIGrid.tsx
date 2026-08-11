@@ -1,85 +1,60 @@
 "use client";
 
-import {
-  IndianRupee,
-  Boxes,
-  TriangleAlert,
-  Users,
-  Package,
-} from "lucide-react";
-
 import KPIStatCard from "./KPIStatCard";
 
+import { KPI_STATS } from "../constants/dashboard.constants";
+
+import type { DashboardSummary } from "../types/dashboard.type";
+
 interface KPIGridProps {
-  todaySales: number;
-  todayProfit: number;
-  totalProducts: number;
-  lowStock: number;
-  totalCustomers: number;
-  totalSuppliers: number;
+  dashboard: DashboardSummary;
 }
 
-export default function KPIGrid({
-  todaySales,
-  todayProfit,
-  totalProducts,
-  lowStock,
-  totalCustomers,
-  totalSuppliers,
-}: KPIGridProps) {
-  const stats = [
-    {
-      title: "Today's Sales",
-      value: `₹${todaySales.toLocaleString("en-IN")}`,
-      icon: IndianRupee,
-      color: "sky" as const,
-      trend: "+12%",
-    },
-    {
-      title: "Today's Profit",
-      value: `₹${todayProfit.toLocaleString("en-IN")}`,
-      icon: IndianRupee,
-      color: "emerald" as const,
-      trend: "+8%",
-    },
-    {
-      title: "Products",
-      value: totalProducts.toLocaleString(),
-      icon: Boxes,
-      color: "violet" as const,
-    },
-    {
-      title: "Low Stock",
-      value: lowStock.toLocaleString(),
-      icon: TriangleAlert,
-      color: "amber" as const,
-    },
-    {
-      title: "Customers",
-      value: totalCustomers.toLocaleString(),
-      icon: Users,
-      color: "blue" as const,
-    },
-    {
-      title: "Suppliers",
-      value: totalSuppliers.toLocaleString(),
-      icon: Package,
-      color: "indigo" as const,
-    },
-  ];
-
+export default function KPIGrid({ dashboard }: KPIGridProps) {
   return (
-    <section className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
-      {stats.map((stat) => (
-        <KPIStatCard
-          key={stat.title}
-          title={stat.title}
-          value={stat.value}
-          icon={stat.icon}
-          color={stat.color}
-          {...(stat.trend && { trend: stat.trend })}
-        />
-      ))}
+    <section className="grid grid-cols-2 gap-4 xl:grid-cols-3">
+      {KPI_STATS.map((item) => {
+        let value = "";
+
+        switch (item.key) {
+          case "todaySales":
+            value = `₹${dashboard.todaySales.toLocaleString("en-IN")}`;
+            break;
+
+          case "todayProfit":
+            value = `₹${dashboard.todayProfit.toLocaleString("en-IN")}`;
+            break;
+
+          case "monthlyRevenue":
+            value = `₹${dashboard.monthlyRevenue.toLocaleString("en-IN")}`;
+            break;
+
+          case "outstandingPayments":
+            value = `₹${dashboard.outstandingPayments.toLocaleString("en-IN")}`;
+            break;
+
+          case "totalCustomers":
+            value = dashboard.totalCustomers.toLocaleString("en-IN");
+            break;
+
+          case "lowStock":
+            value = dashboard.lowStock.toLocaleString("en-IN");
+            break;
+
+          default:
+            value = "";
+        }
+
+        return (
+          <KPIStatCard
+            key={item.key}
+            title={item.title}
+            value={value}
+            icon={item.icon}
+            color={item.color}
+          />
+        );
+      })}
     </section>
   );
 }

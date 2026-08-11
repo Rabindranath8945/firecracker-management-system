@@ -96,14 +96,14 @@ class UserRepository {
     );
   }
 
-  async assignBusiness(
+  async setCurrentBusiness(
     userId: string,
     businessId: string,
   ): Promise<IUser | null> {
     return User.findByIdAndUpdate(
       userId,
       {
-        business: businessId,
+        currentBusiness: businessId,
       },
       {
         new: true,

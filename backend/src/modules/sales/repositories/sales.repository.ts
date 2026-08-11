@@ -36,11 +36,10 @@ class SalesRepository {
     });
   }
 
-  async findById(id: string) {
-    return Sale.findById(id).populate(
-      "customer",
-      "customerCode name mobile address gstNo",
-    );
+  async findById(id: string, session?: ClientSession) {
+    return Sale.findById(id)
+      .populate("customer", "customerCode name mobile address gstNo")
+      .session(session ?? null);
   }
 
   async findBySaleNo(saleNo: string) {
@@ -136,6 +135,73 @@ class SalesRepository {
     };
   }
 
+  async getTodaySummary() {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+
+    const summary = await Sale.aggregate([
+      {
+        $match: {
+          isActive: true,
+          saleDate: {
+            $gte: start,
+            $lte: end,
+          },
+        },
+      },
+      {
+        $project: {
+          grandTotal: 1,
+          items: 1,
+        },
+      },
+      {
+        $group: {
+          _id: null,
+
+          todaySales: {
+            $sum: "$grandTotal",
+          },
+
+          todayOrders: {
+            $sum: 1,
+          },
+
+          itemsSold: {
+            $sum: {
+              $sum: "$items.quantity",
+            },
+          },
+
+          todayProfit: {
+            $sum: {
+              $sum: "$items.profit",
+            },
+          },
+        },
+      },
+    ]);
+
+    return (
+      summary[0] ?? {
+        todaySales: 0,
+        todayOrders: 0,
+        itemsSold: 0,
+        todayProfit: 0,
+      }
+    );
+  }
+
+  async getSaleCodes(session?: ClientSession) {
+    return Sale.find()
+      .select("saleNo -_id")
+      .session(session ?? null)
+      .lean();
+  }
+
   async update(id: string, data: Partial<ISale>, session?: ClientSession) {
     return Sale.findByIdAndUpdate(id, data, {
       new: true,
@@ -172,14 +238,6 @@ class SalesRepository {
         $in: saleNos,
       },
     }).select("saleNo");
-  }
-
-  async countSales() {
-    return Sale.countDocuments();
-  }
-
-  async getNextSequence() {
-    return (await this.countSales()) + 1;
   }
 
   async findInvoiceById(id: string): Promise<ISaleInvoice | null> {

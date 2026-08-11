@@ -37,7 +37,7 @@ export const createPurchaseSchema = z.object({
 
   paymentMethod: z.enum(["CASH", "BANK", "UPI", "CARD", "CHEQUE", "CREDIT"]),
 
-  paymentStatus: z.enum(["PAID", "PARTIAL", "UNPAID"]),
+  paymentStatus: z.enum(["PAID", "PARTIAL", "DUE"]),
 
   notes: z.string().optional(),
 

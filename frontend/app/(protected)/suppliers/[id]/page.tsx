@@ -1,7 +1,6 @@
-import { notFound } from "next/navigation";
-
+import { getSupplier } from "@/features/suppliers/services/supplier.service";
 import SupplierDetailsPage from "@/features/suppliers/pages/SupplierDetailsPage";
-import { suppliers } from "@/features/suppliers/services/supplier.service";
+import { notFound } from "next/navigation";
 
 interface Props {
   params: Promise<{
@@ -12,11 +11,11 @@ interface Props {
 export default async function SupplierDetailsRoute({ params }: Props) {
   const { id } = await params;
 
-  const supplier = suppliers.find((item) => item.id === id);
+  try {
+    const supplier = await getSupplier(id);
 
-  if (!supplier) {
+    return <SupplierDetailsPage supplier={supplier} />;
+  } catch {
     notFound();
   }
-
-  return <SupplierDetailsPage supplier={supplier} />;
 }

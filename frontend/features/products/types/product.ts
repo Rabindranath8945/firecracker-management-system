@@ -6,6 +6,7 @@ export interface Product {
 
   name: string;
   category: string;
+  subCategory: string;
 
   purchasePrice: number;
   sellingPrice: number;

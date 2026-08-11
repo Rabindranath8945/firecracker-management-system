@@ -3,7 +3,7 @@ import { Router } from "express";
 import ExpenseController from "../controllers/expense.controller.js";
 import { authenticate } from "../../auth/middleware/auth.middleware.js";
 import { asyncHandler } from "../../../common/utils/async-handler.js";
-import { excelUpload } from "../../../common/middleware/upload.middleware.js";
+import { excelUpload } from "../../../common/uploads/middleware/excel-upload.middleware.js";
 
 const router = Router();
 

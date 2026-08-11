@@ -3,69 +3,69 @@
 import { useRouter } from "next/navigation";
 
 import { SaleCard } from "./SaleCard";
-import { EmptyState } from "../shared/EmptyState";
 
-const SALES = [
-  {
-    id: "1",
-    invoiceNo: "SAL-00001",
-    customer: "Rahul Shaw",
-    total: 2450,
-    payment: "CASH",
-    status: "PAID",
-    createdAt: "Today • 11:42 AM",
-    items: 12,
-  },
-  {
-    id: "2",
-    invoiceNo: "SAL-00002",
-    customer: "Walk-in Customer",
-    total: 540,
-    payment: "UPI",
-    status: "PAID",
-    createdAt: "Today • 12:15 PM",
-    items: 4,
-  },
-  {
-    id: "3",
-    invoiceNo: "SAL-00003",
-    customer: "Amit Das",
-    total: 1820,
-    payment: "MIXED",
-    status: "PARTIAL",
-    createdAt: "Today • 2:05 PM",
-    items: 8,
-  },
-] as const;
+import { useSales } from "../../hooks/useSales";
+import type { Sale, SaleItem } from "../../types/Sales.types";
+import EmptySales from "../shared/EmptySales";
 
-export function SaleList() {
+interface SaleListProps {
+  search?: string;
+
+  paymentStatus?: string;
+
+  fromDate?: string;
+
+  toDate?: string;
+}
+
+export function SaleList({
+  search,
+  paymentStatus,
+  fromDate,
+  toDate,
+}: SaleListProps) {
   const router = useRouter();
 
-  // if (SALES.length === 0) {
-  //   return (
-  //     <EmptyState
-  //       title="No Sales Found"
-  //       description="Start by creating your first sale."
-  //     />
-  //   );
-  // }
+  const { data: sales = [], isLoading } = useSales({
+    search,
+    paymentStatus,
+    fromDate,
+    toDate,
+  });
+
+  if (isLoading) {
+    return (
+      <section className="space-y-4">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div
+            key={index}
+            className="h-36 animate-pulse rounded-3xl bg-muted"
+          />
+        ))}
+      </section>
+    );
+  }
+
+  if (sales.length === 0) {
+    return <EmptySales />;
+  }
 
   return (
     <section className="space-y-4">
-      {SALES.map((sale) => (
+      {sales.map((sale: Sale) => (
         <div
-          key={sale.id}
+          key={sale._id}
           className="cursor-pointer"
-          onClick={() => router.push(`/sales/${sale.id}`)}
+          onClick={() => router.push(`/sales/${sale._id}`)}
         >
           <SaleCard
-            invoiceNo={sale.invoiceNo}
-            customer={sale.customer}
-            total={sale.total}
-            payment={sale.payment}
-            status={sale.status}
-            createdAt={sale.createdAt}
-            items={sale.items}
+            invoiceNo={sale.saleNo}
+            customer={sale.customer?.name ?? "Walk-in Customer"}
+            total={sale.grandTotal}
+            payment={sale.payment.method}
+            status={sale.paymentStatus}
+            createdAt={new Date(sale.saleDate).toLocaleString()}
+            items={sale.items.reduce((total, item) => total + item.quantity, 0)}
           />
         </div>
       ))}

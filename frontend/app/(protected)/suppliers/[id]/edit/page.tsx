@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 
 import EditSupplierPage from "@/features/suppliers/pages/EditSupplierPage";
-import { suppliers } from "@/features/suppliers/services/supplier.service";
+import { getSupplier } from "@/features/suppliers/services/supplier.service";
 
 interface Props {
   params: Promise<{
@@ -12,28 +12,28 @@ interface Props {
 export default async function SupplierEditRoute({ params }: Props) {
   const { id } = await params;
 
-  const supplier = suppliers.find((item) => item.id === id);
+  try {
+    const supplier = await getSupplier(id);
 
-  if (!supplier) {
+    return (
+      <EditSupplierPage
+        supplierId={supplier._id}
+        defaultValues={{
+          name: supplier.name,
+          mobile: supplier.mobile,
+          email: supplier.email,
+          address: supplier.address,
+          city: supplier.city,
+          state: supplier.state,
+          pinCode: supplier.pinCode,
+          gstNo: supplier.gstNo,
+          openingBalance: supplier.openingBalance,
+          type: supplier.type,
+          isActive: supplier.isActive,
+        }}
+      />
+    );
+  } catch {
     notFound();
   }
-
-  return (
-    <EditSupplierPage
-      supplierId={supplier.id}
-      defaultValues={{
-        name: supplier.name,
-        mobile: supplier.mobile,
-        email: supplier.email,
-        address: supplier.address,
-        city: supplier.city,
-        state: supplier.state,
-        pinCode: supplier.pinCode,
-        gstNo: supplier.gstNo,
-        openingBalance: supplier.openingBalance,
-        type: supplier.type,
-        isActive: supplier.isActive,
-      }}
-    />
-  );
 }

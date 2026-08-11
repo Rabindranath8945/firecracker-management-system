@@ -1,12 +1,12 @@
 "use client";
 
 import {
+  BadgeIndianRupee,
+  Calendar,
   Mail,
   MapPin,
   Phone,
   Wallet,
-  BadgeIndianRupee,
-  Calendar,
 } from "lucide-react";
 
 import type { Supplier } from "../../types/supplier";
@@ -16,11 +16,24 @@ interface Props {
 }
 
 export default function SupplierContactCard({ supplier }: Props) {
+  const createdDate = supplier.createdAt
+    ? new Intl.DateTimeFormat("en-IN", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }).format(new Date(supplier.createdAt))
+    : "-";
+
+  const openingBalance = Number(supplier.openingBalance ?? 0);
+
+  // Temporary until Purchase/Accounts module
+  const currentBalance = Number(supplier.openingBalance ?? 0);
+
   const items = [
     {
       icon: Phone,
       label: "Mobile",
-      value: supplier.mobile,
+      value: supplier.mobile || "-",
     },
     {
       icon: Mail,
@@ -35,17 +48,17 @@ export default function SupplierContactCard({ supplier }: Props) {
     {
       icon: BadgeIndianRupee,
       label: "Opening Balance",
-      value: `₹${supplier.openingBalance.toLocaleString("en-IN")}`,
+      value: `₹${openingBalance.toLocaleString("en-IN")}`,
     },
     {
       icon: Wallet,
       label: "Current Balance",
-      value: `₹${supplier.balance.toLocaleString("en-IN")}`,
+      value: `₹${currentBalance.toLocaleString("en-IN")}`,
     },
     {
       icon: Calendar,
       label: "Supplier Since",
-      value: "15 Jul 2026",
+      value: createdDate,
     },
   ];
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { Mail, Phone, User, Sparkles } from "lucide-react";
+import { Building2, Mail, Phone, Sparkles, User } from "lucide-react";
 import { useFormContext } from "react-hook-form";
 
 import type { PartyConfig } from "../constants";
@@ -20,14 +20,36 @@ export default function PartyBasicInfo({ config }: PartyBasicInfoProps) {
     formState: { errors },
   } = useFormContext<PartyFormValues>();
 
+  const isCustomer = config.primaryType === "CUSTOMER";
+
+  const accent = isCustomer
+    ? {
+        bg: "bg-emerald-100",
+        text: "text-emerald-700",
+        ring: "focus:ring-emerald-100",
+        border: "focus:border-emerald-500",
+      }
+    : {
+        bg: "bg-indigo-100",
+        text: "text-indigo-700",
+        ring: "focus:ring-indigo-100",
+        border: "focus:border-indigo-500",
+      };
+
   return (
-    <Card className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <Card className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
       {/* Header */}
 
-      <div className="border-b border-slate-100 px-5 py-4">
+      <div className="border-b border-slate-100 px-6 py-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-md">
-            <Sparkles className="h-5 w-5" />
+          <div
+            className={`flex h-12 w-12 items-center justify-center rounded-2xl ${accent.bg} ${accent.text}`}
+          >
+            {isCustomer ? (
+              <Sparkles className="h-5 w-5" />
+            ) : (
+              <Building2 className="h-5 w-5" />
+            )}
           </div>
 
           <div>
@@ -45,11 +67,11 @@ export default function PartyBasicInfo({ config }: PartyBasicInfoProps) {
 
       {/* Body */}
 
-      <div className="space-y-5 p-5">
+      <div className="space-y-6 p-6">
         {/* Name */}
 
         <div>
-          <Label className="mb-2 flex items-center gap-1 text-sm font-medium">
+          <Label className="mb-2 flex items-center gap-1">
             {config.nameLabel}
             <span className="text-red-500">*</span>
           </Label>
@@ -60,7 +82,7 @@ export default function PartyBasicInfo({ config }: PartyBasicInfoProps) {
             <Input
               {...register("name")}
               placeholder={`Enter ${config.singular.toLowerCase()} name`}
-              className="h-12 rounded-xl border-slate-200 bg-white pl-12 shadow-sm transition-all hover:border-blue-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+              className={`h-14 rounded-2xl pl-12 transition-all ${accent.border} ${accent.ring}`}
             />
           </div>
 
@@ -72,7 +94,7 @@ export default function PartyBasicInfo({ config }: PartyBasicInfoProps) {
         {/* Mobile */}
 
         <div>
-          <Label className="mb-2 flex items-center gap-1 text-sm font-medium">
+          <Label className="mb-2 flex items-center gap-1">
             Mobile Number
             <span className="text-red-500">*</span>
           </Label>
@@ -85,7 +107,7 @@ export default function PartyBasicInfo({ config }: PartyBasicInfoProps) {
               placeholder="9876543210"
               maxLength={10}
               inputMode="numeric"
-              className="h-12 rounded-xl border-slate-200 bg-white pl-12 shadow-sm transition-all hover:border-blue-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+              className={`h-14 rounded-2xl pl-12 transition-all ${accent.border} ${accent.ring}`}
             />
           </div>
 
@@ -97,7 +119,7 @@ export default function PartyBasicInfo({ config }: PartyBasicInfoProps) {
         {/* Email */}
 
         <div>
-          <Label className="mb-2 text-sm font-medium">Email Address</Label>
+          <Label className="mb-2">Email Address</Label>
 
           <div className="relative">
             <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
@@ -106,7 +128,7 @@ export default function PartyBasicInfo({ config }: PartyBasicInfoProps) {
               type="email"
               {...register("email")}
               placeholder="example@email.com"
-              className="h-12 rounded-xl border-slate-200 bg-white pl-12 shadow-sm transition-all hover:border-blue-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+              className={`h-14 rounded-2xl pl-12 transition-all ${accent.border} ${accent.ring}`}
             />
           </div>
 
@@ -115,7 +137,7 @@ export default function PartyBasicInfo({ config }: PartyBasicInfoProps) {
           )}
 
           <p className="mt-2 text-xs text-slate-500">
-            Optional. Used for invoices, reports and customer communication.
+            Optional. Used for invoices, reports and communication.
           </p>
         </div>
       </div>

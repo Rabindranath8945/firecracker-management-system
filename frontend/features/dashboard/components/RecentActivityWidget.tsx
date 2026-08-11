@@ -13,10 +13,10 @@ import { Button } from "@/components/ui/button";
 
 import DashboardWidget from "./DashboardWidget";
 
-import type { RecentActivity } from "../types/dashboard.type";
+import type { DashboardSummary } from "../types/dashboard.type";
 
 interface RecentActivityWidgetProps {
-  activities: RecentActivity[];
+  dashboard: DashboardSummary;
 }
 
 const COLORS = {
@@ -49,11 +49,13 @@ const ICONS = {
 } as const;
 
 export default function RecentActivityWidget({
-  activities,
+  dashboard,
 }: RecentActivityWidgetProps) {
+  const { recentActivities } = dashboard;
+
   return (
     <DashboardWidget title="Recent Activity" subtitle="Latest business events">
-      {activities.length === 0 ? (
+      {recentActivities.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
           <Package className="h-12 w-12 text-slate-300" />
 
@@ -68,9 +70,8 @@ export default function RecentActivityWidget({
       ) : (
         <>
           <div className="space-y-5">
-            {activities.map((activity, index) => {
+            {recentActivities.map((activity, index) => {
               const Icon = ICONS[activity.type];
-
               const styles = COLORS[activity.type];
 
               return (
@@ -78,7 +79,7 @@ export default function RecentActivityWidget({
                   key={activity.id}
                   className="relative flex gap-4 rounded-3xl border border-slate-200 bg-white p-4 transition-all duration-300 hover:border-sky-200 hover:shadow-md"
                 >
-                  {index !== activities.length - 1 && (
+                  {index !== recentActivities.length - 1 && (
                     <div className="absolute left-[34px] top-14 h-10 w-px bg-slate-200" />
                   )}
 

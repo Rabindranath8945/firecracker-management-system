@@ -24,13 +24,33 @@ export default function PartyBusinessInfo({ config }: PartyBusinessInfoProps) {
 
   const partyType = watch("type");
 
+  const isCustomer = config.primaryType === "CUSTOMER";
+
+  const accent = isCustomer
+    ? {
+        header: "bg-emerald-100 text-emerald-700",
+        ring: "focus:ring-emerald-100",
+        border: "focus:border-emerald-500",
+        active: "border-emerald-500 bg-emerald-50",
+        activeIcon: "bg-emerald-600 text-white",
+      }
+    : {
+        header: "bg-indigo-100 text-indigo-700",
+        ring: "focus:ring-indigo-100",
+        border: "focus:border-indigo-500",
+        active: "border-indigo-500 bg-indigo-50",
+        activeIcon: "bg-indigo-600 text-white",
+      };
+
   return (
-    <Card className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <Card className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
       {/* Header */}
 
-      <div className="border-b border-slate-100 px-5 py-4">
+      <div className="border-b border-slate-100 px-6 py-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-500 text-white shadow-md">
+          <div
+            className={`flex h-12 w-12 items-center justify-center rounded-2xl ${accent.header}`}
+          >
             <Landmark className="h-5 w-5" />
           </div>
 
@@ -48,12 +68,12 @@ export default function PartyBusinessInfo({ config }: PartyBusinessInfoProps) {
 
       {/* Body */}
 
-      <div className="space-y-6 p-5">
+      <div className="space-y-6 p-6">
         <div className="grid gap-5 md:grid-cols-2">
           {/* GST */}
 
           <div>
-            <Label className="mb-2 text-sm font-medium">GST Number</Label>
+            <Label className="mb-2">GST Number</Label>
 
             <div className="relative">
               <CreditCard className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
@@ -61,7 +81,7 @@ export default function PartyBusinessInfo({ config }: PartyBusinessInfoProps) {
               <Input
                 {...register("gstNo")}
                 placeholder="22AAAAA0000A1Z5"
-                className="h-12 rounded-xl border-slate-200 pl-12 shadow-sm transition-all hover:border-blue-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                className={`h-14 rounded-2xl pl-12 ${accent.border} ${accent.ring}`}
               />
             </div>
 
@@ -75,7 +95,7 @@ export default function PartyBusinessInfo({ config }: PartyBusinessInfoProps) {
           {/* Opening Balance */}
 
           <div>
-            <Label className="mb-2 text-sm font-medium">Opening Balance</Label>
+            <Label className="mb-2">Opening Balance</Label>
 
             <div className="relative">
               <IndianRupee className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
@@ -86,7 +106,7 @@ export default function PartyBusinessInfo({ config }: PartyBusinessInfoProps) {
                   valueAsNumber: true,
                 })}
                 placeholder="0.00"
-                className="h-12 rounded-xl border-slate-200 pl-12 shadow-sm transition-all hover:border-blue-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                className={`h-14 rounded-2xl pl-12 ${accent.border} ${accent.ring}`}
               />
             </div>
 
@@ -101,92 +121,72 @@ export default function PartyBusinessInfo({ config }: PartyBusinessInfoProps) {
         {/* Party Type */}
 
         <div>
-          <Label className="mb-3 block text-sm font-medium">Party Type</Label>
+          <Label className="mb-3 block">Party Type</Label>
 
-          <div className="grid gap-3">
-            {/* Primary */}
+          <div className="space-y-3">
+            {[
+              {
+                value: config.primaryType,
+                title: config.primaryTypeLabel,
+                description: config.primaryTypeDescription,
+              },
+              {
+                value: config.secondaryType,
+                title: config.secondaryTypeLabel,
+                description: config.secondaryTypeDescription,
+              },
+            ].map((item) => {
+              const selected = partyType === item.value;
 
-            <button
-              type="button"
-              onClick={() => setValue("type", config.primaryType)}
-              className={`rounded-2xl border p-4 text-left transition-all ${
-                partyType === config.primaryType
-                  ? "border-blue-500 bg-blue-50 shadow-sm"
-                  : "border-slate-200 hover:border-blue-300 hover:bg-slate-50"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className={`flex h-11 w-11 items-center justify-center rounded-xl ${
-                    partyType === config.primaryType
-                      ? "bg-gradient-to-br from-blue-600 to-cyan-500 text-white"
-                      : "bg-slate-100 text-slate-600"
+              return (
+                <button
+                  key={item.value}
+                  type="button"
+                  onClick={() =>
+                    setValue("type", item.value, {
+                      shouldValidate: true,
+                    })
+                  }
+                  className={`w-full rounded-2xl border p-4 text-left transition-all ${
+                    selected
+                      ? accent.active
+                      : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
                   }`}
                 >
-                  <Building2 className="h-5 w-5" />
-                </div>
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`flex h-12 w-12 items-center justify-center rounded-2xl ${
+                        selected
+                          ? accent.activeIcon
+                          : "bg-slate-100 text-slate-600"
+                      }`}
+                    >
+                      <Building2 className="h-5 w-5" />
+                    </div>
 
-                <div className="flex-1">
-                  <p className="font-semibold text-slate-900">
-                    {config.primaryTypeLabel}
-                  </p>
+                    <div className="flex-1">
+                      <p className="font-semibold text-slate-900">
+                        {item.title}
+                      </p>
 
-                  <p className="mt-1 text-xs text-slate-500">
-                    {config.primaryTypeDescription}
-                  </p>
-                </div>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {item.description}
+                      </p>
+                    </div>
 
-                <div
-                  className={`h-5 w-5 rounded-full border-2 transition-all ${
-                    partyType === config.primaryType
-                      ? "border-blue-600 bg-blue-600"
-                      : "border-slate-300"
-                  }`}
-                />
-              </div>
-            </button>
-
-            {/* Secondary */}
-
-            <button
-              type="button"
-              onClick={() => setValue("type", config.secondaryType)}
-              className={`rounded-2xl border p-4 text-left transition-all ${
-                partyType === config.secondaryType
-                  ? "border-emerald-500 bg-emerald-50 shadow-sm"
-                  : "border-slate-200 hover:border-emerald-300 hover:bg-slate-50"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className={`flex h-11 w-11 items-center justify-center rounded-xl ${
-                    partyType === config.secondaryType
-                      ? "bg-gradient-to-br from-emerald-500 to-green-500 text-white"
-                      : "bg-slate-100 text-slate-600"
-                  }`}
-                >
-                  <Building2 className="h-5 w-5" />
-                </div>
-
-                <div className="flex-1">
-                  <p className="font-semibold text-slate-900">
-                    {config.secondaryTypeLabel}
-                  </p>
-
-                  <p className="mt-1 text-xs text-slate-500">
-                    {config.secondaryTypeDescription}
-                  </p>
-                </div>
-
-                <div
-                  className={`h-5 w-5 rounded-full border-2 transition-all ${
-                    partyType === config.secondaryType
-                      ? "border-emerald-600 bg-emerald-600"
-                      : "border-slate-300"
-                  }`}
-                />
-              </div>
-            </button>
+                    <div
+                      className={`h-5 w-5 rounded-full border-2 transition-all ${
+                        selected
+                          ? isCustomer
+                            ? "border-emerald-600 bg-emerald-600"
+                            : "border-indigo-600 bg-indigo-600"
+                          : "border-slate-300"
+                      }`}
+                    />
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>

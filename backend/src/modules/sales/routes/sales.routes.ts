@@ -8,13 +8,33 @@ const router = Router();
 
 router.use(authenticate);
 
+/* -------------------------------------------------------------------------- */
+/*                                   Create                                   */
+/* -------------------------------------------------------------------------- */
+
 router.post("/", SalesController.create);
 
-router.get("/", SalesController.getAll);
+/* -------------------------------------------------------------------------- */
+/*                                   Special                                  */
+/* -------------------------------------------------------------------------- */
+
+router.get("/summary", SalesController.getSummary);
+
+router.get("/next-code", SalesController.getNextCode);
 
 router.get("/export", SalesController.exportExcel);
 
 router.post("/import", SalesController.importExcel);
+
+/* -------------------------------------------------------------------------- */
+/*                                    List                                    */
+/* -------------------------------------------------------------------------- */
+
+router.get("/", SalesController.getAll);
+
+/* -------------------------------------------------------------------------- */
+/*                              Dynamic Routes                                */
+/* -------------------------------------------------------------------------- */
 
 router.get("/:id", SalesController.getById);
 

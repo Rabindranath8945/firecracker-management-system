@@ -52,5 +52,7 @@ export function buildSaleItemSnapshot(
     tax: item.tax,
 
     total: calculation.total,
+
+    profit: calculation.profit,
   };
 }

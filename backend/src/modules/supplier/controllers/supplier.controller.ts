@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 
+import SupplierRepository from "../repositories/supplier.repository.js";
+import { generateSequenceCode } from "../../../common/utils/generate-code.js";
 import SupplierService from "../services/supplier.service.js";
 import { excelService } from "../../../common/excel/index.js";
 import { SupplierExcelRow } from "../../../common/excel/types/supplier-excel-row.types.js";
@@ -15,7 +17,21 @@ class SupplierController {
       });
     }
 
-    const supplier = await SupplierService.create(req.body, req.user.userId);
+    // Get all supplier codes
+    const suppliers = await SupplierRepository.find();
+
+    const supplierCode = generateSequenceCode(
+      suppliers.map((supplier) => supplier.supplierCode),
+      "SUP",
+    );
+
+    const supplier = await SupplierService.create(
+      {
+        ...req.body,
+        supplierCode,
+      },
+      req.user.userId,
+    );
 
     return res.status(201).json({
       success: true,

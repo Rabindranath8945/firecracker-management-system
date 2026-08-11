@@ -6,7 +6,6 @@ import { toast } from "sonner";
 
 import { useBusiness } from "@/features/business/hooks/useBusiness";
 
-import WelcomeScreen from "../components/WelcomeScreen";
 import BusinessSelectionScreen from "../components/BusinessSelectionScreen";
 import BusinessInfoScreen from "../components/BusinessInfoScreen";
 import ProgressScreen from "../components/ProgressScreen";
@@ -20,25 +19,13 @@ export default function OnboardingPage() {
 
   const { createBusiness } = useBusiness();
 
-  const initialStep = (searchParams.get("step") as OnboardingStep) ?? "welcome";
+  const initialStep =
+    (searchParams.get("step") as OnboardingStep) ?? "business";
 
   const [step, setStep] = useState<OnboardingStep>(initialStep);
 
   /* -------------------------------------------------------------------------- */
-  /*                           Finish Onboarding                                */
-  /* -------------------------------------------------------------------------- */
-
-  const finishOnboarding = () => {
-    localStorage.setItem("onboarding-completed", "true");
-
-    sessionStorage.removeItem("business-info");
-    sessionStorage.removeItem("business-type");
-
-    router.replace("/dashboard");
-  };
-
-  /* -------------------------------------------------------------------------- */
-  /*                         Create Business (Backend)                          */
+  /*                           Create Business                                  */
   /* -------------------------------------------------------------------------- */
 
   const setupBusiness = async () => {
@@ -46,25 +33,36 @@ export default function OnboardingPage() {
       sessionStorage.getItem("business-info") ?? "{}",
     ) as BusinessInfo;
 
+    const businessType =
+      sessionStorage.getItem("business-type") ?? "GENERAL_STORE";
+
     await createBusiness({
       name: info.businessName || "My Business",
-      type: "GENERAL_STORE",
 
-      ...(info.mobile && { phone: info.mobile }),
-      ...(info.address && { address: info.address }),
+      type: businessType as
+        | "GENERAL_STORE"
+        | "MEDICAL"
+        | "GROCERY"
+        | "HARDWARE"
+        | "STATIONERY"
+        | "ELECTRONICS"
+        | "CLOTHING"
+        | "RESTAURANT"
+        | "OTHER",
+
+      ...(info.mobile && {
+        phone: info.mobile,
+      }),
+
+      ...(info.address && {
+        address: info.address,
+      }),
     });
   };
 
   switch (step) {
     /* ---------------------------------------------------------------------- */
-    /*                                Welcome                                 */
-    /* ---------------------------------------------------------------------- */
-
-    case "welcome":
-      return <WelcomeScreen onNext={() => setStep("business")} />;
-
-    /* ---------------------------------------------------------------------- */
-    /*                          Business Selection                            */
+    /*                         Business Type                                  */
     /* ---------------------------------------------------------------------- */
 
     case "business":
@@ -79,7 +77,7 @@ export default function OnboardingPage() {
       );
 
     /* ---------------------------------------------------------------------- */
-    /*                         Business Information                           */
+    /*                      Business Information                              */
     /* ---------------------------------------------------------------------- */
 
     case "business-info":
@@ -108,7 +106,7 @@ export default function OnboardingPage() {
       );
 
     /* ---------------------------------------------------------------------- */
-    /*                           Setup Progress                               */
+    /*                           Create Business                              */
     /* ---------------------------------------------------------------------- */
 
     case "progress":
@@ -118,9 +116,14 @@ export default function OnboardingPage() {
             try {
               await setupBusiness();
 
+              localStorage.setItem("onboarding-completed", "true");
+
+              sessionStorage.removeItem("business-info");
+              sessionStorage.removeItem("business-type");
+
               toast.success("Business created successfully.");
 
-              setStep("tour");
+              router.replace("/business/select");
             } catch (error) {
               console.error(error);
 
@@ -129,13 +132,6 @@ export default function OnboardingPage() {
           }}
         />
       );
-
-    /* ---------------------------------------------------------------------- */
-    /*                           Workspace Ready                              */
-    /* ---------------------------------------------------------------------- */
-
-    case "tour":
-      return <WelcomeScreen onNext={finishOnboarding} />;
 
     default:
       return null;

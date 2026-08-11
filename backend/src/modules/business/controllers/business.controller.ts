@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 
 import BusinessService from "../services/business.service.js";
 
+import { toDto, toDtoArray } from "../../../common/mappers/mongoose.mapper.js";
+
 type UpdateParams = {
   id: string;
 };
@@ -26,7 +28,7 @@ class BusinessController {
     return res.status(201).json({
       success: true,
       message: "Business created successfully.",
-      data: business,
+      data: toDto(business),
     });
   };
 
@@ -35,7 +37,7 @@ class BusinessController {
   /* -------------------------------------------------------------------------- */
 
   getMine = async (req: Request, res: Response) => {
-    const ownerId = req.user?.userId;
+    const ownerId = req.user!.userId;
 
     if (!ownerId) {
       return res.status(401).json({
@@ -44,11 +46,11 @@ class BusinessController {
       });
     }
 
-    const business = await BusinessService.getMyBusiness(ownerId);
+    const businesses = await BusinessService.getMyBusinesses(ownerId);
 
-    return res.status(200).json({
+    return res.json({
       success: true,
-      data: business,
+      data: toDtoArray(businesses),
     });
   };
 
@@ -77,7 +79,7 @@ class BusinessController {
 
     return res.status(200).json({
       success: true,
-      data: business,
+      data: toDto(business),
     });
   };
 
@@ -102,7 +104,27 @@ class BusinessController {
     return res.status(200).json({
       success: true,
       message: "Business updated successfully.",
-      data: business,
+      data: toDto(business),
+    });
+  };
+
+  switchBusiness = async (req: Request, res: Response) => {
+    const ownerId = req.user?.userId;
+
+    if (!ownerId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    const business = await BusinessService.switchBusiness(
+      ownerId,
+      req.params.id as string,
+    );
+    return res.json({
+      success: true,
+      data: toDto(business),
     });
   };
 }

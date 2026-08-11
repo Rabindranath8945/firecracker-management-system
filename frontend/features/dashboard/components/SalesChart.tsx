@@ -1,6 +1,7 @@
 "use client";
 
 import AppCard from "@/components/layout/AppCard";
+
 import {
   Area,
   AreaChart,
@@ -10,19 +11,14 @@ import {
   XAxis,
 } from "recharts";
 
-import type { SalesChartItem } from "../types/dashboard.type";
+import type { DashboardSummary } from "../types/dashboard.type";
 
 interface SalesChartProps {
-  data: SalesChartItem[];
-  totalSales: number;
-  growth: number;
+  dashboard: DashboardSummary;
 }
-export default function SalesChart({
-  data,
-  totalSales,
-  growth,
-}: SalesChartProps) {
-  const total = data.reduce((sum, item) => sum + item.sales, 0);
+
+export default function SalesChart({ dashboard }: SalesChartProps) {
+  const { salesChart, weeklySales, salesGrowth } = dashboard;
 
   return (
     <AppCard className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -40,12 +36,12 @@ export default function SalesChart({
             <p className="text-xs text-slate-500">Total Sales</p>
 
             <p className="text-lg font-bold text-sky-700">
-              ₹{total.toLocaleString("en-IN")}
+              ₹{weeklySales.toLocaleString("en-IN")}
             </p>
           </div>
 
           <div className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-700">
-            ↑ {growth}%
+            ↑ {salesGrowth.toFixed(1)}%
           </div>
         </div>
       </div>
@@ -53,11 +49,11 @@ export default function SalesChart({
       <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
-            data={data}
+            data={salesChart}
             margin={{
-              left: 10,
-              right: 10,
               top: 10,
+              right: 10,
+              left: 10,
               bottom: 0,
             }}
           >
@@ -96,7 +92,7 @@ export default function SalesChart({
                 boxShadow: "0 10px 25px rgba(15,23,42,0.08)",
               }}
               formatter={(value) => [
-                `₹{totalSales.toLocaleString("en-IN")}`,
+                `₹${Number(value).toLocaleString("en-IN")}`,
                 "Sales",
               ]}
             />

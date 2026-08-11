@@ -45,7 +45,7 @@ export interface CreateSaleRequest {
     credit: number;
   };
 
-  paymentStatus: "PAID" | "PARTIAL" | "UNPAID";
+  paymentStatus: "PAID" | "PARTIAL" | "DUE";
 
   notes?: string;
 }

@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
 
 import SalesRepository from "../repositories/sales.repository.js";
+import { generateSequenceCode } from "../../../common/utils/generate-code.js";
 
 import {
   createSaleSchema,
@@ -48,6 +49,19 @@ class SalesService {
     }
 
     return sale;
+  }
+
+  async getSummary() {
+    return SalesRepository.getTodaySummary();
+  }
+
+  async getNextCode() {
+    const sales = await SalesRepository.getSaleCodes();
+
+    return generateSequenceCode(
+      sales.map((sale) => sale.saleNo),
+      "SAL",
+    );
   }
 
   async update(id: string, data: unknown, userId: string) {

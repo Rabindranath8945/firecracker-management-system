@@ -7,7 +7,7 @@ import type { Supplier } from "../types/supplier";
 
 import { Button } from "@/components/ui/button";
 
-import SupplierHero from "../components/cards/SupplierHero";
+import SupplierHero from "../components/cards/SupplierDetailsHero";
 import SupplierFinancialOverview from "../components/details/SupplierFinancialOverview";
 import SupplierQuickActions from "../components/details/SupplierQuickActions";
 import SupplierBusinessSummary from "../components/details/SupplierBusinessSummary";
@@ -41,11 +41,19 @@ export default function SupplierDetailsPage({
 
       {/* Financial Overview */}
 
-      <SupplierFinancialOverview outstanding={supplier.balance} />
+      <SupplierFinancialOverview
+        outstanding={supplier.openingBalance}
+        totalPurchases={0}
+        totalPayments={0}
+        advancePaid={0}
+      />
 
       {/* Quick Actions */}
 
-      <SupplierQuickActions mobile={supplier.mobile} supplierId={supplier.id} />
+      <SupplierQuickActions
+        mobile={supplier.mobile}
+        supplierId={supplier._id}
+      />
 
       {/* Main Content */}
 
@@ -59,14 +67,9 @@ export default function SupplierDetailsPage({
         {/* Right Content */}
 
         <div className="space-y-6 xl:col-span-2">
-          <SupplierBusinessSummary
-            openingBalance={supplier.openingBalance}
-            outstanding={supplier.balance}
-          />
+          <SupplierTimeline timeline={[]} />
 
-          <SupplierTimeline />
-
-          <SupplierTransactions />
+          <SupplierTransactions supplierId={supplier._id} transactions={[]} />
         </div>
       </div>
     </div>

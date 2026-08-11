@@ -24,7 +24,7 @@ export default function CustomerListCard({
       {/* Body */}
 
       <div
-        onClick={() => router.push(`/customers/${customer.id}`)}
+        onClick={() => router.push(`/customers/${customer._id}`)}
         className="cursor-pointer px-4 py-3"
       >
         <div className="flex items-start gap-3">
@@ -78,7 +78,7 @@ export default function CustomerListCard({
               </Badge>
 
               <span className="text-xl font-bold text-emerald-600">
-                ₹{customer.balance.toLocaleString("en-IN")}
+                ₹{(customer.openingBalance ?? 0).toLocaleString("en-IN")}
               </span>
             </div>
           </div>
@@ -91,7 +91,7 @@ export default function CustomerListCard({
         <Button
           variant="ghost"
           className="h-9 rounded-none text-xs"
-          onClick={() => router.push(`/customers/${customer.id}`)}
+          onClick={() => router.push(`/customers/${customer._id}`)}
         >
           <Eye className="mr-1 h-3.5 w-3.5" />
           View
@@ -100,7 +100,7 @@ export default function CustomerListCard({
         <Button
           variant="ghost"
           className="h-9 rounded-none border-x border-slate-100 text-xs"
-          onClick={() => router.push(`/customers/${customer.id}/edit`)}
+          onClick={() => router.push(`/customers/${customer._id}/edit`)}
         >
           <Pencil className="mr-1 h-3.5 w-3.5 text-blue-600" />
           Edit

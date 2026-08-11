@@ -7,7 +7,10 @@ import PartyForm from "@/features/shared/master-data/party/components/PartyForm"
 import { PARTY_CONFIG } from "@/features/shared/master-data/party/constants";
 import type { PartyFormValues } from "@/features/shared/master-data/party/lib/party-schema";
 
-import SuccessDialog from "@/features/shared/ui/dialogs/SuccessDialog";
+import { updateCustomer } from "../services/customer.service";
+
+import SuccessSheet from "@/components/common/shared/sheets/SuccessSheet";
+import ProgressDialog from "@/features/shared/ui/dialogs/ProgressDialog";
 
 interface EditCustomerPageProps {
   customerId: string;
@@ -20,18 +23,21 @@ export default function EditCustomerPage({
 }: EditCustomerPageProps) {
   const router = useRouter();
 
+  const [loading, setLoading] = useState(false);
+
   const [successOpen, setSuccessOpen] = useState(false);
 
   async function handleSubmit(values: PartyFormValues) {
     try {
-      console.log("Update Customer:", values);
+      setLoading(true);
 
-      // TODO:
-      // await customerService.update(customerId, values);
+      await updateCustomer(customerId, values);
 
       setSuccessOpen(true);
     } catch (error) {
       console.error("Failed to update customer:", error);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -39,23 +45,42 @@ export default function EditCustomerPage({
     <>
       <PartyForm
         mode="edit"
+        loading={loading}
         config={PARTY_CONFIG.customer}
         defaultValues={defaultValues}
         onSubmit={handleSubmit}
       />
 
-      <SuccessDialog
+      <SuccessSheet
         open={successOpen}
+        onOpenChange={setSuccessOpen}
         title="Customer Updated"
-        description="Customer information has been updated successfully."
-        primaryLabel="View Customer"
-        secondaryLabel="Back to Customers"
-        onPrimary={() => {
-          router.push(`/customers/${customerId}`);
+        summary={[
+          {
+            label: "Customer",
+            value: defaultValues.name ?? "",
+          },
+          {
+            label: "Mobile",
+            value: defaultValues.mobile ?? "",
+          },
+        ]}
+        primaryAction={{
+          label: "View Customer",
+          onClick: () => router.push(`/customers/${customerId}`),
         }}
-        onSecondary={() => {
-          router.push("/customers");
-        }}
+        secondaryActions={[
+          {
+            label: "Back to Customers",
+            onClick: () => router.push("/customers"),
+          },
+        ]}
+      />
+
+      <ProgressDialog
+        open={loading}
+        title="Updating Customer"
+        description="Please wait while we update customer information..."
       />
     </>
   );

@@ -17,12 +17,12 @@ export default function PartyAddress() {
   } = useFormContext<PartyFormValues>();
 
   return (
-    <Card className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <Card className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
       {/* Header */}
 
-      <div className="border-b border-slate-100 px-5 py-4">
+      <div className="border-b border-slate-100 px-6 py-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-red-500 text-white shadow-md">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-100 text-orange-700">
             <Navigation className="h-5 w-5" />
           </div>
 
@@ -40,20 +40,29 @@ export default function PartyAddress() {
 
       {/* Body */}
 
-      <div className="space-y-5 p-5">
+      <div className="space-y-6 p-6">
         {/* Address */}
 
         <div>
-          <Label className="mb-2 text-sm font-medium">Street Address</Label>
+          <Label className="mb-2">Street Address</Label>
 
           <div className="relative">
             <Home className="absolute left-4 top-4 h-5 w-5 text-slate-400" />
 
             <Textarea
               {...register("address")}
-              rows={3}
+              rows={4}
               placeholder="House No, Street, Area"
-              className="rounded-xl border-slate-200 pl-12 shadow-sm transition-all hover:border-blue-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+              className="
+                rounded-2xl
+                border-slate-200
+                pl-12
+                resize-none
+                transition-all
+                focus:border-orange-500
+                focus:ring-4
+                focus:ring-orange-100
+              "
             />
           </div>
 
@@ -70,7 +79,7 @@ export default function PartyAddress() {
           {/* City */}
 
           <div>
-            <Label className="mb-2 text-sm font-medium">City</Label>
+            <Label className="mb-2">City</Label>
 
             <div className="relative">
               <MapPin className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
@@ -78,7 +87,15 @@ export default function PartyAddress() {
               <Input
                 {...register("city")}
                 placeholder="Kolkata"
-                className="h-12 rounded-xl border-slate-200 pl-12 shadow-sm transition-all hover:border-blue-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                className="
+                  h-14
+                  rounded-2xl
+                  pl-12
+                  transition-all
+                  focus:border-orange-500
+                  focus:ring-4
+                  focus:ring-orange-100
+                "
               />
             </div>
 
@@ -90,7 +107,7 @@ export default function PartyAddress() {
           {/* State */}
 
           <div>
-            <Label className="mb-2 text-sm font-medium">State</Label>
+            <Label className="mb-2">State</Label>
 
             <div className="relative">
               <Landmark className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
@@ -98,7 +115,15 @@ export default function PartyAddress() {
               <Input
                 {...register("state")}
                 placeholder="West Bengal"
-                className="h-12 rounded-xl border-slate-200 pl-12 shadow-sm transition-all hover:border-blue-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                className="
+                  h-14
+                  rounded-2xl
+                  pl-12
+                  transition-all
+                  focus:border-orange-500
+                  focus:ring-4
+                  focus:ring-orange-100
+                "
               />
             </div>
 
@@ -112,7 +137,7 @@ export default function PartyAddress() {
           {/* PIN */}
 
           <div>
-            <Label className="mb-2 text-sm font-medium">PIN Code</Label>
+            <Label className="mb-2">PIN Code</Label>
 
             <div className="relative">
               <MapPinned className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
@@ -122,7 +147,15 @@ export default function PartyAddress() {
                 placeholder="721657"
                 inputMode="numeric"
                 maxLength={6}
-                className="h-12 rounded-xl border-slate-200 pl-12 shadow-sm transition-all hover:border-blue-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                className="
+                  h-14
+                  rounded-2xl
+                  pl-12
+                  transition-all
+                  focus:border-orange-500
+                  focus:ring-4
+                  focus:ring-orange-100
+                "
               />
             </div>
 
@@ -134,12 +167,12 @@ export default function PartyAddress() {
           </div>
         </div>
 
-        {/* Footer Note */}
+        {/* Note */}
 
-        <div className="rounded-xl bg-orange-50 px-4 py-3">
-          <p className="text-xs leading-5 text-orange-700">
+        <div className="rounded-2xl border border-orange-200 bg-orange-50 p-4">
+          <p className="text-sm leading-6 text-orange-700">
             Address information is optional but recommended for invoices,
-            delivery, GST records, and customer communication.
+            delivery, GST records and business communication.
           </p>
         </div>
       </div>

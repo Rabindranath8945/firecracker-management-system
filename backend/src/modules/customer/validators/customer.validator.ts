@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const createCustomerSchema = z.object({
-  customerCode: z.string().trim().min(1, "Customer code is required.").max(30),
+  customerCode: z.string().trim().max(30).optional(),
 
   name: z.string().trim().min(2, "Customer name is required.").max(100),
 
@@ -25,9 +25,9 @@ export const createCustomerSchema = z.object({
 
   pinCode: z.string().trim().max(10).optional().or(z.literal("")),
 
-  openingBalance: z.coerce.number().min(0).default(0),
+  openingBalance: z.coerce.number().default(0),
 
-  creditLimit: z.coerce.number().min(0).default(0),
+  creditLimit: z.coerce.number().default(0),
 
   notes: z.string().trim().max(1000).optional().or(z.literal("")),
 

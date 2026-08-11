@@ -9,20 +9,30 @@ import { validateProductRows } from "../excel/product-validator.js";
 
 class ProductController {
   create = async (req: Request, res: Response) => {
-    if (!req.user) {
-      return res.status(401).json({
+    try {
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized",
+        });
+      }
+
+      const product = await ProductService.create(req.body, req.user.userId);
+
+      return res.status(201).json({
+        success: true,
+        message: "Product created successfully.",
+        data: product,
+      });
+    } catch (error) {
+      console.error("Create Product Error:", error);
+
+      return res.status(500).json({
         success: false,
-        message: "Unauthorized",
+        message:
+          error instanceof Error ? error.message : "Internal Server Error",
       });
     }
-
-    const product = await ProductService.create(req.body, req.user.userId);
-
-    return res.status(201).json({
-      success: true,
-      message: "Product created successfully.",
-      data: product,
-    });
   };
 
   getAll = async (req: Request, res: Response) => {
@@ -32,28 +42,21 @@ class ProductController {
 
       search: req.query.search ? String(req.query.search) : undefined,
 
-      sort: req.query.sort ? String(req.query.sort) : undefined,
-
-      order:
-        req.query.order === "asc" || req.query.order === "desc"
-          ? req.query.order
-          : undefined,
-
       category: req.query.category ? String(req.query.category) : undefined,
 
-      stock:
-        req.query.stock === "low" ||
-        req.query.stock === "available" ||
-        req.query.stock === "out"
-          ? req.query.stock
-          : undefined,
+      subCategory: req.query.subCategory
+        ? String(req.query.subCategory)
+        : undefined,
 
-      minPrice: req.query.minPrice ? Number(req.query.minPrice) : undefined,
+      stock: req.query.stock as "IN_STOCK" | "LOW_STOCK" | "OUT_OF_STOCK",
 
-      maxPrice: req.query.maxPrice ? Number(req.query.maxPrice) : undefined,
-
-      isActive:
-        req.query.isActive !== undefined ? req.query.isActive === "true" : true,
+      sort: req.query.sort as
+        | "NAME_ASC"
+        | "NAME_DESC"
+        | "PRICE_ASC"
+        | "PRICE_DESC"
+        | "STOCK_ASC"
+        | "STOCK_DESC",
     });
 
     return res.status(200).json({
@@ -71,7 +74,7 @@ class ProductController {
       });
     }
 
-    const image = uploadService.uploadImage(req.file);
+    const image = uploadService.getImage(req.file);
 
     return res.status(200).json({
       success: true,
@@ -285,6 +288,17 @@ class ProductController {
     });
   };
 
+  getNextCode = async (_req: Request, res: Response) => {
+    const productCode = await ProductService.getNextCode();
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        productCode,
+      },
+    });
+  };
+
   update = async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({
@@ -310,15 +324,19 @@ class ProductController {
     if (!req.user) {
       return res.status(401).json({
         success: false,
-        message: "Unauthorized",
+        message: "Unauthorized.",
       });
     }
 
-    await ProductService.delete(String(req.params.id), req.user.userId);
+    const product = await ProductService.delete(
+      String(req.params.id),
+      req.user.userId,
+    );
 
     return res.status(200).json({
       success: true,
       message: "Product deleted successfully.",
+      data: product,
     });
   };
 }

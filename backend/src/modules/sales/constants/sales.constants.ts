@@ -7,6 +7,6 @@ export const SALES_PAYMENT_METHODS = [
   "MIXED",
 ] as const;
 
-export const SALES_PAYMENT_STATUS = ["PAID", "PARTIAL", "UNPAID"] as const;
+export const SALES_PAYMENT_STATUS = ["PAID", "PARTIAL", "DUE"] as const;
 
 export const SALES_TYPES = ["RETAIL", "WHOLESALE"] as const;

@@ -1,9 +1,9 @@
 import multer from "multer";
 
-import { createStorage } from "../utils/storage.js";
+import { createStorage } from "../utils/createStorage.js";
 import { imageFileFilter } from "../utils/file-filter.js";
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 const createUpload = (folder: string, prefix: string) =>
   multer({

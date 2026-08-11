@@ -4,19 +4,22 @@ import { ArrowRight, PackageX, TriangleAlert } from "lucide-react";
 
 import DashboardWidget from "./DashboardWidget";
 import { Button } from "@/components/ui/button";
-import type { LowStockProduct } from "../types/dashboard.type";
+
+import type { DashboardSummary } from "../types/dashboard.type";
 
 interface LowStockWidgetProps {
-  products: LowStockProduct[];
+  dashboard: DashboardSummary;
 }
 
-export default function LowStockWidget({ products }: LowStockWidgetProps) {
+export default function LowStockWidget({ dashboard }: LowStockWidgetProps) {
+  const { lowStockProducts } = dashboard;
+
   return (
     <DashboardWidget
       title="Low Stock Products"
-      subtitle={`${products.length} products require attention`}
+      subtitle={`${lowStockProducts.length} products require attention`}
     >
-      {products.length === 0 ? (
+      {lowStockProducts.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-10 text-center">
           <div className="rounded-3xl bg-emerald-100 p-5">
             <PackageX className="h-10 w-10 text-emerald-600" />
@@ -32,11 +35,11 @@ export default function LowStockWidget({ products }: LowStockWidgetProps) {
         </div>
       ) : (
         <div className="space-y-4">
-          {products.map((item) => {
-            const percentage = Math.min(
-              (item.stock / item.minStock) * 100,
-              100,
-            );
+          {lowStockProducts.map((item) => {
+            const percentage =
+              item.minStock > 0
+                ? Math.min((item.stock / item.minStock) * 100, 100)
+                : 0;
 
             return (
               <div
@@ -55,8 +58,8 @@ export default function LowStockWidget({ products }: LowStockWidgetProps) {
                       </h3>
 
                       <p className="mt-1 text-sm text-slate-500">
-                        Current Stock:{" "}
-                        <span className="font-medium text-red-600">
+                        Current Stock{" "}
+                        <span className="font-semibold text-red-600">
                           {item.stock}
                         </span>{" "}
                         / {item.minStock}

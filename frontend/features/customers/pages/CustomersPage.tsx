@@ -1,55 +1,56 @@
 "use client";
 
+import CustomerHero from "../components/cards/CustomerHero";
+
 import { useMemo, useState } from "react";
-import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import type { Customer } from "../types/customer";
-import { customers } from "../services/customer.service";
 
-import CustomerStats from "../components/cards/CustomerStats";
+import { useCustomers } from "../hooks/useCustomers";
+import { useDeleteCustomer } from "../hooks/useDeleteCustomer";
+
+import CustomerSummary from "../components/cards/CustomerSummary";
+import CustomerSearch from "../components/cards/CustomerSearch";
+import CustomerFilterSheet from "../components/cards/CustomerFilterSheet";
 import CustomerList from "../components/cards/CustomerList";
-import CustomerListFilter from "../components/cards/CustomerListFilter";
-
-import PageContainer from "@/features/shared/ui/layout/PageContainer";
-import PageHeader from "@/features/shared/ui/layout/PageHeader";
-import PageToolbar from "@/features/shared/ui/layout/PageToolbar";
-
-import SearchInput from "@/features/shared/ui/forms/SearchInput";
-import FilterSelect from "@/features/shared/ui/forms/FilterSelect";
-
-import DeleteDialog from "@/features/shared/ui/dialogs/DeleteDialog";
-import ProgressDialog from "@/features/shared/ui/dialogs/ProgressDialog";
 
 import EmptyState from "@/features/shared/ui/cards/EmptyState";
-
-import { Button } from "@/components/ui/button";
+import DeleteDialog from "@/features/shared/ui/dialogs/DeleteDialog";
+import ProgressDialog from "@/features/shared/ui/dialogs/ProgressDialog";
+import FloatingActionButton from "@/components/common/shared/button/FloatingActionButton";
 
 export default function CustomersPage() {
   const router = useRouter();
 
   const [search, setSearch] = useState("");
 
-  const [status, setStatus] = useState("ALL");
+  const [status, setStatus] = useState("ACTIVE");
 
   const [sort, setSort] = useState("NAME_ASC");
 
-  const [loading, setLoading] = useState(false);
+  const { customers, loading } = useCustomers({
+    search,
+    status,
+    sort,
+  });
 
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     null,
   );
+
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const [deleteOpen, setDeleteOpen] = useState(false);
 
   const filteredCustomers = useMemo(() => {
     const keyword = search.trim().toLowerCase();
 
-    return customers.filter((customer) => {
+    const filtered = customers.filter((customer) => {
       const matchesSearch =
         customer.name.toLowerCase().includes(keyword) ||
-        customer.mobile.includes(keyword) ||
-        customer.customerNo.toLowerCase().includes(keyword);
+        customer.customerCode.toLowerCase().includes(keyword) ||
+        (customer.mobile ?? "").toLowerCase().includes(keyword);
 
       const matchesStatus =
         status === "ALL"
@@ -60,125 +61,108 @@ export default function CustomersPage() {
 
       return matchesSearch && matchesStatus;
     });
-  }, [search, status]);
 
-  async function handleDelete() {
+    switch (sort) {
+      case "NAME_DESC":
+        filtered.sort((a, b) => b.name.localeCompare(a.name));
+        break;
+
+      case "NEWEST":
+        filtered.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        );
+        break;
+
+      case "OLDEST":
+        filtered.sort(
+          (a, b) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        );
+        break;
+
+      default:
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    return filtered;
+  }, [customers, search, status, sort]);
+
+  const { mutate: deleteCustomer, isPending: deleting } = useDeleteCustomer();
+
+  function handleDelete() {
     if (!selectedCustomer) return;
 
-    setLoading(true);
+    deleteCustomer(selectedCustomer._id, {
+      onSuccess: () => {
+        setDeleteOpen(false);
+        setSelectedCustomer(null);
+      },
+    });
+  }
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    console.log("Delete", selectedCustomer);
-
-    setLoading(false);
-
-    setDeleteOpen(false);
-
-    setSelectedCustomer(null);
+  if (loading) {
+    return (
+      <main className="flex min-h-[60vh] items-center justify-center">
+        <p className="text-sm text-muted-foreground">Loading customers...</p>
+      </main>
+    );
   }
 
   return (
-    <PageContainer className="space-y-4 pb-24">
-      <PageHeader
-        title="Customers"
-        description="Manage customers, balances and payment history."
-        action={
-          <Button
-            className="
-    h-11
-    rounded-xl
-    bg-gradient-to-r
-    from-slate-900
-    to-slate-700
-    px-5
-    shadow-lg
-    transition-all
-    hover:scale-105
-    hover:shadow-xl
-  "
-            onClick={() => router.push("/customers/new")}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Add Customer
-          </Button>
-        }
+    <main className="space-y-5 px-4 py-5 pb-24">
+      <CustomerHero />
+
+      <CustomerSearch
+        value={search}
+        onChange={setSearch}
+        onFilterClick={() => setFilterOpen(true)}
       />
 
-      <CustomerStats customers={filteredCustomers} />
-
-      <PageToolbar
-        left={
-          <>
-            <SearchInput
-              value={search}
-              onChange={setSearch}
-              placeholder="Search customers..."
-            />
-
-            <FilterSelect
-              value={status}
-              onChange={setStatus}
-              options={[
-                {
-                  label: "All Customers",
-                  value: "ALL",
-                },
-                {
-                  label: "Active",
-                  value: "ACTIVE",
-                },
-                {
-                  label: "Inactive",
-                  value: "INACTIVE",
-                },
-              ]}
-            />
-          </>
-        }
-      />
+      <CustomerSummary customers={filteredCustomers} />
 
       {filteredCustomers.length === 0 ? (
         <EmptyState
           title="No Customers Found"
-          description="Create your first customer to start managing sales and payments."
+          description="Create your first customer to start managing customers."
           actionLabel="Add Customer"
           onAction={() => router.push("/customers/new")}
         />
       ) : (
-        <>
-          <CustomerListFilter
-            total={filteredCustomers.length}
-            status={status}
-            onStatusChange={setStatus}
-            sort={sort}
-            onSortChange={setSort}
-          />
-          <CustomerList
-            customers={filteredCustomers}
-            onAdd={() => router.push("/customers/new")}
-            onDelete={(customer) => {
-              setSelectedCustomer(customer);
-              setDeleteOpen(true);
-            }}
-          />
-        </>
+        <CustomerList
+          customers={filteredCustomers}
+          onDelete={(customer) => {
+            setSelectedCustomer(customer);
+            setDeleteOpen(true);
+          }}
+        />
       )}
+
+      <FloatingActionButton href="/customers/new" label="New Customer" />
+
+      <CustomerFilterSheet
+        open={filterOpen}
+        onOpenChange={setFilterOpen}
+        status={status}
+        sort={sort}
+        onStatusChange={setStatus}
+        onSortChange={setSort}
+      />
 
       <DeleteDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         entityType="Customer"
         entityName={selectedCustomer?.name ?? ""}
-        loading={loading}
+        loading={deleting}
         onConfirm={handleDelete}
       />
 
       <ProgressDialog
-        open={loading}
+        open={deleting}
         title="Deleting Customer"
-        description="Please wait while we delete the customer."
+        description="Please wait while deleting the customer..."
       />
-    </PageContainer>
+    </main>
   );
 }

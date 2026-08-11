@@ -1,6 +1,11 @@
 "use client";
 
-import { ArrowLeft, UserRoundPlus } from "lucide-react";
+import {
+  ArrowLeft,
+  Building2,
+  CalendarDays,
+  UserRoundPlus,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
@@ -9,54 +14,72 @@ interface PartyHeaderProps {
   title: string;
   description: string;
   backLabel: string;
+  module?: "customer" | "supplier";
 }
 
 export default function PartyHeader({
   title,
   description,
   backLabel,
+  module = "customer",
 }: PartyHeaderProps) {
   const router = useRouter();
 
+  const isCustomer = module === "customer";
+
   return (
-    <div className="mb-6 w-full">
-      {/* Back Button */}
-      <div className="mb-5">
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={() => router.back()}
-          className="h-10 rounded-full px-3 text-slate-600 hover:bg-slate-100"
+    <section className="space-y-5">
+      {/* Back */}
+
+      <Button
+        type="button"
+        variant="ghost"
+        onClick={() => router.back()}
+        className="-ml-2 h-10 rounded-xl px-2"
+      >
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        {backLabel}
+      </Button>
+
+      {/* Module Badge */}
+
+      <div
+        className={`inline-flex items-center gap-2 rounded-full px-3 py-1.5 ${
+          isCustomer ? "bg-emerald-50" : "bg-indigo-50"
+        }`}
+      >
+        <div
+          className={`flex h-8 w-8 items-center justify-center rounded-full ${
+            isCustomer ? "bg-emerald-100" : "bg-indigo-100"
+          }`}
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-
-          <span className="font-medium">{backLabel}</span>
-        </Button>
-      </div>
-
-      {/* Hero */}
-
-      <div className="w-full overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 shadow-lg">
-        <div className="flex items-center gap-4 p-5">
-          {/* Icon */}
-
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10 backdrop-blur">
-            <UserRoundPlus className="h-7 w-7 text-cyan-300" />
-          </div>
-
-          {/* Content */}
-
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate text-2xl font-bold text-white sm:text-3xl">
-              {title}
-            </h1>
-
-            <p className="mt-2 text-sm leading-6 text-slate-300">
-              {description}
-            </p>
-          </div>
+          {isCustomer ? (
+            <UserRoundPlus className="h-4 w-4 text-emerald-700" />
+          ) : (
+            <Building2 className="h-4 w-4 text-indigo-700" />
+          )}
         </div>
+
+        <span
+          className={`text-xs font-semibold uppercase tracking-wider ${
+            isCustomer ? "text-emerald-700" : "text-indigo-700"
+          }`}
+        >
+          {isCustomer ? "Customer Management" : "Supplier Management"}
+        </span>
       </div>
-    </div>
+
+      {/* Heading */}
+
+      <div>
+        <h1 className="text-4xl font-bold tracking-tight text-slate-900">
+          {title}
+        </h1>
+
+        <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
+          {description}
+        </p>
+      </div>
+    </section>
   );
 }

@@ -25,22 +25,25 @@ class CustomerService {
       throw new Error("Invalid user.");
     }
 
-    const customerCodeExists = await CustomerRepository.findByCode(
-      data.customerCode,
-    );
-
-    if (customerCodeExists) {
-      throw new Error("Customer code already exists.");
-    }
-
     const mobileExists = await CustomerRepository.findByMobile(data.mobile);
 
     if (mobileExists) {
       throw new Error("Mobile number already exists.");
     }
+    const lastCustomer = await CustomerRepository.findLastCustomer();
 
+    let customerCode = "CUS00001";
+
+    if (lastCustomer?.customerCode) {
+      const match = lastCustomer.customerCode.match(/\d+$/);
+
+      const nextNumber = match ? Number(match[0]) + 1 : 1;
+
+      customerCode = `CUS${nextNumber.toString().padStart(5, "0")}`;
+    }
     return CustomerRepository.create({
       ...data,
+      customerCode,
       createdBy: new Types.ObjectId(userId),
     });
   }

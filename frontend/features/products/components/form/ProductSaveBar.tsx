@@ -1,13 +1,22 @@
 "use client";
 
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, Pencil } from "lucide-react";
 import { useFormContext } from "react-hook-form";
+
 import { Button } from "@/components/ui/button";
 
-export default function ProductSaveBar() {
+interface ProductSaveBarProps {
+  mode?: "create" | "edit";
+}
+
+export default function ProductSaveBar({
+  mode = "create",
+}: ProductSaveBarProps) {
   const {
-    formState: { isSubmitting, isDirty, isValid },
+    formState: { isSubmitting },
   } = useFormContext();
+
+  const isEdit = mode === "edit";
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -20,12 +29,17 @@ export default function ProductSaveBar() {
           {isSubmitting ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Saving Product...
+              {isEdit ? "Updating Product..." : "Saving Product..."}
             </>
           ) : (
             <>
-              <Save className="mr-2 h-4 w-4" />
-              Save Product
+              {isEdit ? (
+                <Pencil className="mr-2 h-4 w-4" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+
+              {isEdit ? "Update Product" : "Save Product"}
             </>
           )}
         </Button>

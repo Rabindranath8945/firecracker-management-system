@@ -6,14 +6,11 @@ import { calculateSaleTotals } from "../helpers/sales-calculator.js";
 
 import { buildSaleItemSnapshot } from "../mappers/sale-item.mapper.js";
 
+import type { CreateSaleInput } from "../validators/sales.validator.js";
+
 export async function buildSale(
-  items: {
-    product: string;
-    quantity: number;
-    sellingPrice: number;
-    discount: number;
-    tax: number;
-  }[],
+  items: CreateSaleInput["items"],
+  invoiceDiscount: number = 0,
 ) {
   const saleItems = [];
 
@@ -26,30 +23,43 @@ export async function buildSale(
       throw new Error("Product not found.");
     }
 
+    const sellingPrice = product.sellingPrice;
+
+    const purchasePrice = product.purchasePrice;
+
+    const tax = product.tax ?? 0;
+
+    const discount = 0;
+
     const calculation = calculateSaleItem({
       quantity: item.quantity,
-
-      purchasePrice: product.purchasePrice,
-
-      sellingPrice: item.sellingPrice,
-
-      discount: item.discount,
-
-      tax: item.tax,
+      purchasePrice,
+      sellingPrice,
+      discount,
+      tax,
     });
 
-    saleItems.push(buildSaleItemSnapshot(product, item, calculation));
+    saleItems.push(
+      buildSaleItemSnapshot(
+        product,
+        {
+          ...item,
+          sellingPrice,
+          discount,
+          tax,
+        },
+        calculation,
+      ),
+    );
   }
 
   const totals = calculateSaleTotals({
     items: saleItems,
-
-    discount: 0,
+    discount: Math.max(0, invoiceDiscount),
   });
 
   return {
     saleItems,
-
     totals,
   };
 }

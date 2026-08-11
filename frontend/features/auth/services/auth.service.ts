@@ -1,5 +1,6 @@
-import { authApi } from "../api/auth.api";
 import { deviceService } from "@/libs/device";
+
+import { authApi } from "../api/auth.api";
 
 import type { AuthResponse, User } from "../types/auth.types";
 
@@ -12,26 +13,40 @@ class AuthService {
       deviceId,
     });
 
-    return response.data.data;
+    const auth = response.data.data;
+
+    localStorage.setItem("accessToken", auth.accessToken);
+
+    if (auth.refreshToken) {
+      localStorage.setItem("refreshToken", auth.refreshToken);
+    }
+
+    return auth;
   }
 
-  async refresh() {
+  async refresh(): Promise<{ accessToken: string }> {
     const response = await authApi.refresh();
 
-    return response.data.data;
+    const auth = response.data.data;
+
+    localStorage.setItem("accessToken", auth.accessToken);
+
+    return auth;
   }
 
-  async me() {
+  async me(): Promise<User> {
     const response = await authApi.me();
 
     return response.data.data;
   }
 
-  async logout() {
-    await authApi.logout();
-
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("refreshToken");
+  async logout(): Promise<void> {
+    try {
+      await authApi.logout();
+    } finally {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+    }
   }
 }
 

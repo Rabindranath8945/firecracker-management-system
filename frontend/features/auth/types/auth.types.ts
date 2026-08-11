@@ -5,7 +5,7 @@ export interface User {
 
   role: string;
 
-  business: string | null;
+  currentBusiness: string | null;
 
   profilePicture?: string;
 

@@ -22,12 +22,6 @@ class BusinessService {
 
     const validated = createBusinessSchema.parse(data);
 
-    const existing = await BusinessRepository.findByOwner(ownerId);
-
-    if (existing) {
-      throw new Error("Business already exists.");
-    }
-
     let businessId = generateBusinessId();
 
     while (await BusinessRepository.findByBusinessId(businessId)) {
@@ -43,8 +37,7 @@ class BusinessService {
 
       createdBy: new Types.ObjectId(ownerId),
     });
-
-    await UserService.assignBusiness(ownerId, business._id.toString());
+    await UserService.setCurrentBusiness(ownerId, business._id.toString());
 
     return business;
   }
@@ -53,18 +46,12 @@ class BusinessService {
   /*                                  Get Mine                                  */
   /* -------------------------------------------------------------------------- */
 
-  async getMyBusiness(ownerId: string) {
+  async getMyBusinesses(ownerId: string) {
     if (!Types.ObjectId.isValid(ownerId)) {
       throw new Error("Invalid owner.");
     }
 
-    const business = await BusinessRepository.findByOwner(ownerId);
-
-    if (!business) {
-      throw new Error("Business not found.");
-    }
-
-    return business;
+    return BusinessRepository.findByOwner(ownerId);
   }
 
   /* -------------------------------------------------------------------------- */
@@ -123,6 +110,29 @@ class BusinessService {
     if (!business) {
       throw new Error("Business not found.");
     }
+
+    return business;
+  }
+
+  async switchBusiness(ownerId: string, businessId: string) {
+    if (!Types.ObjectId.isValid(ownerId)) {
+      throw new Error("Invalid owner.");
+    }
+
+    if (!Types.ObjectId.isValid(businessId)) {
+      throw new Error("Invalid business.");
+    }
+
+    const business = await BusinessRepository.findByIdAndOwner(
+      businessId,
+      ownerId,
+    );
+
+    if (!business) {
+      throw new Error("Business not found.");
+    }
+
+    await UserService.setCurrentBusiness(ownerId, business._id.toString());
 
     return business;
   }

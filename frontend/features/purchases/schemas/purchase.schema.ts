@@ -22,7 +22,7 @@ export const PurchaseSchema = z.object({
 
   dueDate: z.string().optional(),
 
-  paymentStatus: z.enum(["PAID", "PARTIAL", "UNPAID"]),
+  paymentStatus: z.enum(["PAID", "PARTIAL", "DUE"]),
 
   transportCharge: z.number(),
 

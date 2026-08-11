@@ -6,7 +6,9 @@ import { authenticate } from "../../auth/middleware/auth.middleware.js";
 
 import { asyncHandler } from "../../../common/utils/async-handler.js";
 
-import { imageUpload } from "../../../common/middleware/upload.middleware.js";
+import { ocrUpload } from "../../../common/uploads/middleware/ocr-upload.middleware.js";
+
+import { settingsUpload } from "../../../common/uploads/middleware/upload.middleware.js";
 
 const router = Router();
 
@@ -32,7 +34,7 @@ router.get("/payment/qr", asyncHandler(SettingsController.paymentQr));
 
 router.patch(
   "/payment/qr",
-  imageUpload.single("qr"),
+  ocrUpload.single("qr"),
   asyncHandler(SettingsController.updatePaymentQr),
 );
 
@@ -42,7 +44,7 @@ router.get("/payment/qr", asyncHandler(SettingsController.paymentQr));
 
 router.patch(
   "/logo",
-  imageUpload.single("logo"),
+  settingsUpload.single("logo"),
   asyncHandler(SettingsController.updateLogo),
 );
 

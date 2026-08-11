@@ -1,27 +1,35 @@
-import { generateSku } from "../utils/generateSku";
 import type { ProductFormData } from "../schemas/product.schema";
 
 export function getProductDefaultValues(): ProductFormData {
   return {
+    productCode: "",
+
     name: "",
-    sku: generateSku(),
+
     barcode: "",
+
     category: "",
 
-    purchasePrice: 0,
-    sellingPrice: 0,
-    // mrp: undefined,
+    subCategory: "",
 
-    openingStock: 0,
+    purchasePrice: 0,
+
+    sellingPrice: 0,
+
+    stock: 0,
+
     minimumStock: 0,
-    unit: "piece",
+
+    unit: "PCS",
+
+    hsnCode: "",
+
+    tax: 18,
 
     brand: "",
-    hsn: "",
-    gst: 18,
 
     description: "",
 
-    active: true,
+    isActive: true,
   };
 }

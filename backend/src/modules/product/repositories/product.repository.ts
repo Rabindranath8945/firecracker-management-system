@@ -5,12 +5,25 @@ import { ClientSession } from "mongoose";
 interface ProductQueryOptions {
   page?: number;
   limit?: number;
+
   search?: string;
-  sort?: string;
-  order?: "asc" | "desc";
+
+  sort?:
+    | "NAME_ASC"
+    | "NAME_DESC"
+    | "PRICE_ASC"
+    | "PRICE_DESC"
+    | "STOCK_ASC"
+    | "STOCK_DESC";
+
   category?: string;
+
+  subCategory?: string;
+
   isActive?: boolean;
-  stock?: "low" | "available" | "out";
+
+  stock?: "IN_STOCK" | "LOW_STOCK" | "OUT_OF_STOCK";
+
   minPrice?: number;
   maxPrice?: number;
 }
@@ -20,12 +33,9 @@ class ProductRepository {
     return Product.create(data);
   }
 
-  async find() {
-    return Product.find()
-      .populate("category", "categoryCode name")
-      .populate("subCategory", "subCategoryCode name");
+  async findCodes() {
+    return Product.find({}).select("productCode");
   }
-
   async findByName(name: string) {
     return Product.findOne({
       name: new RegExp(`^${name}$`, "i"),
@@ -43,13 +53,11 @@ class ProductRepository {
       barcode,
     });
   }
-
   async findByCodes(productCodes: string[]) {
     return Product.find({
       productCode: { $in: productCodes },
     }).select("productCode");
   }
-
   async findByCode(productCode: string) {
     return Product.findOne({
       productCode,
@@ -65,19 +73,28 @@ class ProductRepository {
     const {
       page = 1,
       limit = 20,
+
       search,
-      sort = "createdAt",
-      order = "desc",
+
       category,
+
+      subCategory,
+
       isActive = true,
+
       stock,
+
+      sort,
+
       minPrice,
       maxPrice,
     } = options;
 
-    const query: Record<string, unknown> = {
-      isActive,
-    };
+    const query: Record<string, unknown> = {};
+
+    if (isActive !== undefined) {
+      query.isActive = isActive;
+    }
 
     // Search
     if (search) {
@@ -88,12 +105,15 @@ class ProductRepository {
       ];
     }
 
-    // Category
+    // Category & SubCategory
     if (category) {
       query.category = category;
     }
+    if (subCategory) {
+      query.subCategory = subCategory;
+    }
 
-    // Price Range
+    // Price
     if (minPrice !== undefined || maxPrice !== undefined) {
       query.sellingPrice = {};
 
@@ -106,21 +126,54 @@ class ProductRepository {
       }
     }
 
-    // Stock Filters
-    if (stock === "out") {
-      query.stock = 0;
+    // Stock Filter
+    switch (stock) {
+      case "IN_STOCK":
+        query.$expr = {
+          $gt: ["$stock", "$minimumStock"],
+        };
+        break;
+
+      case "LOW_STOCK":
+        query.$expr = {
+          $and: [{ $gt: ["$stock", 0] }, { $lte: ["$stock", "$minimumStock"] }],
+        };
+        break;
+
+      case "OUT_OF_STOCK":
+        query.stock = 0;
+        break;
     }
 
-    if (stock === "available") {
-      query.stock = {
-        $gt: 0,
-      };
-    }
+    // Sorting
+    let sortOption: Record<string, 1 | -1> = {
+      name: 1,
+    };
 
-    if (stock === "low") {
-      query.$expr = {
-        $lte: ["$stock", "$minimumStock"],
-      };
+    switch (sort) {
+      case "NAME_ASC":
+        sortOption = { name: 1 };
+        break;
+
+      case "NAME_DESC":
+        sortOption = { name: -1 };
+        break;
+
+      case "PRICE_ASC":
+        sortOption = { sellingPrice: 1 };
+        break;
+
+      case "PRICE_DESC":
+        sortOption = { sellingPrice: -1 };
+        break;
+
+      case "STOCK_ASC":
+        sortOption = { stock: 1 };
+        break;
+
+      case "STOCK_DESC":
+        sortOption = { stock: -1 };
+        break;
     }
 
     const skip = (page - 1) * limit;
@@ -129,16 +182,16 @@ class ProductRepository {
       Product.find(query)
         .populate("category", "categoryCode name")
         .populate("subCategory", "subCategoryCode name")
-        .sort({
-          [sort]: order === "asc" ? 1 : -1,
-        })
+        .sort(sortOption)
         .skip(skip)
         .limit(limit),
 
       Product.countDocuments(query),
     ]);
+
     return {
       items,
+
       pagination: {
         page,
         limit,
@@ -155,10 +208,6 @@ class ProductRepository {
       new: true,
       runValidators: true,
     });
-  }
-
-  async delete(id: string) {
-    return Product.findByIdAndDelete(id);
   }
 
   async bulkCreate(products: Partial<IProduct>[]) {
@@ -190,8 +239,10 @@ class ProductRepository {
     quantity: number,
     session?: ClientSession,
   ) {
-    return Product.findByIdAndUpdate(
-      productId,
+    return Product.findOneAndUpdate(
+      {
+        _id: productId,
+      },
       {
         $inc: {
           stock: -quantity,
@@ -204,9 +255,9 @@ class ProductRepository {
     );
   }
 
-  /* -------------------------------------------------------------------------- */
-  /*                                  Restore                                   */
-  /* -------------------------------------------------------------------------- */
+  async delete(id: string) {
+    return Product.findByIdAndDelete(id);
+  }
 
   async bulkReplace(businessId: string, data: Partial<IProduct>[]) {
     await Product.deleteMany({
