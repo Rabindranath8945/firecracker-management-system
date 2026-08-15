@@ -34,6 +34,12 @@ class PurchaseController {
         ? String(req.query.paymentStatus)
         : undefined,
 
+      fromDate: req.query.fromDate
+        ? new Date(String(req.query.fromDate))
+        : undefined,
+
+      toDate: req.query.toDate ? new Date(String(req.query.toDate)) : undefined,
+
       sort: req.query.sort ? String(req.query.sort) : undefined,
 
       order:

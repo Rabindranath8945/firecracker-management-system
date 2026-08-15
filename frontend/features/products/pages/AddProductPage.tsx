@@ -1,6 +1,5 @@
 "use client";
 
-import ProductFormHeader from "../components/form/ProductFormHeader";
 import ProductForm from "../components/form/ProductForm";
 import PageHeader from "../../../components/common/shared/header/PageHeader";
 

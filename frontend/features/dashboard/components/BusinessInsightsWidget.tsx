@@ -22,23 +22,23 @@ interface BusinessInsightsWidgetProps {
 
 const COLORS = {
   SUCCESS: {
-    bg: "bg-emerald-100",
-    text: "text-emerald-600",
+    bg: "bg-emerald-100 dark:bg-emerald-500/10",
+    text: "text-emerald-600 dark:text-emerald-400",
   },
 
   WARNING: {
-    bg: "bg-amber-100",
-    text: "text-amber-600",
+    bg: "bg-amber-100 dark:bg-amber-500/10",
+    text: "text-amber-600 dark:text-amber-400",
   },
 
   BEST_SELLER: {
-    bg: "bg-violet-100",
-    text: "text-violet-600",
+    bg: "bg-violet-100 dark:bg-violet-500/10",
+    text: "text-violet-600 dark:text-violet-400",
   },
 
   SUGGESTION: {
-    bg: "bg-sky-100",
-    text: "text-sky-600",
+    bg: "bg-sky-100 dark:bg-sky-500/10",
+    text: "text-sky-600 dark:text-sky-400",
   },
 } as const;
 
@@ -52,98 +52,202 @@ const ICONS = {
 export default function BusinessInsightsWidget({
   dashboard,
 }: BusinessInsightsWidgetProps) {
-  const { insights } = dashboard;
+  const insights = dashboard.insights ?? [];
 
-  if (insights.length === 0) {
-    return (
-      <DashboardWidget
-        title="OneHub AI Insights"
-        subtitle="Smart recommendations"
-      >
-        <div className="flex flex-col items-center justify-center py-12">
-          <BrainCircuit className="h-12 w-12 text-slate-300" />
-
-          <h3 className="mt-4 text-lg font-semibold">No insights available</h3>
-
-          <p className="mt-2 text-center text-sm text-slate-500">
-            AI recommendations will appear once enough business data is
-            available.
-          </p>
-        </div>
-      </DashboardWidget>
-    );
-  }
+  const hasWarning = insights.some((item) => item.type === "WARNING");
 
   return (
     <DashboardWidget
       title="OneHub AI Insights"
       subtitle="Smart recommendations for your business"
     >
-      {/* Hero */}
+      {/* ------------------------------------------------------------------ */}
+      {/* EMPTY STATE                                                        */}
+      {/* ------------------------------------------------------------------ */}
 
-      <div className="mb-6 rounded-3xl bg-gradient-to-r from-sky-600 via-cyan-600 to-blue-700 p-6 text-white">
-        <div className="flex items-start gap-4">
-          <div className="rounded-2xl bg-white/20 p-3 backdrop-blur">
-            <BrainCircuit className="h-7 w-7" />
+      {insights.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div
+            className="
+              flex
+              h-16
+              w-16
+              items-center
+              justify-center
+              rounded-3xl
+              bg-sky-100
+              dark:bg-sky-500/10
+            "
+          >
+            <BrainCircuit className="h-8 w-8 text-sky-600 dark:text-sky-400" />
           </div>
 
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4" />
+          <h3 className="mt-4 text-lg font-semibold text-slate-900 dark:text-foreground">
+            No insights available
+          </h3>
 
-              <span className="text-sm font-medium">AI Business Assistant</span>
-            </div>
-
-            <h3 className="mt-3 text-2xl font-bold">
-              Your business looks healthy today.
-            </h3>
-
-            <p className="mt-2 text-sm leading-6 text-sky-100">
-              Sales are improving and only a few products require attention.
-              Review the recommendations below to maximise your revenue.
-            </p>
-          </div>
+          <p className="mt-2 max-w-sm text-sm leading-6 text-slate-500 dark:text-muted-foreground">
+            Business recommendations will appear as more sales, inventory, and
+            payment data becomes available.
+          </p>
         </div>
-      </div>
+      ) : (
+        <>
+          {/* -------------------------------------------------------------- */}
+          {/* AI HERO                                                        */}
+          {/* -------------------------------------------------------------- */}
 
-      {/* Insights */}
+          <div
+            className="
+              relative
+              mb-6
+              overflow-hidden
+              rounded-3xl
+              bg-gradient-to-br
+              from-sky-600
+              via-cyan-600
+              to-blue-700
+              p-5
+              text-white
+              shadow-lg
+            "
+          >
+            {/* Decorative glow */}
 
-      <div className="space-y-4">
-        {insights.map((item) => {
-          const Icon = ICONS[item.type];
-          const styles = COLORS[item.type];
+            <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
 
-          return (
-            <div
-              key={item.id}
-              className="rounded-3xl border border-slate-200 bg-white p-5 transition-all duration-300 hover:border-sky-200 hover:shadow-md"
-            >
-              <div className="flex items-start gap-4">
-                <div className={`rounded-2xl ${styles.bg} p-3`}>
-                  <Icon className={`h-6 w-6 ${styles.text}`} />
+            <div className="relative flex items-start gap-4">
+              <div
+                className="
+                  flex
+                  h-12
+                  w-12
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-2xl
+                  bg-white/15
+                  shadow-inner
+                  backdrop-blur
+                "
+              >
+                <BrainCircuit className="h-6 w-6" />
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4" />
+
+                  <span className="text-xs font-semibold uppercase tracking-wide text-sky-100">
+                    AI Business Assistant
+                  </span>
                 </div>
 
-                <div className="flex-1">
-                  <h3 className="font-semibold text-slate-900">{item.title}</h3>
+                <h3 className="mt-2 text-xl font-bold">
+                  {hasWarning
+                    ? "Your business needs attention."
+                    : "Your business is looking healthy."}
+                </h3>
 
-                  <p className="mt-2 text-sm leading-6 text-slate-500">
-                    {item.description}
-                  </p>
-                </div>
+                <p className="mt-2 text-sm leading-6 text-sky-100">
+                  {hasWarning
+                    ? "A few areas require your attention. Review the recommendations below."
+                    : "Here are the latest recommendations based on your business activity."}
+                </p>
               </div>
             </div>
-          );
-        })}
-      </div>
+          </div>
 
-      {/* Footer */}
+          {/* -------------------------------------------------------------- */}
+          {/* INSIGHTS                                                        */}
+          {/* -------------------------------------------------------------- */}
 
-      <Button variant="outline" className="mt-6 w-full rounded-2xl">
-        <Link href="/reports">
-          View Detailed Insights
-          <ArrowRight className="ml-2 h-4 w-4" />
-        </Link>
-      </Button>
+          <div className="space-y-3">
+            {insights.map((item) => {
+              const Icon = ICONS[item.type];
+              const styles = COLORS[item.type];
+
+              return (
+                <div
+                  key={item.id}
+                  className="
+                    rounded-3xl
+                    border
+                    border-slate-200
+                    bg-white
+                    p-4
+                    transition-all
+                    duration-300
+                    hover:-translate-y-0.5
+                    hover:border-sky-200
+                    hover:shadow-md
+                    dark:border-border
+                    dark:bg-card
+                    dark:hover:border-sky-500/30
+                  "
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`
+                        flex
+                        h-11
+                        w-11
+                        shrink-0
+                        items-center
+                        justify-center
+                        rounded-2xl
+                        ${styles.bg}
+                      `}
+                    >
+                      <Icon
+                        className={`h-5 w-5 ${styles.text}`}
+                        strokeWidth={2}
+                      />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-sm font-semibold text-slate-900 dark:text-foreground">
+                        {item.title}
+                      </h3>
+
+                      <p className="mt-1.5 text-xs leading-5 text-slate-500 dark:text-muted-foreground">
+                        {item.description}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* -------------------------------------------------------------- */}
+          {/* FOOTER                                                         */}
+          {/* -------------------------------------------------------------- */}
+
+          <Link href="/reports" className="mt-5 block">
+            <Button
+              type="button"
+              variant="outline"
+              className="
+                h-11
+                w-full
+                rounded-2xl
+                font-semibold
+                transition-all
+                hover:border-sky-300
+                hover:bg-sky-50
+                hover:text-sky-700
+                dark:hover:border-sky-500/30
+                dark:hover:bg-sky-500/10
+                dark:hover:text-sky-400
+              "
+            >
+              View Detailed Insights
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </Link>
+        </>
+      )}
     </DashboardWidget>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import type { Supplier } from "../../types/supplier";
+import type { Supplier } from "../../types/supplier.type";
 
 import EmptyState from "@/features/shared/ui/cards/EmptyState";
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -598,7 +598,7 @@ export default function PaymentPage() {
 
           setSuccessOpen(false);
 
-          router.replace("/sales");
+          router.replace("/sales/new");
         }}
         onPrint={() => {
           if (!createdSale?._id) {

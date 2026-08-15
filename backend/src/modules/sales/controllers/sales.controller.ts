@@ -22,6 +22,26 @@ class SalesController {
   };
 
   getAll = async (req: Request, res: Response) => {
+    const parseStartOfDay = (value: string): Date => {
+      const [year, month, day] = value.split("-").map(Number);
+
+      return new Date(year, month - 1, day, 0, 0, 0, 0);
+    };
+
+    const parseEndOfDay = (value: string): Date => {
+      const [year, month, day] = value.split("-").map(Number);
+
+      return new Date(year, month - 1, day, 23, 59, 59, 999);
+    };
+
+    const fromDate = req.query.fromDate
+      ? parseStartOfDay(String(req.query.fromDate))
+      : undefined;
+
+    const toDate = req.query.toDate
+      ? parseEndOfDay(String(req.query.toDate))
+      : undefined;
+
     const sales = await SalesService.getAll({
       page: Number(req.query.page) || 1,
 
@@ -39,11 +59,9 @@ class SalesController {
         ? String(req.query.paymentMethod)
         : undefined,
 
-      fromDate: req.query.fromDate
-        ? new Date(String(req.query.fromDate))
-        : undefined,
+      fromDate,
 
-      toDate: req.query.toDate ? new Date(String(req.query.toDate)) : undefined,
+      toDate,
 
       sort: req.query.sort ? String(req.query.sort) : undefined,
 

@@ -2,7 +2,7 @@
 
 import { Truck, UserCheck, UserX, Wallet } from "lucide-react";
 
-import type { Supplier } from "../../types/supplier";
+import type { Supplier } from "../../types/supplier.type";
 
 import StatCard from "@/features/shared/ui/cards/StatCard";
 

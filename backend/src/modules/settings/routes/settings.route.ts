@@ -14,6 +14,12 @@ const router = Router();
 
 router.use(authenticate);
 
+router.post(
+  "/initialize",
+  authenticate,
+  asyncHandler(SettingsController.initializeFromUser),
+);
+
 router.get("/", asyncHandler(SettingsController.get));
 
 // router.post("/", asyncHandler(SettingsController.create));

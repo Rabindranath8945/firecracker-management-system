@@ -3,28 +3,52 @@ import ProductModel from "../../product/models/product.model.js";
 import CustomerModel from "../../customer/models/customer.model.js";
 import SupplierModel from "../../supplier/models/supplier.model.js";
 import SalesModel from "../../sales/models/sales.model.js";
+import type { DashboardData } from "../interfaces/dashboard.interface.js";
 
 class DashboardRepository {
-  async getDashboard(ownerId: string) {
-    /* -------------------------------------------------------------------------- */
-    /*                              Business                                      */
-    /* -------------------------------------------------------------------------- */
+  async getDashboard(ownerId: string): Promise<DashboardData> {
+    /* ---------------------------------------------------------------------- */
+    /* Dates                                                                  */
+    /* ---------------------------------------------------------------------- */
 
-    const today = new Date();
+    const now = new Date();
 
+    const today = new Date(now);
     today.setHours(0, 0, 0, 0);
 
     const tomorrow = new Date(today);
-
     tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const monthStart = new Date(now);
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+
+    const nextMonth = new Date(monthStart);
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+    const weekStart = new Date(today);
+    weekStart.setDate(weekStart.getDate() - 6);
+
+    /* ---------------------------------------------------------------------- */
+    /* Business                                                               */
+    /* ---------------------------------------------------------------------- */
+
+    const business = await BusinessModel.findOne({
+      owner: ownerId,
+    }).lean();
+
+    /* ---------------------------------------------------------------------- */
+    /* Today's Sales                                                          */
+    /* ---------------------------------------------------------------------- */
 
     const todaySalesResult = await SalesModel.aggregate([
       {
         $match: {
-          createdAt: {
+          saleDate: {
             $gte: today,
             $lt: tomorrow,
           },
+          isActive: true,
         },
       },
       {
@@ -37,53 +61,11 @@ class DashboardRepository {
       },
     ]);
 
-    const todaySales = todaySalesResult[0]?.total ?? 0;
+    const todaySales = Number(todaySalesResult[0]?.total ?? 0);
 
-    const monthStart = new Date();
-
-    monthStart.setDate(1);
-
-    monthStart.setHours(0, 0, 0, 0);
-
-    const nextMonth = new Date(monthStart);
-
-    nextMonth.setMonth(nextMonth.getMonth() + 1);
-
-    const monthlyRevenueResult = await SalesModel.aggregate([
-      {
-        $match: {
-          createdAt: {
-            $gte: monthStart,
-            $lt: nextMonth,
-          },
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          total: {
-            $sum: "$grandTotal",
-          },
-        },
-      },
-    ]);
-
-    const monthlyRevenue = monthlyRevenueResult[0]?.total ?? 0;
-
-    const lowStock = await ProductModel.countDocuments({
-      $expr: {
-        $lte: ["$stock", "$minStock"],
-      },
-    });
-
-    const lowStockProducts = await ProductModel.find({
-      $expr: {
-        $lte: ["$stock", "$minimumStock"],
-      },
-    })
-      .select("name stock minimumStock")
-      .limit(5)
-      .lean();
+    /* ---------------------------------------------------------------------- */
+    /* Today's Profit                                                         */
+    /* ---------------------------------------------------------------------- */
 
     const todayProfitResult = await SalesModel.aggregate([
       {
@@ -91,29 +73,6 @@ class DashboardRepository {
           saleDate: {
             $gte: today,
             $lt: tomorrow,
-          },
-        },
-      },
-      {
-        $unwind: "$items",
-      },
-      {
-        $group: {
-          _id: null,
-          totalProfit: {
-            $sum: "$items.profit",
-          },
-        },
-      },
-    ]);
-
-    const todayProfit = todayProfitResult[0]?.totalProfit ?? 0;
-    const monthlyProfitResult = await SalesModel.aggregate([
-      {
-        $match: {
-          saleDate: {
-            $gte: monthStart,
-            $lt: nextMonth,
           },
           isActive: true,
         },
@@ -124,14 +83,44 @@ class DashboardRepository {
       {
         $group: {
           _id: null,
-          totalProfit: {
+          total: {
             $sum: "$items.profit",
           },
         },
       },
     ]);
 
-    const monthlyProfit = monthlyProfitResult[0]?.totalProfit ?? 0;
+    const todayProfit = Number(todayProfitResult[0]?.total ?? 0);
+
+    /* ---------------------------------------------------------------------- */
+    /* Monthly Revenue                                                        */
+    /* ---------------------------------------------------------------------- */
+
+    const monthlyRevenueResult = await SalesModel.aggregate([
+      {
+        $match: {
+          saleDate: {
+            $gte: monthStart,
+            $lt: nextMonth,
+          },
+          isActive: true,
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: {
+            $sum: "$grandTotal",
+          },
+        },
+      },
+    ]);
+
+    const monthlyRevenue = Number(monthlyRevenueResult[0]?.total ?? 0);
+
+    /* ---------------------------------------------------------------------- */
+    /* Outstanding Customer Payments                                         */
+    /* ---------------------------------------------------------------------- */
 
     const outstandingPaymentsResult = await SalesModel.aggregate([
       {
@@ -139,6 +128,7 @@ class DashboardRepository {
           dueAmount: {
             $gt: 0,
           },
+          isActive: true,
         },
       },
       {
@@ -151,20 +141,115 @@ class DashboardRepository {
       },
     ]);
 
-    const outstandingPayments = outstandingPaymentsResult[0]?.total ?? 0;
+    const outstandingPayments = Number(
+      outstandingPaymentsResult[0]?.total ?? 0,
+    );
 
-    const last7Days = new Date();
+    /* ---------------------------------------------------------------------- */
+    /* Weekly Sales                                                           */
+    /* ---------------------------------------------------------------------- */
 
-    last7Days.setDate(last7Days.getDate() - 6);
-
-    last7Days.setHours(0, 0, 0, 0);
-
-    const salesChart = await SalesModel.aggregate([
+    const weeklySalesResult = await SalesModel.aggregate([
       {
         $match: {
           saleDate: {
-            $gte: last7Days,
+            $gte: weekStart,
+            $lt: tomorrow,
           },
+          isActive: true,
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: {
+            $sum: "$grandTotal",
+          },
+        },
+      },
+    ]);
+
+    const weeklySales = Number(weeklySalesResult[0]?.total ?? 0);
+
+    /* ---------------------------------------------------------------------- */
+    /* Sales Growth                                                           */
+    /* ---------------------------------------------------------------------- */
+
+    const previousWeekStart = new Date(weekStart);
+    previousWeekStart.setDate(previousWeekStart.getDate() - 7);
+
+    const previousWeekSalesResult = await SalesModel.aggregate([
+      {
+        $match: {
+          saleDate: {
+            $gte: previousWeekStart,
+            $lt: weekStart,
+          },
+          isActive: true,
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: {
+            $sum: "$grandTotal",
+          },
+        },
+      },
+    ]);
+
+    const previousWeekSales = Number(previousWeekSalesResult[0]?.total ?? 0);
+
+    const salesGrowth =
+      previousWeekSales === 0
+        ? weeklySales > 0
+          ? 100
+          : 0
+        : ((weeklySales - previousWeekSales) / previousWeekSales) * 100;
+
+    /* ---------------------------------------------------------------------- */
+    /* Low Stock                                                              */
+    /* ---------------------------------------------------------------------- */
+
+    const lowStock = await ProductModel.countDocuments({
+      $expr: {
+        $lte: ["$stock", "$minimumStock"],
+      },
+      isActive: true,
+    });
+
+    const lowStockProductsRaw = await ProductModel.find({
+      $expr: {
+        $lte: ["$stock", "$minimumStock"],
+      },
+      isActive: true,
+    })
+      .select("_id name stock minimumStock")
+      .sort({
+        stock: 1,
+      })
+      .limit(5)
+      .lean();
+
+    const lowStockProducts = lowStockProductsRaw.map((product) => ({
+      id: product._id.toString(),
+      name: product.name,
+      stock: Number(product.stock ?? 0),
+      minStock: Number(product.minimumStock ?? 0),
+    }));
+
+    /* ---------------------------------------------------------------------- */
+    /* Sales Chart                                                            */
+    /* ---------------------------------------------------------------------- */
+
+    const salesChartRaw = await SalesModel.aggregate([
+      {
+        $match: {
+          saleDate: {
+            $gte: weekStart,
+            $lt: tomorrow,
+          },
+          isActive: true,
         },
       },
       {
@@ -175,7 +260,6 @@ class DashboardRepository {
               date: "$saleDate",
             },
           },
-
           sales: {
             $sum: "$grandTotal",
           },
@@ -188,8 +272,21 @@ class DashboardRepository {
       },
     ]);
 
-    const recentSales = await SalesModel.find()
-      .sort({ createdAt: -1 })
+    const salesChart = salesChartRaw.map((item) => ({
+      day: item._id,
+      sales: Number(item.sales ?? 0),
+    }));
+
+    /* ---------------------------------------------------------------------- */
+    /* Recent Activities                                                      */
+    /* ---------------------------------------------------------------------- */
+
+    const recentSales = await SalesModel.find({
+      isActive: true,
+    })
+      .sort({
+        createdAt: -1,
+      })
       .limit(5)
       .lean();
 
@@ -198,80 +295,99 @@ class DashboardRepository {
 
       title: "Sale Completed",
 
-      subtitle: sale.invoiceNo,
+      subtitle: sale.invoiceNo || sale.saleNo || "Sale",
 
-      value: `₹${sale.grandTotal.toLocaleString("en-IN")}`,
+      value: `₹${Number(sale.grandTotal ?? 0).toLocaleString("en-IN")}`,
 
-      time: sale.saleDate.toLocaleDateString("en-IN"),
+      time: new Date(sale.createdAt).toLocaleString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
 
       type: "SALE" as const,
     }));
 
-    const insights = [];
+    /* ---------------------------------------------------------------------- */
+    /* Insights                                                               */
+    /* ---------------------------------------------------------------------- */
+
+    const insights: {
+      id: string;
+      title: string;
+      description: string;
+      type: "SUCCESS" | "WARNING" | "BEST_SELLER" | "SUGGESTION";
+    }[] = [];
 
     if (todaySales > 0) {
       insights.push({
-        id: "sales",
-
-        title: "Sales Growth",
-
-        description: `Today's sales reached ₹${todaySales.toLocaleString("en-IN")}.`,
-
+        id: "today-sales",
+        title: "Today's Sales",
+        description: `Today's sales reached ₹${todaySales.toLocaleString(
+          "en-IN",
+        )}.`,
         type: "SUCCESS",
       });
     }
 
     if (lowStock > 0) {
       insights.push({
-        id: "stock",
-
-        title: "Low Stock",
-
+        id: "low-stock",
+        title: "Low Stock Alert",
         description: `${lowStock} products need restocking.`,
-
         type: "WARNING",
       });
     }
 
     if (outstandingPayments > 0) {
       insights.push({
-        id: "due",
-
+        id: "outstanding",
         title: "Outstanding Payments",
-
-        description: `₹${outstandingPayments.toLocaleString("en-IN")} is pending collection.`,
-
+        description: `₹${outstandingPayments.toLocaleString(
+          "en-IN",
+        )} is pending collection.`,
         type: "SUGGESTION",
       });
     }
 
     if (monthlyRevenue > 0) {
       insights.push({
-        id: "revenue",
-
+        id: "monthly-revenue",
         title: "Monthly Revenue",
-
-        description: `Monthly revenue reached ₹${monthlyRevenue.toLocaleString("en-IN")}.`,
-
+        description: `Monthly revenue is ₹${monthlyRevenue.toLocaleString(
+          "en-IN",
+        )}.`,
         type: "BEST_SELLER",
       });
     }
 
-    const business = await BusinessModel.findOne({
-      owner: ownerId,
-    }).lean();
-
-    /* -------------------------------------------------------------------------- */
-    /*                                Counts                                      */
-    /* -------------------------------------------------------------------------- */
+    /* ---------------------------------------------------------------------- */
+    /* Counts                                                                 */
+    /* ---------------------------------------------------------------------- */
 
     const [totalProducts, totalCustomers, totalSuppliers, totalSales] =
       await Promise.all([
-        ProductModel.countDocuments(),
-        CustomerModel.countDocuments(),
-        SupplierModel.countDocuments(),
-        SalesModel.countDocuments(),
+        ProductModel.countDocuments({
+          isActive: true,
+        }),
+
+        CustomerModel.countDocuments({
+          isActive: true,
+        }),
+
+        SupplierModel.countDocuments({
+          isActive: true,
+        }),
+
+        SalesModel.countDocuments({
+          isActive: true,
+        }),
       ]);
+
+    /* ---------------------------------------------------------------------- */
+    /* Return                                                                 */
+    /* ---------------------------------------------------------------------- */
 
     return {
       business,
@@ -285,9 +401,11 @@ class DashboardRepository {
       todayProfit,
 
       monthlyRevenue,
-      monthlyProfit,
 
       outstandingPayments,
+
+      weeklySales,
+      salesGrowth,
 
       lowStock,
 

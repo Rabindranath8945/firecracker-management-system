@@ -3,17 +3,24 @@ import { Request, Response } from "express";
 import SettingsService from "../services/settings.service.js";
 
 class SettingsController {
-  private getId(req: Request): string {
+  private getId = (req: Request): string => {
     return String(req.params.id);
-  }
-  private handleError(res: Response, error: unknown, message: string) {
+  };
+
+  private handleError = (res: Response, error: unknown, message: string) => {
+    console.error(error);
+
     return res.status(500).json({
       success: false,
       message: error instanceof Error ? error.message : message,
     });
-  }
+  };
 
-  async get(_req: Request, res: Response) {
+  /* ---------------------------------------------------------------------- */
+  /* Get Settings                                                           */
+  /* ---------------------------------------------------------------------- */
+
+  get = async (_req: Request, res: Response) => {
     try {
       const settings = await SettingsService.get();
 
@@ -24,23 +31,13 @@ class SettingsController {
     } catch (error) {
       return this.handleError(res, error, "Failed to fetch settings.");
     }
-  }
+  };
 
-  // async create(req: Request, res: Response) {
-  //   try {
-  //     const settings = await SettingsService.create(req.body);
+  /* ---------------------------------------------------------------------- */
+  /* Business                                                               */
+  /* ---------------------------------------------------------------------- */
 
-  //     return res.status(201).json({
-  //       success: true,
-  //       message: "Settings created successfully.",
-  //       data: settings,
-  //     });
-  //   } catch (error) {
-  //     return this.handleError(res, error, "Failed to create settings.");
-  //   }
-  // }
-
-  async updateBusiness(req: Request, res: Response) {
+  updateBusiness = async (req: Request, res: Response) => {
     try {
       const settings = await SettingsService.updateBusiness(
         this.getId(req),
@@ -59,9 +56,13 @@ class SettingsController {
         "Failed to update business settings.",
       );
     }
-  }
+  };
 
-  async updateUsers(req: Request, res: Response) {
+  /* ---------------------------------------------------------------------- */
+  /* Users                                                                  */
+  /* ---------------------------------------------------------------------- */
+
+  updateUsers = async (req: Request, res: Response) => {
     try {
       const settings = await SettingsService.updateUsers(
         this.getId(req),
@@ -76,9 +77,13 @@ class SettingsController {
     } catch (error) {
       return this.handleError(res, error, "Failed to update user settings.");
     }
-  }
+  };
 
-  async updatePayment(req: Request, res: Response) {
+  /* ---------------------------------------------------------------------- */
+  /* Payment                                                                */
+  /* ---------------------------------------------------------------------- */
+
+  updatePayment = async (req: Request, res: Response) => {
     try {
       const settings = await SettingsService.updatePayment(
         this.getId(req),
@@ -93,9 +98,13 @@ class SettingsController {
     } catch (error) {
       return this.handleError(res, error, "Failed to update payment settings.");
     }
-  }
+  };
 
-  async updateInvoice(req: Request, res: Response) {
+  /* ---------------------------------------------------------------------- */
+  /* Invoice                                                                */
+  /* ---------------------------------------------------------------------- */
+
+  updateInvoice = async (req: Request, res: Response) => {
     try {
       const settings = await SettingsService.updateInvoice(
         this.getId(req),
@@ -110,9 +119,13 @@ class SettingsController {
     } catch (error) {
       return this.handleError(res, error, "Failed to update invoice settings.");
     }
-  }
+  };
 
-  async updateTax(req: Request, res: Response) {
+  /* ---------------------------------------------------------------------- */
+  /* Tax                                                                    */
+  /* ---------------------------------------------------------------------- */
+
+  updateTax = async (req: Request, res: Response) => {
     try {
       const settings = await SettingsService.updateTax(
         this.getId(req),
@@ -127,9 +140,13 @@ class SettingsController {
     } catch (error) {
       return this.handleError(res, error, "Failed to update tax settings.");
     }
-  }
+  };
 
-  async updateNumbering(req: Request, res: Response) {
+  /* ---------------------------------------------------------------------- */
+  /* Numbering                                                              */
+  /* ---------------------------------------------------------------------- */
+
+  updateNumbering = async (req: Request, res: Response) => {
     try {
       const settings = await SettingsService.updateNumbering(
         this.getId(req),
@@ -144,9 +161,13 @@ class SettingsController {
     } catch (error) {
       return this.handleError(res, error, "Failed to update number series.");
     }
-  }
+  };
 
-  async updateDataManagement(req: Request, res: Response) {
+  /* ---------------------------------------------------------------------- */
+  /* Data Management                                                        */
+  /* ---------------------------------------------------------------------- */
+
+  updateDataManagement = async (req: Request, res: Response) => {
     try {
       const settings = await SettingsService.updateDataManagement(
         this.getId(req),
@@ -161,9 +182,13 @@ class SettingsController {
     } catch (error) {
       return this.handleError(res, error, "Failed to update data management.");
     }
-  }
+  };
 
-  async updateNotification(req: Request, res: Response) {
+  /* ---------------------------------------------------------------------- */
+  /* Notification                                                           */
+  /* ---------------------------------------------------------------------- */
+
+  updateNotification = async (req: Request, res: Response) => {
     try {
       const settings = await SettingsService.updateNotification(
         this.getId(req),
@@ -182,9 +207,13 @@ class SettingsController {
         "Failed to update notification settings.",
       );
     }
-  }
+  };
 
-  async updateAppearance(req: Request, res: Response) {
+  /* ---------------------------------------------------------------------- */
+  /* Appearance                                                             */
+  /* ---------------------------------------------------------------------- */
+
+  updateAppearance = async (req: Request, res: Response) => {
     try {
       const settings = await SettingsService.updateAppearance(
         this.getId(req),
@@ -203,9 +232,13 @@ class SettingsController {
         "Failed to update appearance settings.",
       );
     }
-  }
+  };
 
-  async updateSystem(req: Request, res: Response) {
+  /* ---------------------------------------------------------------------- */
+  /* System                                                                 */
+  /* ---------------------------------------------------------------------- */
+
+  updateSystem = async (req: Request, res: Response) => {
     try {
       const settings = await SettingsService.updateSystem(
         this.getId(req),
@@ -220,9 +253,13 @@ class SettingsController {
     } catch (error) {
       return this.handleError(res, error, "Failed to update system settings.");
     }
-  }
+  };
 
-  async updateSecurity(req: Request, res: Response) {
+  /* ---------------------------------------------------------------------- */
+  /* Security                                                               */
+  /* ---------------------------------------------------------------------- */
+
+  updateSecurity = async (req: Request, res: Response) => {
     try {
       const settings = await SettingsService.updateSecurity(
         this.getId(req),
@@ -241,9 +278,13 @@ class SettingsController {
         "Failed to update security settings.",
       );
     }
-  }
+  };
 
-  async updateAbout(req: Request, res: Response) {
+  /* ---------------------------------------------------------------------- */
+  /* About                                                                  */
+  /* ---------------------------------------------------------------------- */
+
+  updateAbout = async (req: Request, res: Response) => {
     try {
       const settings = await SettingsService.updateAbout(
         this.getId(req),
@@ -258,8 +299,13 @@ class SettingsController {
     } catch (error) {
       return this.handleError(res, error, "Failed to update about settings.");
     }
-  }
-  async updateLogo(req: Request, res: Response) {
+  };
+
+  /* ---------------------------------------------------------------------- */
+  /* Logo                                                                   */
+  /* ---------------------------------------------------------------------- */
+
+  updateLogo = async (req: Request, res: Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({
@@ -269,7 +315,7 @@ class SettingsController {
       }
 
       const settings = await SettingsService.updateLogo(
-        String(req.params.id),
+        this.getId(req),
         `/uploads/${req.file.filename}`,
       );
 
@@ -281,8 +327,13 @@ class SettingsController {
     } catch (error) {
       return this.handleError(res, error, "Failed to upload business logo.");
     }
-  }
-  async updatePaymentQr(req: Request, res: Response) {
+  };
+
+  /* ---------------------------------------------------------------------- */
+  /* Payment QR                                                             */
+  /* ---------------------------------------------------------------------- */
+
+  updatePaymentQr = async (req: Request, res: Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({
@@ -292,7 +343,7 @@ class SettingsController {
       }
 
       const settings = await SettingsService.updatePaymentQr(
-        String(req.params.id),
+        this.getId(req),
         `/uploads/${req.file.filename}`,
       );
 
@@ -304,8 +355,13 @@ class SettingsController {
     } catch (error) {
       return this.handleError(res, error, "Failed to upload payment QR.");
     }
-  }
-  async paymentQr(req: Request, res: Response) {
+  };
+
+  /* ---------------------------------------------------------------------- */
+  /* Generate Payment QR                                                    */
+  /* ---------------------------------------------------------------------- */
+
+  paymentQr = async (req: Request, res: Response) => {
     try {
       const amount = Number(req.query.amount);
 
@@ -325,9 +381,13 @@ class SettingsController {
     } catch (error) {
       return this.handleError(res, error, "Failed to generate payment QR.");
     }
-  }
+  };
 
-  async paymentStatus(_req: Request, res: Response) {
+  /* ---------------------------------------------------------------------- */
+  /* Payment Status                                                         */
+  /* ---------------------------------------------------------------------- */
+
+  paymentStatus = async (_req: Request, res: Response) => {
     try {
       const status = await SettingsService.getPaymentStatus();
 
@@ -337,6 +397,35 @@ class SettingsController {
       });
     } catch (error) {
       return this.handleError(res, error, "Failed to fetch payment status.");
+    }
+  };
+
+  async initializeFromUser(req: Request, res: Response) {
+    try {
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized",
+        });
+      }
+
+      const settings = await SettingsService.initializeForUser(req.user.userId);
+
+      return res.status(200).json({
+        success: true,
+        message: "Settings initialized successfully.",
+        data: settings,
+      });
+    } catch (error) {
+      console.error("Failed to initialize settings:", error);
+
+      return res.status(500).json({
+        success: false,
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to initialize settings.",
+      });
     }
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, AlertCircle, Info } from "lucide-react";
+import { AlertCircle, Check, CheckCircle2, Info } from "lucide-react";
 
 import { Card } from "@/components/ui/card";
 
@@ -23,78 +23,168 @@ export default function SuccessStatus({
     return null;
   }
 
-  function getColor(color?: SuccessStatusItem["color"]) {
+  function getStatusStyle(color?: SuccessStatusItem["color"]) {
     switch (color) {
       case "warning":
         return {
-          bg: "bg-amber-100",
-          text: "text-amber-600",
-          icon: <AlertCircle className="h-4 w-4" />,
+          container:
+            "border-amber-200/70 bg-amber-50/60 dark:border-amber-500/20 dark:bg-amber-500/[0.06]",
+          icon: "bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400",
+          value: "text-amber-600 dark:text-amber-400",
+          line: "bg-amber-400",
+          iconComponent: <AlertCircle className="h-4 w-4" strokeWidth={2.5} />,
         };
 
       case "error":
         return {
-          bg: "bg-red-100",
-          text: "text-red-600",
-          icon: <AlertCircle className="h-4 w-4" />,
+          container:
+            "border-red-200/70 bg-red-50/60 dark:border-red-500/20 dark:bg-red-500/[0.06]",
+          icon: "bg-red-100 text-red-600 dark:bg-red-500/15 dark:text-red-400",
+          value: "text-red-600 dark:text-red-400",
+          line: "bg-red-400",
+          iconComponent: <AlertCircle className="h-4 w-4" strokeWidth={2.5} />,
         };
 
       case "info":
         return {
-          bg: "bg-sky-100",
-          text: "text-sky-600",
-          icon: <Info className="h-4 w-4" />,
+          container:
+            "border-sky-200/70 bg-sky-50/60 dark:border-sky-500/20 dark:bg-sky-500/[0.06]",
+          icon: "bg-sky-100 text-sky-600 dark:bg-sky-500/15 dark:text-sky-400",
+          value: "text-sky-600 dark:text-sky-400",
+          line: "bg-sky-400",
+          iconComponent: <Info className="h-4 w-4" strokeWidth={2.5} />,
         };
 
       default:
         return {
-          bg: "bg-emerald-100",
-          text: "text-emerald-600",
-          icon: <CheckCircle2 className="h-4 w-4" />,
+          container:
+            "border-emerald-200/70 bg-emerald-50/60 dark:border-emerald-500/20 dark:bg-emerald-500/[0.06]",
+          icon: "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400",
+          value: "text-emerald-600 dark:text-emerald-400",
+          line: "bg-emerald-400",
+          iconComponent: <CheckCircle2 className="h-4 w-4" strokeWidth={2.5} />,
         };
     }
   }
 
   return (
-    <Card className="overflow-hidden rounded-3xl border shadow-sm">
-      <div className="border-b bg-muted/40 px-5 py-4">
-        <h3 className="font-semibold">{title}</h3>
+    <Card className="overflow-hidden rounded-[26px] border border-border/60 bg-card shadow-sm">
+      {/* Header */}
 
-        <p className="mt-1 text-sm text-muted-foreground">
-          Operation completed successfully.
-        </p>
+      <div className="border-b border-border/50 bg-gradient-to-r from-muted/50 via-background to-emerald-50/40 px-5 py-4 dark:to-emerald-500/[0.04]">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold">{title}</h3>
+
+              <span className="rounded-full bg-emerald-100 px-2 py-1 text-[9px] font-bold uppercase tracking-wide text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400">
+                Complete
+              </span>
+            </div>
+
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              All required operations have been processed.
+            </p>
+          </div>
+
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 shadow-sm transition-transform duration-300 hover:scale-110 dark:bg-emerald-500/10 dark:text-emerald-400">
+            <Check className="h-4 w-4" strokeWidth={3} />
+          </div>
+        </div>
       </div>
 
-      <div className="space-y-3 p-5">
-        {items.map((item) => {
-          const style = getColor(item.color);
+      {/* Progress */}
+
+      <div className="px-5 pt-4">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] font-medium text-muted-foreground">
+            Completion
+          </span>
+
+          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+            {items.length}/{items.length}
+          </span>
+        </div>
+
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
+          <div className="h-full w-full rounded-full bg-gradient-to-r from-emerald-500 via-emerald-400 to-emerald-500 transition-all duration-1000" />
+        </div>
+      </div>
+
+      {/* Items */}
+
+      <div className="space-y-2 p-5">
+        {items.map((item, index) => {
+          const style = getStatusStyle(item.color);
 
           return (
-            <div
-              key={`${item.label}-${item.value}`}
-              className="
-                flex
-                items-center
-                justify-between
-                rounded-2xl
-                bg-white
-                p-3
-                shadow-sm
-              "
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className={`flex h-8 w-8 items-center justify-center rounded-full ${style.bg} ${style.text}`}
-                >
-                  {style.icon}
+            <div key={`${item.label}-${item.value}-${index}`} className="group">
+              <div
+                className={`
+                  flex
+                  min-h-[52px]
+                  items-center
+                  justify-between
+                  gap-3
+                  rounded-[18px]
+                  border
+                  px-3
+                  py-2.5
+                  transition-all
+                  duration-300
+                  hover:-translate-y-0.5
+                  hover:shadow-md
+                  ${style.container}
+                `}
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <div
+                    className={`
+                      flex
+                      h-9
+                      w-9
+                      shrink-0
+                      items-center
+                      justify-center
+                      rounded-full
+                      transition-transform
+                      duration-300
+                      group-hover:scale-110
+                      ${style.icon}
+                    `}
+                  >
+                    {style.iconComponent}
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-semibold">
+                      {item.label}
+                    </p>
+
+                    <p className="mt-0.5 text-[9px] text-muted-foreground">
+                      Processed successfully
+                    </p>
+                  </div>
                 </div>
 
-                <span className="font-medium">{item.label}</span>
+                <div
+                  className={`
+                    shrink-0
+                    rounded-full
+                    px-2.5
+                    py-1
+                    text-[10px]
+                    font-bold
+                    ${style.value}
+                  `}
+                >
+                  {item.value}
+                </div>
               </div>
 
-              <span className={`font-semibold ${style.text}`}>
-                {item.value}
-              </span>
+              {index < items.length - 1 && (
+                <div className="ml-[18px] h-2 w-px bg-border" />
+              )}
             </div>
           );
         })}

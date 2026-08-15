@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
-import type { Supplier } from "../types/supplier";
+import type { Supplier } from "../types/supplier.type";
 
 import { Button } from "@/components/ui/button";
 

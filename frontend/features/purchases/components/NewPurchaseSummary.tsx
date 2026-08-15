@@ -2,52 +2,84 @@
 
 import { Boxes, Hash, IndianRupee } from "lucide-react";
 
-interface Props {
+interface PurchaseSummaryProps {
   products: number;
   quantity: number;
   total: number;
 }
 
-export default function PurchaseSummary({ products, quantity, total }: Props) {
+export default function PurchaseSummary({
+  products,
+  quantity,
+  total,
+}: PurchaseSummaryProps) {
   return (
-    <div className="grid grid-cols-3 gap-3">
-      <Card
-        icon={<Boxes className="size-5" />}
+    <section className="grid grid-cols-3 gap-2">
+      <SummaryCard
+        icon={<Boxes className="h-4 w-4" />}
         title="Products"
         value={products.toString()}
       />
 
-      <Card
-        icon={<Hash className="size-5" />}
+      <SummaryCard
+        icon={<Hash className="h-4 w-4" />}
         title="Quantity"
         value={quantity.toString()}
       />
 
-      <Card
-        icon={<IndianRupee className="size-5" />}
+      <SummaryCard
+        icon={<IndianRupee className="h-4 w-4" />}
         title="Total"
-        value={`₹${total.toFixed(2)}`}
+        value={`₹${total.toLocaleString("en-IN", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}`}
       />
-    </div>
+    </section>
   );
 }
 
-interface CardProps {
+interface SummaryCardProps {
   icon: React.ReactNode;
   title: string;
   value: string;
 }
 
-function Card({ icon, title, value }: CardProps) {
+function SummaryCard({ icon, title, value }: SummaryCardProps) {
   return (
-    <div className="rounded-2xl border bg-card p-4 shadow-sm">
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+    <div
+      className="
+        rounded-2xl
+        border
+        bg-card
+        px-3
+        py-3
+        shadow-sm
+      "
+    >
+      <div
+        className="
+          mb-2
+          flex
+          h-8
+          w-8
+          items-center
+          justify-center
+          rounded-xl
+          bg-emerald-100
+          text-emerald-600
+          dark:bg-emerald-500/10
+          dark:text-emerald-400
+        "
+      >
         {icon}
       </div>
 
-      <p className="text-xs text-muted-foreground">{title}</p>
+      <p className="text-[10px] font-medium text-muted-foreground">{title}</p>
 
-      <h3 className="mt-1 text-xl font-bold">{value}</h3>
+      <p className="mt-0.5 truncate text-sm font-bold text-foreground">
+        {value}
+      </p>
     </div>
   );
 }

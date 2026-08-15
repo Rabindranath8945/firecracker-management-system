@@ -101,23 +101,14 @@ class AppSetupService {
     userId: Types.ObjectId,
     data: AppSetupInput,
   ) {
-    /**
-     * STEP 1
-     * Create Settings
-     */
-
     const { businessId } = await SettingsService.initialize({
       businessName: data.businessName,
       ownerName: data.ownerName,
       phone: data.phone,
+      userId: userId.toString(),
     });
 
     await this.markSettingsConfigured(appSetupId);
-
-    /**
-     * STEP 2
-     * Create Security
-     */
 
     await SecurityService.initialize({
       user: userId,
@@ -127,18 +118,7 @@ class AppSetupService {
 
     await this.markSecurityConfigured(appSetupId);
 
-    /**
-     * STEP 3
-     * Register Device
-     * (implemented later)
-     */
-
     await this.markDeviceRegistered(appSetupId);
-
-    /**
-     * STEP 4
-     * Finish Setup
-     */
 
     return this.complete(appSetupId);
   }

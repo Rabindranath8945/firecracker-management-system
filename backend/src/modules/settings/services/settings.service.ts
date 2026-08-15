@@ -1,3 +1,6 @@
+import { Types } from "mongoose";
+import BusinessRepository from "../../business/repositories/business.repository.js";
+import UserService from "../../user/services/user.service.js";
 import SettingsRepository from "../repositories/settings.repository.js";
 import { generatePaymentSessionId } from "../helpers/payment-session.js";
 import { generateUpiQr } from "../helpers/upi-qr.js";
@@ -229,26 +232,176 @@ class SettingsService {
     businessName: string;
     ownerName: string;
     phone: string;
+    userId: string;
   }) {
+    if (!Types.ObjectId.isValid(data.userId)) {
+      throw new Error("Invalid user.");
+    }
+
+    // Check whether active settings already exist.
+    const existingSettings = await SettingsRepository.find();
+
+    if (existingSettings) {
+      return {
+        settings: existingSettings,
+        businessId: existingSettings.users.businessId,
+      };
+    }
+
     let businessId = generateBusinessId();
 
     while (await SettingsRepository.existsByBusinessId(businessId)) {
       businessId = generateBusinessId();
     }
 
-    const settings = await createDefaultSettings(
+    const defaultSettings = await createDefaultSettings(
       data.businessName,
       data.ownerName,
       data.phone,
       businessId,
     );
 
-    const createdSettings = await SettingsRepository.create(settings);
+    const createdSettings = await SettingsRepository.create({
+      ...defaultSettings,
+      createdBy: new Types.ObjectId(data.userId),
+    });
 
     return {
       settings: createdSettings,
       businessId,
     };
+  }
+
+  async initializeFromBusiness(businessId: string, userId: string) {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new Error("Invalid user.");
+    }
+
+    console.log("Settings initialization businessId:", businessId);
+
+    const business = await BusinessRepository.findByBusinessId(businessId);
+
+    console.log("Business found:", business);
+
+    if (!business) {
+      throw new Error("Business not found.");
+    }
+
+    const existingSettings = await SettingsRepository.findByBusinessId(
+      business.businessId,
+    );
+
+    if (existingSettings) {
+      return {
+        settings: existingSettings,
+        businessId: business.businessId,
+      };
+    }
+
+    const businessName = business.name ?? "";
+    const phone = business.phone ?? "";
+
+    const defaultSettings = await createDefaultSettings(
+      businessName,
+      "",
+      phone,
+      business.businessId,
+    );
+
+    const settings = await SettingsRepository.create({
+      ...defaultSettings,
+
+      business: {
+        ...defaultSettings.business,
+
+        name: businessName,
+        ownerName: "",
+        logo: business.logo ?? "",
+        businessType: business.type ?? "",
+        phone,
+        address: business.address ?? "",
+      },
+
+      createdBy: new Types.ObjectId(userId),
+    });
+
+    return {
+      settings,
+      businessId: business.businessId,
+    };
+  }
+
+  async initializeForUser(userId: string) {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new Error("Invalid user.");
+    }
+
+    // User.currentBusiness stores the Business MongoDB _id
+    const currentBusinessId = await UserService.getCurrentBusiness(userId);
+
+    if (!currentBusinessId) {
+      throw new Error("No current business selected.");
+    }
+
+    // Find the selected business by MongoDB _id
+    const business = await BusinessRepository.findById(currentBusinessId);
+
+    if (!business) {
+      throw new Error(`Business '${currentBusinessId}' not found.`);
+    }
+
+    // Check whether Settings already exists
+    const existingSettings = await SettingsRepository.findByBusinessId(
+      business.businessId,
+    );
+
+    if (existingSettings) {
+      return existingSettings;
+    }
+
+    // Get business owner
+    const owner = await UserService.getUserById(business.owner.toString());
+
+    if (!owner) {
+      throw new Error("Business owner not found.");
+    }
+
+    // Your User model currently has email but no firstName/lastName.
+    const ownerName = owner.email.trim();
+
+    if (!ownerName) {
+      throw new Error("Business owner name is missing.");
+    }
+
+    // Create default settings
+    const defaultSettings = await createDefaultSettings(
+      business.name,
+      ownerName,
+      business.phone ?? "",
+      business.businessId,
+    );
+
+    // Create Settings
+    const settings = await SettingsRepository.create({
+      ...defaultSettings,
+
+      business: {
+        ...defaultSettings.business,
+
+        name: business.name,
+        ownerName,
+
+        logo: business.logo ?? "",
+        businessType: business.type ?? "",
+        phone: business.phone ?? "",
+        email: business.email ?? "",
+        address: business.address ?? "",
+      },
+
+      createdBy: new Types.ObjectId(userId),
+    });
+
+    return settings;
   }
 }
 // settings.constants.ts

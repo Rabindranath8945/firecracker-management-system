@@ -1,75 +1,68 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+
 import {
   FormProvider,
   useForm,
   useWatch,
   type FieldErrors,
 } from "react-hook-form";
+
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
-import { PurchaseSchema, type PurchaseForm } from "../schemas/purchase.schema";
+import { useQueryClient } from "@tanstack/react-query";
+import { useSupplierBalance } from "@/features/suppliers/hook/useSupplierBalance";
+import type { CreatePurchaseRequest } from "../types/purchase.types";
 
-import { MOCK_PRODUCTS } from "@/features/products/mock/products";
+import { PurchaseSchema, type PurchaseForm } from "../schemas/purchase.schema";
+import { useCreateSupplier } from "@/features/suppliers/hook/useCreateSupplier";
+
+import { usePurchaseOCR } from "../hooks/usePurchaseOCR";
+import { useCreatePurchase } from "../hooks/useCreatePurchase";
+import { SuccessSheet } from "@/components/common/shared/sheets";
 import type { Product } from "@/features/products/types/product.types";
-import { MOCK_SUPPLIERS } from "@/features/suppliers/mock/suppliers";
+import { useProducts } from "@/features/products/hooks/useProducts";
+
+import { useSuppliers } from "@/features/suppliers/hook/useSuppliers";
+import type { Supplier } from "@/features/suppliers/types/supplier.type";
+
 import FrequentProducts from "./FrequentProducts";
-import { FREQUENT_PRODUCTS } from "../mock/frequentProducts";
 
 import PurchaseInfoCard from "./PurchaseInfoCard";
 import InvoiceImportCard from "./InvoiceImportCard";
 import NewPurchaseSearch from "./NewPurchaseSearch";
 import PurchaseSearchItem from "./PurchaseSearchItem";
+import QuickProductSheet from "./QuickProductSheet";
+
 import PurchaseEditorSheet from "./PurchaseEditorSheet";
 import type { PurchaseEditorValues } from "./PurchaseProductEditor";
+
 import PurchaseProductTable, {
   type PurchaseLineItem,
 } from "./PurchaseProductTable";
+
 import TotalsCard from "./TotalsCard";
 import PaymentCard from "./PaymentCard";
 import NotesCard from "./NotesCard";
 import StickySaveBar from "./StickySaveBar";
+
 import PurchaseSummary from "./NewPurchaseSummary";
+
 import PurchaseSupplierCard from "./PurchaseSupplierCard";
 import PurchaseSupplierSheet from "./PurchaseSupplierSheet";
 import SupplierInsights from "./SupplierInsights";
+
 import InvoiceProcessingDialog from "./InvoiceProcessingDialog";
-import InvoicePreviewSheet from "./InvoicePreviewSheet";
+
 import { calculatePurchaseTotals } from "../utils/purchaseCalculation";
-import PurchaseSuccessSheet from "./PurchaseSuccessSheet";
+
 import QuickSupplierSheet from "@/features/suppliers/components/QuickSupplierSheet";
 
-const OCR_PRODUCTS = [
-  {
-    name: "Rocket Deluxe",
-    quantity: 10,
-    price: 220,
-    confidence: 98,
-    matched: true,
-  },
-  {
-    name: "Flower Pot Big",
-    quantity: 15,
-    price: 120,
-    confidence: 95,
-    matched: true,
-  },
-  {
-    name: "Chocolate Bomb",
-    quantity: 8,
-    price: 180,
-    confidence: 91,
-    matched: true,
-  },
-  {
-    name: "Sky Shot Deluxe",
-    quantity: 5,
-    price: 450,
-    confidence: 62,
-    matched: false,
-  },
-];
+/* -------------------------------------------------------------------------- */
+/*                               EMPTY EDITOR                                 */
+/* -------------------------------------------------------------------------- */
 
 const EMPTY_EDITOR: PurchaseEditorValues = {
   quantity: 1,
@@ -79,15 +72,9 @@ const EMPTY_EDITOR: PurchaseEditorValues = {
   gstRate: 0,
 };
 
-function onInvalid(errors: FieldErrors<PurchaseForm>) {
-  const firstError = Object.values(errors)[0];
-
-  toast.error("Please complete all required fields.", {
-    description:
-      firstError?.message?.toString() ??
-      "Some required information is missing.",
-  });
-}
+/* -------------------------------------------------------------------------- */
+/*                              FORM ERROR HELPER                             */
+/* -------------------------------------------------------------------------- */
 
 function getFirstErrorMessage(errors: FieldErrors<PurchaseForm>): string {
   for (const value of Object.values(errors)) {
@@ -104,31 +91,152 @@ function getFirstErrorMessage(errors: FieldErrors<PurchaseForm>): string {
   return "Please complete all required fields.";
 }
 
+/* -------------------------------------------------------------------------- */
+/*                               PURCHASE FORM                                */
+/* -------------------------------------------------------------------------- */
+
 export default function PurchaseForm() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  /* ------------------------------------------------------------------------ */
+  /* Mutations                                                                */
+  /* ------------------------------------------------------------------------ */
+
+  const createPurchase = useCreatePurchase();
+
+  const createSupplier = useCreateSupplier();
+
+  const purchaseOCR = usePurchaseOCR();
+
+  /* ------------------------------------------------------------------------ */
+  /* File inputs                                                              */
+  /* ------------------------------------------------------------------------ */
+
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+
+  /* ------------------------------------------------------------------------ */
+  /* Form                                                                     */
+  /* ------------------------------------------------------------------------ */
+
   const methods = useForm<PurchaseForm>({
     resolver: zodResolver(PurchaseSchema),
 
     defaultValues: {
       supplierId: "",
+
       invoiceNo: "",
+
       purchaseDate: new Date().toISOString().slice(0, 10),
+
       dueDate: "",
+
       paymentStatus: "PAID",
+
+      paymentMethod: "CASH",
+
       transportCharge: 0,
+
       paidAmount: 0,
+
       notes: "",
+
       items: [],
     },
   });
 
-  const {
-    handleSubmit,
-    formState: { errors },
-  } = methods;
+  const { handleSubmit, control, setValue, reset } = methods;
+
+  /* ------------------------------------------------------------------------ */
+  /* OCR state                                                                */
+  /* ------------------------------------------------------------------------ */
+
+  const [ocrText, setOcrText] = useState("");
+
+  /* ------------------------------------------------------------------------ */
+  /* OCR handlers                                                             */
+  /* ------------------------------------------------------------------------ */
+
+  function handleCameraClick() {
+    cameraInputRef.current?.click();
+  }
+
+  function handleGalleryClick() {
+    galleryInputRef.current?.click();
+  }
+
+  async function handleOCRFile(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    try {
+      const response = await purchaseOCR.mutateAsync(file);
+
+      const text = response.data.data.text;
+
+      setOcrText(text);
+
+      toast.success("Invoice scanned successfully.");
+    } catch (error) {
+      console.error("Invoice OCR failed:", error);
+
+      const message =
+        error instanceof Error ? error.message : "Failed to scan invoice.";
+
+      toast.error(message);
+    } finally {
+      event.target.value = "";
+    }
+  }
+
+  // Product Editor Sheet
+
+  const [editing, setEditing] = useState(false);
+
+  /* ------------------------------------------------------------------------ */
+  /* Suppliers                                                                */
+  /* ------------------------------------------------------------------------ */
+
+  const { data: suppliers = [], isLoading: suppliersLoading } = useSuppliers();
+
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(
+    null,
+  );
+
+  const { data: supplierBalance, isLoading: supplierBalanceLoading } =
+    useSupplierBalance(selectedSupplier?._id);
+
+  /* ------------------------------------------------------------------------ */
+  /* Products                                                                 */
+  /* ------------------------------------------------------------------------ */
+
+  const { data: productsData, isLoading: productsLoading } = useProducts({
+    page: 1,
+    limit: 100,
+  });
+
+  const products: Product[] = useMemo(() => {
+    return productsData?.items ?? [];
+  }, [productsData]);
+
+  /* ------------------------------------------------------------------------ */
+  /* Search                                                                   */
+  /* ------------------------------------------------------------------------ */
 
   const [search, setSearch] = useState("");
 
+  /* ------------------------------------------------------------------------ */
+  /* Product editor                                                           */
+  /* ------------------------------------------------------------------------ */
+
   const [editorOpen, setEditorOpen] = useState(false);
+
+  const [newProductOpen, setNewProductOpen] = useState(false);
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
@@ -138,63 +246,120 @@ export default function PurchaseForm() {
 
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
-  const [selectedSupplier, setSelectedSupplier] = useState<
-    (typeof MOCK_SUPPLIERS)[number] | null
-  >(null);
+  /* ------------------------------------------------------------------------ */
+  /* Supplier                                                                 */
+  /* ------------------------------------------------------------------------ */
 
   const [supplierSheetOpen, setSupplierSheetOpen] = useState(false);
 
   const [quickSupplierOpen, setQuickSupplierOpen] = useState(false);
 
-  const [processing, setProcessing] = useState(false);
+  /* ------------------------------------------------------------------------ */
+  /* Purchase UI state                                                        */
+  /* ------------------------------------------------------------------------ */
 
-  const [previewOpen, setPreviewOpen] = useState(false);
+  const [processing, setProcessing] = useState(false);
 
   const [successOpen, setSuccessOpen] = useState(false);
 
+  const [createdPurchaseNo, setCreatedPurchaseNo] = useState("");
+
+  /* ------------------------------------------------------------------------ */
+  /* Watched values                                                           */
+  /* ------------------------------------------------------------------------ */
+
   const transportCharge =
     useWatch({
-      control: methods.control,
+      control,
       name: "transportCharge",
     }) ?? 0;
 
+  const paidAmount =
+    useWatch({
+      control,
+      name: "paidAmount",
+    }) ?? 0;
+
   const paymentStatus = useWatch({
-    control: methods.control,
+    control,
     name: "paymentStatus",
   });
 
-  const paidAmount =
-    useWatch({
-      control: methods.control,
-      name: "paidAmount",
-    }) ?? 0;
+  /* ------------------------------------------------------------------------ */
+  /* Purchase totals                                                          */
+  /* ------------------------------------------------------------------------ */
+
   const totals = useMemo(() => {
-    return calculatePurchaseTotals(items, transportCharge);
+    return calculatePurchaseTotals(items, Number(transportCharge) || 0);
   }, [items, transportCharge]);
 
-  const balanceAmount = Math.max(0, totals.grandTotal - paidAmount);
+  const balanceAmount = Math.max(
+    0,
+    totals.grandTotal - Number(paidAmount || 0),
+  );
+
+  /* ------------------------------------------------------------------------ */
+  /* Supplier adapter                                                         */
+  /* ------------------------------------------------------------------------ */
+
+  const sheetSuppliers = suppliers.map((supplier) => ({
+    _id: supplier._id,
+    name: supplier.name,
+    mobile: supplier.mobile,
+    supplierCode: supplier.supplierCode,
+    currentDue: Number(supplier.currentDue ?? 0),
+  }));
+
+  /* ------------------------------------------------------------------------ */
+  /* Product search                                                           */
+  /* ------------------------------------------------------------------------ */
 
   const filteredProducts = useMemo(() => {
-    if (!search.trim()) return [];
+    const keyword = search.trim().toLowerCase();
 
-    const keyword = search.toLowerCase();
+    if (!keyword) {
+      return [];
+    }
 
-    return MOCK_PRODUCTS.filter(
-      (product) =>
+    return products.filter((product) => {
+      return (
         product.name.toLowerCase().includes(keyword) ||
-        product.sku.toLowerCase().includes(keyword),
-    );
-  }, [search]);
+        product.productCode.toLowerCase().includes(keyword)
+      );
+    });
+  }, [products, search]);
+
+  /* ------------------------------------------------------------------------ */
+  /* Open product editor                                                      */
+  /* ------------------------------------------------------------------------ */
+
+  function handleAddNewProduct() {
+    setNewProductOpen(true);
+  }
+
+  function handleNewProductCreated(product: Product) {
+    setNewProductOpen(false);
+
+    openEditor(product);
+
+    void queryClient.invalidateQueries({
+      queryKey: ["products"],
+    });
+  }
 
   function openEditor(product: Product) {
     setSelectedProduct(product);
 
     setEditor({
       quantity: 1,
-      purchasePrice: product.purchasePrice,
-      sellingPrice: product.sellingPrice,
+
+      purchasePrice: Number(product.purchasePrice ?? 0),
+
+      sellingPrice: Number(product.sellingPrice ?? 0),
+
       discount: 0,
-      gstRate: product.gst,
+
+      gstRate: Number(product.tax ?? 0),
     });
 
     setEditingIndex(null);
@@ -204,36 +369,9 @@ export default function PurchaseForm() {
     setSearch("");
   }
 
-  function saveProduct() {
-    if (!selectedProduct) return;
-
-    const item: PurchaseLineItem = {
-      productId: selectedProduct._id,
-      productName: selectedProduct.name,
-      sku: selectedProduct.sku,
-      quantity: editor.quantity,
-      purchasePrice: editor.purchasePrice,
-      sellingPrice: editor.sellingPrice,
-      discount: editor.discount,
-      gstRate: editor.gstRate,
-    };
-
-    let updatedItems: PurchaseLineItem[];
-
-    if (editingIndex === null) {
-      updatedItems = [...items, item];
-    } else {
-      updatedItems = items.map((p, i) => (i === editingIndex ? item : p));
-    }
-
-    setItems(updatedItems);
-
-    methods.setValue("items", updatedItems, {
-      shouldValidate: true,
-    });
-
-    closeEditor();
-  }
+  /* ------------------------------------------------------------------------ */
+  /* Close product editor                                                     */
+  /* ------------------------------------------------------------------------ */
 
   function closeEditor() {
     setSelectedProduct(null);
@@ -247,275 +385,638 @@ export default function PurchaseForm() {
     setSearch("");
   }
 
-  function removeProduct(index: number) {
-    const updatedItems = items.filter((_, i) => i !== index);
+  /* ------------------------------------------------------------------------ */
+  /* Save product line                                                        */
+  /* ------------------------------------------------------------------------ */
+
+  function saveProduct() {
+    if (!selectedProduct) {
+      return;
+    }
+
+    if (editor.quantity <= 0) {
+      toast.error("Quantity must be greater than zero.");
+      return;
+    }
+
+    if (editor.purchasePrice < 0) {
+      toast.error("Purchase price cannot be negative.");
+      return;
+    }
+
+    const item: PurchaseLineItem = {
+      productId: selectedProduct._id,
+
+      productName: selectedProduct.name,
+
+      sku: selectedProduct.productCode,
+
+      quantity: editor.quantity,
+
+      purchasePrice: editor.purchasePrice,
+
+      sellingPrice: editor.sellingPrice,
+
+      discount: editor.discount,
+
+      gstRate: editor.gstRate,
+
+      image: selectedProduct.image,
+    };
+
+    const updatedItems =
+      editingIndex === null
+        ? [...items, item]
+        : items.map((existingItem, index) =>
+            index === editingIndex ? item : existingItem,
+          );
 
     setItems(updatedItems);
 
-    methods.setValue("items", updatedItems, {
+    setValue("items", updatedItems, {
       shouldValidate: true,
+      shouldDirty: true,
+    });
+
+    closeEditor();
+  }
+
+  /* ------------------------------------------------------------------------ */
+  /* Remove product                                                           */
+  /* ------------------------------------------------------------------------ */
+
+  function removeProduct(index: number) {
+    const updatedItems = items.filter((_, itemIndex) => itemIndex !== index);
+
+    setItems(updatedItems);
+
+    setValue("items", updatedItems, {
+      shouldValidate: true,
+      shouldDirty: true,
     });
   }
+
+  /* ------------------------------------------------------------------------ */
+  /* Edit product                                                             */
+  /* ------------------------------------------------------------------------ */
 
   function editProduct(index: number) {
     const item = items[index];
 
-    if (!item) return;
+    if (!item) {
+      return;
+    }
+
+    const product = products.find(
+      (currentProduct) => currentProduct._id === item.productId,
+    );
+
+    if (!product) {
+      toast.error("Product is no longer available.");
+      return;
+    }
 
     setEditingIndex(index);
 
-    setSelectedProduct({
-      _id: item.productId,
-      name: item.productName,
-      sku: item.sku,
-      purchasePrice: item.purchasePrice,
-      sellingPrice: item.sellingPrice,
-      gst: item.gstRate,
-      stock: 0,
-      minimumStock: 0,
-      category: "",
-      unit: "",
-      mrp: item.sellingPrice,
-      status: "ACTIVE",
-    });
+    setSelectedProduct(product);
 
     setEditor({
       quantity: item.quantity,
+
       purchasePrice: item.purchasePrice,
+
       sellingPrice: item.sellingPrice,
+
       discount: item.discount,
+
       gstRate: item.gstRate,
     });
 
     setEditorOpen(true);
   }
 
+  /* ------------------------------------------------------------------------ */
+  /* Supplier selection                                                       */
+  /* ------------------------------------------------------------------------ */
+
+  function handleSupplierSelect(supplierId: string) {
+    const supplier = suppliers.find((item) => item._id === supplierId);
+
+    if (!supplier) {
+      toast.error("Supplier not found.");
+      return;
+    }
+
+    setSelectedSupplier(supplier);
+
+    setValue("supplierId", supplier._id, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+
+    setSupplierSheetOpen(false);
+  }
+
+  /* ------------------------------------------------------------------------ */
+  /* Invalid submit                                                           */
+  /* ------------------------------------------------------------------------ */
+
+  function handleInvalidSubmit(formErrors: FieldErrors<PurchaseForm>) {
+    toast.error(getFirstErrorMessage(formErrors));
+  }
+
+  /* ------------------------------------------------------------------------ */
+  /* Submit                                                                    */
+  /* ------------------------------------------------------------------------ */
+
   async function onSubmit(data: PurchaseForm) {
+    if (!selectedSupplier) {
+      toast.error("Please select a supplier.");
+      return;
+    }
+
+    if (items.length === 0) {
+      toast.error("Please add at least one product.");
+      return;
+    }
+
     try {
-      console.log("Saving Purchase...");
+      setProcessing(true);
 
-      await new Promise((resolve) => setTimeout(resolve, 1200));
+      const purchaseData: CreatePurchaseRequest = {
+        supplierId: data.supplierId,
 
-      console.log(data);
+        purchaseDate: data.purchaseDate,
+
+        paymentMethod: data.paymentMethod,
+
+        transportCharge: Number(data.transportCharge || 0),
+
+        paidAmount: Number(data.paidAmount || 0),
+
+        items: items.map((item) => ({
+          productId: item.productId,
+
+          quantity: Number(item.quantity),
+
+          purchasePrice: Number(item.purchasePrice),
+
+          sellingPrice: Number(item.sellingPrice),
+
+          discount: Number(item.discount),
+
+          gstRate: Number(item.gstRate),
+        })),
+      };
+
+      if (data.dueDate?.trim()) {
+        purchaseData.dueDate = data.dueDate.trim();
+      }
+
+      if (data.notes?.trim()) {
+        purchaseData.notes = data.notes.trim();
+      }
+
+      const response = await createPurchase.mutateAsync(purchaseData);
+
+      const createdPurchase = response.data.data;
+
+      if (!createdPurchase?._id) {
+        throw new Error(
+          "Purchase was created but the server response is invalid.",
+        );
+      }
+
+      setCreatedPurchaseNo(createdPurchase.purchaseNo);
+
+      await queryClient.invalidateQueries({
+        queryKey: ["purchase", createdPurchase._id],
+      });
+
+      toast.success("Purchase created successfully.");
 
       setSuccessOpen(true);
     } catch (error) {
-      console.error(error);
+      console.error("Failed to create purchase:", error);
+
+      const message =
+        error instanceof Error ? error.message : "Failed to create purchase.";
+
+      toast.error(message);
+    } finally {
+      setProcessing(false);
     }
   }
 
-  function handleInvalidSubmit(errors: FieldErrors<PurchaseForm>) {
-    toast.error(getFirstErrorMessage(errors));
+  /* ------------------------------------------------------------------------ */
+  /* Reset                                                                    */
+  /* ------------------------------------------------------------------------ */
+
+  function resetPurchaseForm() {
+    reset({
+      supplierId: "",
+
+      invoiceNo: "",
+
+      purchaseDate: new Date().toISOString().slice(0, 10),
+
+      dueDate: "",
+
+      paymentStatus: "PAID",
+
+      paymentMethod: "CASH",
+
+      transportCharge: 0,
+
+      paidAmount: 0,
+
+      notes: "",
+
+      items: [],
+    });
+
+    setItems([]);
+
+    setSelectedSupplier(null);
+
+    setSelectedProduct(null);
+
+    setEditingIndex(null);
+
+    setEditor(EMPTY_EDITOR);
+
+    setSearch("");
+
+    setCreatedPurchaseNo("");
+
+    setOcrText("");
+
+    setSuccessOpen(false);
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   }
+  /* ------------------------------------------------------------------------ */
+  /* RENDER                                                                   */
+  /* ------------------------------------------------------------------------ */
 
   return (
     <FormProvider {...methods}>
       <form
         onSubmit={handleSubmit(onSubmit, handleInvalidSubmit)}
-        className="space-y-6 pb-28"
+        className="space-y-6 pb-32"
       >
+        {/* ------------------------------------------------------------------ */}
+        {/* Hidden OCR inputs                                                   */}
+        {/* ------------------------------------------------------------------ */}
+
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          capture="environment"
+          className="hidden"
+          onChange={handleOCRFile}
+        />
+
+        <input
+          ref={galleryInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={handleOCRFile}
+        />
+
+        {/* ------------------------------------------------------------------ */}
+        {/* Purchase Information                                                */}
+        {/* ------------------------------------------------------------------ */}
+
         <PurchaseInfoCard />
 
-        <InvoiceImportCard
-          onCamera={() => {
-            setProcessing(true);
+        {/* ------------------------------------------------------------------ */}
+        {/* AI Invoice Scanner                                                  */}
+        {/* ------------------------------------------------------------------ */}
 
-            setTimeout(() => {
-              setProcessing(false);
-              setPreviewOpen(true);
-            }, 2500);
-          }}
-          onGallery={() => {
-            console.log("Gallery Click");
-          }}
+        <InvoiceImportCard
+          onCamera={handleCameraClick}
+          onGallery={handleGalleryClick}
+          loading={purchaseOCR.isPending}
+          disabled={processing || purchaseOCR.isPending}
         />
+
+        {/* ------------------------------------------------------------------ */}
+        {/* OCR Result                                                          */}
+        {/* ------------------------------------------------------------------ */}
+
+        {ocrText && (
+          <section className="overflow-hidden rounded-3xl border border-emerald-200 bg-emerald-50/50 dark:border-emerald-500/20 dark:bg-emerald-500/5">
+            <div className="flex items-center justify-between border-b border-emerald-200 px-5 py-4 dark:border-emerald-500/20">
+              <div>
+                <h2 className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
+                  OCR Result
+                </h2>
+
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Raw text detected from the invoice.
+                </p>
+              </div>
+
+              <span className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400">
+                Google Vision
+              </span>
+            </div>
+
+            <pre className="max-h-80 overflow-y-auto whitespace-pre-wrap p-5 text-sm leading-6 text-slate-700 dark:text-slate-300">
+              {ocrText}
+            </pre>
+          </section>
+        )}
+
+        {/* ------------------------------------------------------------------ */}
+        {/* Supplier                                                            */}
+        {/* ------------------------------------------------------------------ */}
+
         <PurchaseSupplierCard
           supplier={selectedSupplier}
-          onSelect={() => setSupplierSheetOpen(true)}
-          onAdd={() => setQuickSupplierOpen(true)}
+          loading={suppliersLoading}
+          onSelect={() => {
+            setSupplierSheetOpen(true);
+          }}
+          onAddNew={() => {
+            setQuickSupplierOpen(true);
+          }}
         />
 
-        {selectedSupplier && (
-          <SupplierInsights
-            supplierName={selectedSupplier.name}
-            lastPurchase="12 Jul 2026"
-            totalPurchase={245600}
-            pendingDue={selectedSupplier.due}
-            totalBills={26}
-          />
-        )}
+        {/* ------------------------------------------------------------------ */}
+        {/* Supplier Insights                                                   */}
+        {/* ------------------------------------------------------------------ */}
 
         {selectedSupplier && (
-          <FrequentProducts
-            products={FREQUENT_PRODUCTS}
-            onSelect={(product) => {
-              const found = MOCK_PRODUCTS.find((p) => p.sku === product.sku);
-
-              if (found) {
-                openEditor(found);
-              }
-            }}
-          />
+          <>
+            {supplierBalanceLoading ? (
+              <div className="rounded-3xl border bg-card p-5 text-sm text-muted-foreground">
+                Loading supplier balance...
+              </div>
+            ) : supplierBalance ? (
+              <SupplierInsights
+                supplier={selectedSupplier}
+                balance={supplierBalance}
+              />
+            ) : null}
+          </>
         )}
 
-        <section className="space-y-5">
-          <NewPurchaseSearch value={search} onChange={setSearch} />
-          <PurchaseSummary
-            products={totals.products}
-            quantity={totals.quantity}
-            total={totals.grandTotal}
+        {/* ------------------------------------------------------------------ */}
+        {/* Product Search                                                      */}
+        {/* ------------------------------------------------------------------ */}
+
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-lg font-bold">Add Products</h2>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+              Search products or choose from frequently purchased items.
+            </p>
+          </div>
+
+          <NewPurchaseSearch
+            value={search}
+            onChange={setSearch}
+            onAddProduct={handleAddNewProduct}
+            loading={productsLoading}
           />
 
-          {filteredProducts.length > 0 && (
-            <div className="space-y-3">
-              {filteredProducts.map((product) => (
-                <PurchaseSearchItem
-                  key={product._id}
-                  product={product}
-                  onSelect={openEditor}
-                />
-              ))}
+          {/* Search Results */}
+
+          {search.trim() && (
+            <div className="space-y-2">
+              {filteredProducts.length === 0 ? (
+                <div className="rounded-3xl border border-dashed bg-muted/20 p-8 text-center">
+                  <p className="font-semibold">No Product Found</p>
+
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Try another product name or code.
+                  </p>
+                </div>
+              ) : (
+                filteredProducts.map((product) => (
+                  <PurchaseSearchItem
+                    key={product._id}
+                    product={product}
+                    onSelect={() => openEditor(product)}
+                  />
+                ))
+              )}
             </div>
           )}
-          <PurchaseSupplierSheet
-            open={supplierSheetOpen}
-            suppliers={MOCK_SUPPLIERS}
-            onClose={() => setSupplierSheetOpen(false)}
-            onSelect={(supplier) => {
-              setSelectedSupplier(supplier);
 
-              methods.setValue("supplierId", supplier.id, {
-                shouldValidate: true,
-              });
+          {/* Frequently Purchased */}
 
-              setSupplierSheetOpen(false);
-            }}
-          />
-
-          <PurchaseEditorSheet
-            open={editorOpen}
-            product={selectedProduct}
-            values={editor}
-            editing={editingIndex !== null}
-            onClose={closeEditor}
-            onChange={(field, value) =>
-              setEditor((prev) => ({
-                ...prev,
-                [field]: value,
-              }))
-            }
-            onAdd={saveProduct}
-          />
-
-          <PurchaseProductTable
-            items={items}
-            onEdit={editProduct}
-            onDelete={removeProduct}
-          />
+          {!search.trim() && (
+            <FrequentProducts products={products} onSelect={openEditor} />
+          )}
         </section>
+
+        {/* ------------------------------------------------------------------ */}
+        {/* Products                                                           */}
+        {/* ------------------------------------------------------------------ */}
+
+        <PurchaseProductTable
+          items={items}
+          onEdit={editProduct}
+          onDelete={removeProduct}
+        />
+
+        {/* ------------------------------------------------------------------ */}
+        {/* Purchase Summary                                                   */}
+        {/* ------------------------------------------------------------------ */}
+
+        <PurchaseSummary
+          products={items.length}
+          quantity={items.reduce(
+            (total, item) => total + Number(item.quantity || 0),
+            0,
+          )}
+          total={totals.grandTotal}
+        />
+
+        {/* ------------------------------------------------------------------ */}
+        {/* Totals                                                             */}
+        {/* ------------------------------------------------------------------ */}
 
         <TotalsCard totals={totals} />
 
-        <PaymentCard grandTotal={totals.grandTotal} />
+        {/* ------------------------------------------------------------------ */}
+        {/* Payment                                                             */}
+        {/* ------------------------------------------------------------------ */}
+        <PaymentCard supplierCurrentDue={selectedSupplier?.currentDue ?? 0} />
+
+        {/* ------------------------------------------------------------------ */}
+        {/* Notes                                                              */}
+        {/* ------------------------------------------------------------------ */}
 
         <NotesCard />
 
-        {!editorOpen && (
-          <StickySaveBar
-            total={totals.grandTotal}
-            products={totals.products}
-            disabled={items.length === 0}
-          />
-        )}
+        {/* ------------------------------------------------------------------ */}
+        {/* Save                                                                */}
+        {/* ------------------------------------------------------------------ */}
 
-        <InvoiceProcessingDialog open={processing} />
+        <StickySaveBar
+          total={totals.grandTotal}
+          products={items.length}
+          disabled={processing || createPurchase.isPending}
+        />
 
-        <InvoicePreviewSheet
-          open={previewOpen}
-          products={OCR_PRODUCTS}
-          onClose={() => setPreviewOpen(false)}
-          onImport={() => {
-            setPreviewOpen(false);
-            console.log("Import Products");
+        {/* ------------------------------------------------------------------ */}
+        {/* Product Editor                                                      */}
+        {/* ------------------------------------------------------------------ */}
+
+        <PurchaseEditorSheet
+          open={editorOpen}
+          editing={editing}
+          product={selectedProduct}
+          values={editor}
+          onChange={(field, value) => {
+            setEditor((prev) => ({
+              ...prev,
+              [field]: value,
+            }));
+          }}
+          onClose={closeEditor}
+          onAdd={saveProduct}
+        />
+
+        {/* ------------------------------------------------------------------ */}
+        {/* Supplier Selector                                                   */}
+        {/* ------------------------------------------------------------------ */}
+
+        <PurchaseSupplierSheet
+          open={supplierSheetOpen}
+          suppliers={sheetSuppliers}
+          selectedSupplierId={selectedSupplier?._id ?? ""}
+          onClose={() => setSupplierSheetOpen(false)}
+          onSelect={(supplier) => {
+            handleSupplierSelect(supplier._id);
+          }}
+          onClear={() => {
+            setValue("supplierId", "", {
+              shouldValidate: true,
+              shouldDirty: true,
+            });
+
+            setSelectedSupplier(null);
           }}
         />
+
+        <QuickProductSheet
+          open={newProductOpen}
+          onOpenChange={setNewProductOpen}
+          onCreated={handleNewProductCreated}
+        />
+
+        {/* ------------------------------------------------------------------ */}
+        {/* Quick Supplier                                                      */}
+        {/* ------------------------------------------------------------------ */}
+
         <QuickSupplierSheet
           open={quickSupplierOpen}
           onOpenChange={setQuickSupplierOpen}
-          onSave={(supplier) => {
-            const created = {
-              id: crypto.randomUUID(),
-              name: supplier.businessName,
-              mobile: supplier.mobile,
-              due: 0,
-            };
+          loading={createSupplier.isPending}
+          onSave={async (data) => {
+            try {
+              const supplier = await createSupplier.mutateAsync(data);
 
-            setSelectedSupplier(created);
+              setSelectedSupplier(supplier);
 
-            methods.setValue("supplierId", created.id);
+              setValue("supplierId", supplier._id, {
+                shouldValidate: true,
+                shouldDirty: true,
+              });
 
-            setQuickSupplierOpen(false);
-
-            toast.success("Supplier created successfully");
+              setQuickSupplierOpen(false);
+            } catch (error) {
+              console.error("Failed to create supplier:", error);
+            }
           }}
           onMoreDetails={() => {
-            toast.info("Supplier details page coming soon.");
+            setQuickSupplierOpen(false);
           }}
         />
-        <PurchaseSuccessSheet
+
+        {/* ------------------------------------------------------------------ */}
+        {/* OCR Processing                                                      */}
+        {/* ------------------------------------------------------------------ */}
+
+        <InvoiceProcessingDialog open={purchaseOCR.isPending} />
+
+        {/* ------------------------------------------------------------------ */}
+        {/* Purchase Success                                                    */}
+        {/* ------------------------------------------------------------------ */}
+
+        <SuccessSheet
           open={successOpen}
-          invoiceNo="PUR-2026-000125"
-          supplier={selectedSupplier?.name ?? ""}
-          products={totals.products}
-          grandTotal={totals.grandTotal}
-          paidAmount={paidAmount}
-          balanceAmount={balanceAmount}
-          paymentStatus={paymentStatus}
           onOpenChange={setSuccessOpen}
-          onPrint={() => {
-            toast.info("Print feature coming soon.");
+          title="Purchase Created"
+          description="Your purchase has been successfully recorded."
+          summary={[
+            {
+              label: "Purchase Number",
+              value: createdPurchaseNo || "—",
+            },
+            {
+              label: "Products",
+              value: String(items.length),
+            },
+            {
+              label: "Total Amount",
+              value: `₹${totals.grandTotal.toLocaleString("en-IN", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}`,
+            },
+          ]}
+          status={[
+            {
+              label: "Inventory",
+              value: "Updated",
+              color: "success",
+            },
+            {
+              label: "Payment",
+              value: paymentStatus,
+              color:
+                paymentStatus === "PAID"
+                  ? "success"
+                  : paymentStatus === "PARTIAL"
+                    ? "warning"
+                    : "error",
+            },
+          ]}
+          primaryAction={{
+            label: "New Purchase",
+            onClick: () => {
+              setSuccessOpen(false);
+              resetPurchaseForm();
+            },
           }}
-          onShare={() => {
-            toast.info("Share feature coming soon.");
-          }}
-          onView={() => {
-            toast.info(
-              "Purchase details will be available after backend integration.",
-            );
-          }}
-          onPayment={() => {
-            toast.info("Payment module coming soon.");
-          }}
-          onNew={() => {
-            setSuccessOpen(false);
+          secondaryActions={[
+            {
+              label: "View Purchase",
+              onClick: () => {
+                if (!createdPurchaseNo) {
+                  return;
+                }
 
-            methods.reset({
-              supplierId: "",
-              invoiceNo: "",
-              purchaseDate: new Date().toISOString().slice(0, 10),
-              dueDate: "",
-              paymentStatus: "PAID",
-              transportCharge: 0,
-              paidAmount: 0,
-              notes: "",
-              items: [],
-            });
+                setSuccessOpen(false);
 
-            setItems([]);
-            setSelectedSupplier(null);
-            setSelectedProduct(null);
-            setEditor(EMPTY_EDITOR);
-            setSearch("");
-
-            window.scrollTo({
-              top: 0,
-              behavior: "smooth",
-            });
-
-            requestAnimationFrame(() => {
-              methods.setFocus("supplierId");
-            });
-          }}
+                router.push(
+                  `/purchases?search=${encodeURIComponent(createdPurchaseNo)}`,
+                );
+              },
+            },
+          ]}
         />
       </form>
     </FormProvider>

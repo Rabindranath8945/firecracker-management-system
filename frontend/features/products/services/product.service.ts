@@ -1,5 +1,8 @@
 import api from "@/lib/api";
 
+import type { Product } from "../types/product.types";
+import type { ProductFormData } from "../schemas/product.schema";
+
 interface GetProductsParams {
   search?: string;
 
@@ -61,14 +64,22 @@ class ProductService {
     return response.data.data.productCode;
   }
 
-  async createProduct(data: unknown) {
-    const response = await api.post("/products", data);
+  async createProduct(data: ProductFormData): Promise<Product> {
+    const response = await api.post<{
+      success: boolean;
+      message: string;
+      data: Product;
+    }>("/products", data);
 
     return response.data.data;
   }
 
-  async updateProduct(id: string, data: unknown) {
-    const response = await api.put(`/products/${id}`, data);
+  async updateProduct(id: string, data: ProductFormData): Promise<Product> {
+    const response = await api.put<{
+      success: boolean;
+      message: string;
+      data: Product;
+    }>(`/products/${id}`, data);
 
     return response.data.data;
   }

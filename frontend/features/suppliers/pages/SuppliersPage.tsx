@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import type { Supplier } from "../types/supplier";
+import type { Supplier } from "../types/supplier.type";
 import { deleteSupplier, getSuppliers } from "../services/supplier.service";
 
 import SupplierSummary from "../components/cards/SupplierSummary";

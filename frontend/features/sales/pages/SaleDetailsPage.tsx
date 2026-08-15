@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   ArrowLeft,
@@ -13,7 +14,6 @@ import {
   UserRound,
   Wallet,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -145,8 +145,20 @@ export default function SaleDetailsPage({ saleId }: SaleDetailsPageProps) {
           </div>
         </div>
 
-        <Button type="button" variant="outline" className="rounded-2xl">
+        <Button
+          type="button"
+          variant="outline"
+          className="rounded-2xl"
+          onClick={() => {
+            if (!sale?._id) {
+              return;
+            }
+
+            router.push(`/sales/${sale._id}/print`);
+          }}
+        >
           <Printer className="mr-2 h-4 w-4" />
+
           <span className="hidden sm:inline">Print</span>
         </Button>
       </div>

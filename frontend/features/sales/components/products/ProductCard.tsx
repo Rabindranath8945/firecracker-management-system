@@ -17,6 +17,17 @@ export default function ProductCard({ product, onAdd }: ProductCardProps) {
   const [qty, setQty] = useState(1);
 
   const outOfStock = product.stock === 0;
+  const lowStock = !outOfStock && product.stock <= product.minimumStock;
+
+  const itemTotal = product.sellingPrice * qty;
+
+  const decreaseQty = () => {
+    setQty((current) => Math.max(1, current - 1));
+  };
+
+  const increaseQty = () => {
+    setQty((current) => Math.min(product.stock, current + 1));
+  };
 
   return (
     <Card
@@ -30,14 +41,14 @@ export default function ProductCard({ product, onAdd }: ProductCardProps) {
         hover:shadow-md
       "
     >
-      {/* Header */}
+      {/* Product */}
 
-      <div className="flex items-start gap-3">
+      <div className="flex items-center gap-2.5">
         <div
           className="
             flex
-            h-10
-            w-10
+            h-9
+            w-9
             shrink-0
             items-center
             justify-center
@@ -45,87 +56,132 @@ export default function ProductCard({ product, onAdd }: ProductCardProps) {
             bg-violet-100
           "
         >
-          <Package2 className="h-5 w-5 text-violet-700" />
+          <Package2 className="h-4.5 w-4.5 text-violet-700" />
         </div>
 
         <div className="min-w-0 flex-1">
-          <h3 className="truncate text-sm font-bold text-slate-900">
-            {product.name}
-          </h3>
+          <div className="flex items-center justify-between gap-2">
+            <h3 className="truncate text-sm font-bold text-slate-900">
+              {product.name}
+            </h3>
 
-          <p className="text-[11px] text-slate-500">{product.productCode}</p>
+            <span className="shrink-0 text-base font-black text-slate-900">
+              ₹{product.sellingPrice}
+            </span>
+          </div>
+
+          <div className="mt-0.5 flex items-center gap-2 text-[10px]">
+            <span className="font-medium text-slate-500">
+              {product.productCode}
+            </span>
+
+            <span className="text-slate-300">•</span>
+
+            <span className="text-slate-500">PCS</span>
+
+            <span className="text-slate-300">•</span>
+
+            <span
+              className={
+                outOfStock
+                  ? "font-semibold text-red-600"
+                  : lowStock
+                    ? "font-semibold text-orange-600"
+                    : "font-semibold text-emerald-600"
+              }
+            >
+              {outOfStock
+                ? "Out of Stock"
+                : lowStock
+                  ? `Low Stock ${product.stock}`
+                  : `Stock ${product.stock}`}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Price */}
+      {/* Quick Sale Controls */}
 
-      <div className="mt-3 flex items-center justify-between">
-        <span className="text-xl font-black text-slate-900">
-          ₹{product.sellingPrice}
-        </span>
+      <div className="mt-2.5 flex items-center gap-2">
+        {/* Quantity */}
 
-        <span
-          className={`
-            rounded-full
-            px-2
-            py-0.5
-            text-[10px]
-            font-semibold
-            ${
-              product.stock === 0
-                ? "bg-red-100 text-red-700"
-                : product.stock <= product.minimumStock
-                  ? "bg-orange-100 text-orange-700"
-                  : "bg-green-100 text-green-700"
-            }
-          `}
+        <div
+          className="
+            flex
+            h-9
+            flex-1
+            items-center
+            justify-between
+            rounded-xl
+            bg-slate-100
+            px-1
+          "
         >
-          {product.stock}
-        </span>
-      </div>
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            disabled={qty <= 1 || outOfStock}
+            onClick={decreaseQty}
+            className="
+              h-7
+              w-7
+              rounded-lg
+              text-slate-600
+              hover:bg-white
+            "
+          >
+            <Minus className="h-3.5 w-3.5" />
+          </Button>
 
-      {/* Quantity */}
+          <span className="text-xs font-bold text-slate-900">Qty {qty}</span>
 
-      <div className="mt-3 flex items-center justify-between rounded-xl bg-slate-100 p-1">
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            disabled={qty >= product.stock || outOfStock}
+            onClick={increaseQty}
+            className="
+              h-7
+              w-7
+              rounded-lg
+              text-slate-600
+              hover:bg-white
+            "
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+
+        {/* Total */}
+
+        <div className="min-w-[58px] text-right">
+          <p className="text-[9px] text-slate-400">Total</p>
+
+          <p className="text-sm font-black text-slate-900">₹{itemTotal}</p>
+        </div>
+
+        {/* Add */}
+
         <Button
-          size="icon"
-          variant="ghost"
-          className="h-7 w-7 rounded-lg"
-          onClick={() => setQty((q) => Math.max(1, q - 1))}
+          type="button"
+          disabled={outOfStock}
+          onClick={() => onAdd(product, qty)}
+          className="
+            h-9
+            min-w-[62px]
+            rounded-xl
+            bg-violet-600
+            px-3
+            text-[11px]
+            font-bold
+            hover:bg-violet-700
+          "
         >
-          <Minus className="h-3.5 w-3.5" />
-        </Button>
-
-        <span className="text-sm font-bold">{qty}</span>
-
-        <Button
-          size="icon"
-          variant="ghost"
-          className="h-7 w-7 rounded-lg"
-          onClick={() => setQty((q) => q + 1)}
-        >
-          <Plus className="h-3.5 w-3.5" />
+          {outOfStock ? "Out" : "ADD"}
         </Button>
       </div>
-
-      {/* Add */}
-
-      <Button
-        disabled={outOfStock}
-        onClick={() => onAdd(product, qty)}
-        className="
-          mt-3
-          h-8
-          w-full
-          rounded-xl
-          bg-violet-600
-          text-xs
-          font-semibold
-          hover:bg-violet-700
-        "
-      >
-        {outOfStock ? "Out" : "Add"}
-      </Button>
     </Card>
   );
 }

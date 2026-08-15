@@ -24,6 +24,7 @@ import businessRoutes from "../modules/business/routes/business.routes.js";
 import joinRequestRoutes from "../modules/join-request/routes/join-request.routes.js";
 import dashboardRoutes from "../modules/dashboard/routes/dashboard.routes.js";
 import customerPaymentRoutes from "../modules/customer/routes/customer-payment.routes.js";
+import supplierPaymentRoutes from "../modules/supplier/routes/supplier-payment.routes.js";
 
 const router = Router();
 
@@ -48,6 +49,8 @@ router.use("/reports", reportRoutes);
 router.use("/expenses", expenseRoutes);
 // Purchase Routes
 router.use("/purchases", purchaseRoutes);
+// Supplier Payment Routes
+router.use("/api/supplier-payments", supplierPaymentRoutes);
 // Sales Routes
 router.use("/sales", salesRoutes);
 // Invoice Routes

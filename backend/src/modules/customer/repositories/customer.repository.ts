@@ -42,6 +42,15 @@ class CustomerRepository {
     });
   }
 
+  async findByName(name: string) {
+    return Customer.findOne({
+      name: {
+        $regex: `^${name.trim()}$`,
+        $options: "i",
+      },
+    });
+  }
+
   async findByCodes(customerCodes: string[]) {
     return Customer.find({
       customerCode: {

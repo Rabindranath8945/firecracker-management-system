@@ -26,14 +26,7 @@ export default function ProductGrid({
   }
 
   return (
-    <section
-      className="
-        grid
-        grid-cols-2
-        gap-3
-        pb-28
-      "
-    >
+    <section className="space-y-3 pb-28">
       {products.map((product) => (
         <ProductCard key={product._id} product={product} onAdd={onAdd} />
       ))}

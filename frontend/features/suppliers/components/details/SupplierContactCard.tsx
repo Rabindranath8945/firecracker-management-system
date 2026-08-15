@@ -9,7 +9,7 @@ import {
   Wallet,
 } from "lucide-react";
 
-import type { Supplier } from "../../types/supplier";
+import type { Supplier } from "../../types/supplier.type";
 
 interface Props {
   supplier: Supplier;

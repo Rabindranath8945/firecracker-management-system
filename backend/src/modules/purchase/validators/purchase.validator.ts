@@ -1,50 +1,139 @@
 import { z } from "zod";
 
-const purchaseItemSchema = z.object({
-  product: z.string().trim().min(1),
+/* -------------------------------------------------------------------------- */
+/* COMMON ITEM FIELDS                                                         */
+/* -------------------------------------------------------------------------- */
 
-  quantity: z.number().positive(),
+const PurchaseItemFields = {
+  quantity: z.number().min(1, "Quantity must be at least 1"),
 
-  purchasePrice: z.number().min(0),
+  purchasePrice: z.number().min(0, "Purchase price cannot be negative"),
 
-  tax: z.number().min(0),
+  sellingPrice: z.number().min(0, "Selling price cannot be negative"),
 
-  total: z.number().min(0),
+  discount: z.number().min(0, "Discount cannot be negative"),
+
+  gstRate: z.number().min(0, "GST rate cannot be negative"),
+};
+
+/* -------------------------------------------------------------------------- */
+/* FRONTEND PURCHASE ITEM                                                     */
+/* -------------------------------------------------------------------------- */
+
+export const PurchaseItemSchema = z.object({
+  productId: z.string().trim().min(1, "Product required"),
+
+  ...PurchaseItemFields,
 });
 
-export const createPurchaseSchema = z.object({
-  purchaseNo: z.string().trim().min(1),
+/* -------------------------------------------------------------------------- */
+/* FRONTEND PURCHASE FORM                                                     */
+/* -------------------------------------------------------------------------- */
 
-  supplier: z.string().trim().min(1),
+export const PurchaseSchema = z.object({
+  supplierId: z.string().trim().min(1, "Supplier required"),
 
-  invoiceNo: z.string().optional(),
+  purchaseDate: z.string().min(1, "Purchase date required"),
 
-  purchaseDate: z.coerce.date(),
-
-  items: z.array(purchaseItemSchema).min(1),
-
-  subtotal: z.number().min(0),
-
-  taxAmount: z.number().min(0),
-
-  discount: z.number().min(0),
-
-  grandTotal: z.number().min(0),
-
-  paidAmount: z.number().min(0),
-
-  dueAmount: z.number().min(0),
+  dueDate: z.string().optional(),
 
   paymentMethod: z.enum(["CASH", "BANK", "UPI", "CARD", "CHEQUE", "CREDIT"]),
 
-  paymentStatus: z.enum(["PAID", "PARTIAL", "DUE"]),
+  transportCharge: z.number().min(0, "Transport charge cannot be negative"),
+
+  paidAmount: z.number().min(0, "Paid amount cannot be negative"),
+
+  notes: z.string().optional(),
+
+  items: z.array(PurchaseItemSchema).min(1, "Add at least one product"),
+});
+
+export type PurchaseForm = z.infer<typeof PurchaseSchema>;
+
+/* -------------------------------------------------------------------------- */
+/* BACKEND PURCHASE ITEM                                                      */
+/* -------------------------------------------------------------------------- */
+
+const BackendPurchaseItemSchema = z.object({
+  product: z.string().trim().min(1, "Product required"),
+
+  ...PurchaseItemFields,
+});
+
+/* -------------------------------------------------------------------------- */
+/* BACKEND CREATE PURCHASE                                                    */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * These fields are intentionally NOT accepted from the client:
+ *
+ * purchaseNo
+ * invoiceNo
+ * subtotal
+ * discount
+ * taxAmount
+ * grandTotal
+ * dueAmount
+ * paymentStatus
+ *
+ * PurchaseService generates/calculates them.
+ */
+
+export const createPurchaseSchema = z.object({
+  supplier: z.string().trim().min(1, "Supplier required"),
+
+  purchaseDate: z.coerce.date(),
+
+  dueDate: z.coerce.date().optional(),
+
+  items: z
+    .array(BackendPurchaseItemSchema)
+    .min(1, "At least one product is required"),
+
+  transportCharge: z.number().min(0, "Transport charge cannot be negative"),
+
+  paidAmount: z.number().min(0, "Paid amount cannot be negative"),
+
+  paymentMethod: z.enum(["CASH", "BANK", "UPI", "CARD", "CHEQUE", "CREDIT"]),
+
+  notes: z.string().optional(),
+});
+
+/* -------------------------------------------------------------------------- */
+/* BACKEND UPDATE PURCHASE                                                    */
+/* -------------------------------------------------------------------------- */
+
+export const updatePurchaseSchema = z.object({
+  supplier: z.string().trim().min(1, "Supplier required").optional(),
+
+  purchaseDate: z.coerce.date().optional(),
+
+  dueDate: z.coerce.date().optional(),
+
+  items: z
+    .array(BackendPurchaseItemSchema)
+    .min(1, "At least one product is required")
+    .optional(),
+
+  transportCharge: z
+    .number()
+    .min(0, "Transport charge cannot be negative")
+    .optional(),
+
+  paidAmount: z.number().min(0, "Paid amount cannot be negative").optional(),
+
+  paymentMethod: z
+    .enum(["CASH", "BANK", "UPI", "CARD", "CHEQUE", "CREDIT"])
+    .optional(),
 
   notes: z.string().optional(),
 
   isActive: z.boolean().optional(),
 });
 
-export const updatePurchaseSchema = createPurchaseSchema.partial();
+/* -------------------------------------------------------------------------- */
+/* TYPES                                                                      */
+/* -------------------------------------------------------------------------- */
 
 export type CreatePurchaseInput = z.infer<typeof createPurchaseSchema>;
 

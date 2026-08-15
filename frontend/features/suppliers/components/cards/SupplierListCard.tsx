@@ -3,7 +3,7 @@
 import { Eye, MoreVertical, Pencil, Phone, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-import type { Supplier } from "../../types/supplier";
+import type { Supplier } from "../../types/supplier.type";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

@@ -234,10 +234,22 @@ export default function ProductForm({
               },
             ]}
             status={[
-              "Product saved successfully.",
-              "Ready for Purchases.",
-              "Ready for Sales.",
-              "Inventory updated.",
+              {
+                label: "Product saved successfully.",
+                value: "Completed",
+              },
+              {
+                label: "Ready for Purchases.",
+                value: "Yes",
+              },
+              {
+                label: "Ready for Sales.",
+                value: "Yes",
+              },
+              {
+                label: "Inventory",
+                value: "Updated",
+              },
             ]}
             primaryAction={{
               label: "Add Another Product",

@@ -73,6 +73,10 @@ class SalesRepository {
       isActive,
     };
 
+    /* ---------------------------------------------------------------------- */
+    /* Search                                                                 */
+    /* ---------------------------------------------------------------------- */
+
     if (search) {
       query.$or = [
         {
@@ -84,29 +88,51 @@ class SalesRepository {
       ];
     }
 
+    /* ---------------------------------------------------------------------- */
+    /* Customer                                                               */
+    /* ---------------------------------------------------------------------- */
+
     if (customer) {
       query.customer = customer;
     }
+
+    /* ---------------------------------------------------------------------- */
+    /* Payment Status                                                          */
+    /* ---------------------------------------------------------------------- */
 
     if (paymentStatus) {
       query.paymentStatus = paymentStatus;
     }
 
+    /* ---------------------------------------------------------------------- */
+    /* Payment Method                                                          */
+    /* ---------------------------------------------------------------------- */
+
     if (paymentMethod) {
       query["payment.method"] = paymentMethod;
     }
 
+    /* ---------------------------------------------------------------------- */
+    /* Date Filter                                                             */
+    /* ---------------------------------------------------------------------- */
+
     if (fromDate || toDate) {
-      query.saleDate = {};
+      const dateQuery: Record<string, Date> = {};
 
       if (fromDate) {
-        (query.saleDate as Record<string, unknown>).$gte = fromDate;
+        dateQuery.$gte = fromDate;
       }
 
       if (toDate) {
-        (query.saleDate as Record<string, unknown>).$lte = toDate;
+        dateQuery.$lte = toDate;
       }
+
+      query.saleDate = dateQuery;
     }
+
+    /* ---------------------------------------------------------------------- */
+    /* Pagination                                                              */
+    /* ---------------------------------------------------------------------- */
 
     const skip = (page - 1) * limit;
 
@@ -122,14 +148,17 @@ class SalesRepository {
       Sale.countDocuments(query),
     ]);
 
+    const totalPages = Math.ceil(total / limit);
+
     return {
       items,
+
       pagination: {
         page,
         limit,
         total,
-        totalPages: Math.ceil(total / limit),
-        hasNextPage: page < Math.ceil(total / limit),
+        totalPages,
+        hasNextPage: page < totalPages,
         hasPreviousPage: page > 1,
       },
     };

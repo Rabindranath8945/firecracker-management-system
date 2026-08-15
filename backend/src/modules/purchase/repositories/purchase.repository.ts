@@ -4,24 +4,47 @@ import { IPurchase } from "../interfaces/purchase.interface.js";
 interface PurchaseQueryOptions {
   page?: number;
   limit?: number;
+
   search?: string;
   supplier?: string;
   paymentStatus?: string;
+
   fromDate?: Date;
   toDate?: Date;
+
   isActive?: boolean;
+
   sort?: string;
   order?: "asc" | "desc";
 }
 
+const SUPPLIER_FIELDS =
+  "name mobile supplierCode email gstNo address city state pinCode";
+
+const PRODUCT_FIELDS = "name sku image unit purchasePrice salePrice gst";
+
 class PurchaseRepository {
+  /* -------------------------------------------------------------------------- */
+  /*                                  Create                                    */
+  /* -------------------------------------------------------------------------- */
+
   async create(data: Partial<IPurchase>) {
     return Purchase.create(data);
   }
 
+  /* -------------------------------------------------------------------------- */
+  /*                                    Find                                    */
+  /* -------------------------------------------------------------------------- */
+
   async find() {
-    return Purchase.find();
+    return Purchase.find()
+      .populate("supplier", SUPPLIER_FIELDS)
+      .populate("items.product", PRODUCT_FIELDS);
   }
+
+  /* -------------------------------------------------------------------------- */
+  /*                              Clear Business Data                           */
+  /* -------------------------------------------------------------------------- */
 
   async clearBusinessData(businessId: string) {
     return Purchase.deleteMany({
@@ -29,15 +52,31 @@ class PurchaseRepository {
     });
   }
 
+  /* -------------------------------------------------------------------------- */
+  /*                                  Find By ID                                */
+  /* -------------------------------------------------------------------------- */
+
   async findById(id: string) {
-    return Purchase.findById(id).populate("supplier").populate("items.product");
+    return Purchase.findById(id)
+      .populate("supplier", SUPPLIER_FIELDS)
+      .populate("items.product", PRODUCT_FIELDS);
   }
+
+  /* -------------------------------------------------------------------------- */
+  /*                             Find By Purchase No                            */
+  /* -------------------------------------------------------------------------- */
 
   async findByPurchaseNo(purchaseNo: string) {
     return Purchase.findOne({
       purchaseNo,
-    });
+    })
+      .populate("supplier", SUPPLIER_FIELDS)
+      .populate("items.product", PRODUCT_FIELDS);
   }
+
+  /* -------------------------------------------------------------------------- */
+  /*                                  Find All                                  */
+  /* -------------------------------------------------------------------------- */
 
   async findAll(options: PurchaseQueryOptions = {}) {
     const {
@@ -53,88 +92,194 @@ class PurchaseRepository {
       order = "desc",
     } = options;
 
+    /* ------------------------------------------------------------------------ */
+    /* Query                                                                    */
+    /* ------------------------------------------------------------------------ */
+
     const query: Record<string, unknown> = {
       isActive,
     };
 
-    if (search) {
+    /* ------------------------------------------------------------------------ */
+    /* Search                                                                   */
+    /* ------------------------------------------------------------------------ */
+
+    if (search?.trim()) {
+      const keyword = search.trim();
+
       query.$or = [
         {
-          purchaseNo: new RegExp(search, "i"),
+          purchaseNo: {
+            $regex: keyword,
+            $options: "i",
+          },
         },
         {
-          invoiceNo: new RegExp(search, "i"),
+          invoiceNo: {
+            $regex: keyword,
+            $options: "i",
+          },
         },
       ];
     }
 
-    if (supplier) {
-      query.supplier = supplier;
+    /* ------------------------------------------------------------------------ */
+    /* Supplier                                                                 */
+    /* ------------------------------------------------------------------------ */
+
+    if (supplier?.trim()) {
+      query.supplier = supplier.trim();
     }
 
-    if (paymentStatus) {
-      query.paymentStatus = paymentStatus;
+    /* ------------------------------------------------------------------------ */
+    /* Payment Status                                                           */
+    /* ------------------------------------------------------------------------ */
+
+    if (paymentStatus?.trim()) {
+      query.paymentStatus = paymentStatus.trim();
     }
+
+    /* ------------------------------------------------------------------------ */
+    /* Date Filter                                                              */
+    /* ------------------------------------------------------------------------ */
 
     if (fromDate || toDate) {
-      query.purchaseDate = {};
+      const purchaseDate: Record<string, Date> = {};
 
       if (fromDate) {
-        (query.purchaseDate as Record<string, unknown>).$gte = fromDate;
+        const start = new Date(fromDate);
+
+        start.setHours(0, 0, 0, 0);
+
+        purchaseDate.$gte = start;
       }
 
       if (toDate) {
-        (query.purchaseDate as Record<string, unknown>).$lte = toDate;
+        const end = new Date(toDate);
+
+        end.setHours(23, 59, 59, 999);
+
+        purchaseDate.$lte = end;
       }
+
+      query.purchaseDate = purchaseDate;
     }
 
-    const skip = (page - 1) * limit;
+    /* ------------------------------------------------------------------------ */
+    /* Pagination                                                               */
+    /* ------------------------------------------------------------------------ */
+
+    const safePage = Math.max(1, Math.floor(page));
+
+    const safeLimit = Math.min(Math.max(1, Math.floor(limit)), 100);
+
+    const skip = (safePage - 1) * safeLimit;
+
+    /* ------------------------------------------------------------------------ */
+    /* Sorting                                                                  */
+    /* ------------------------------------------------------------------------ */
+
+    const allowedSortFields = new Set([
+      "purchaseDate",
+      "createdAt",
+      "updatedAt",
+      "purchaseNo",
+      "invoiceNo",
+      "grandTotal",
+      "subtotal",
+      "paidAmount",
+      "dueAmount",
+      "paymentStatus",
+    ]);
+
+    const safeSort = allowedSortFields.has(sort) ? sort : "purchaseDate";
+
+    const sortDirection = order === "asc" ? 1 : -1;
+
+    const sortQuery: Record<string, 1 | -1> = {
+      [safeSort]: sortDirection,
+    };
+
+    /* ------------------------------------------------------------------------ */
+    /* Database Query                                                           */
+    /* ------------------------------------------------------------------------ */
 
     const [items, total] = await Promise.all([
       Purchase.find(query)
-        .populate("supplier")
-        .sort({
-          [sort]: order === "asc" ? 1 : -1,
-        })
+        .populate("supplier", SUPPLIER_FIELDS)
+        .populate("items.product", PRODUCT_FIELDS)
+        .sort(sortQuery)
         .skip(skip)
-        .limit(limit),
+        .limit(safeLimit)
+        .lean()
+        .exec(),
 
       Purchase.countDocuments(query),
     ]);
 
+    /* ------------------------------------------------------------------------ */
+    /* Pagination                                                               */
+    /* ------------------------------------------------------------------------ */
+
+    const totalPages = total === 0 ? 0 : Math.ceil(total / safeLimit);
+
     return {
       items,
+
       pagination: {
-        page,
-        limit,
+        page: safePage,
+        limit: safeLimit,
         total,
-        totalPages: Math.ceil(total / limit),
-        hasNextPage: page < Math.ceil(total / limit),
-        hasPreviousPage: page > 1,
+        totalPages,
+
+        hasNextPage: safePage < totalPages,
+
+        hasPreviousPage: safePage > 1 && totalPages > 0,
       },
     };
   }
 
+  /* -------------------------------------------------------------------------- */
+  /*                                  Update                                    */
+  /* -------------------------------------------------------------------------- */
+
   async update(id: string, data: Partial<IPurchase>) {
     return Purchase.findByIdAndUpdate(id, data, {
-      returnDocument: "after",
+      new: true,
       runValidators: true,
-    });
+    })
+      .populate("supplier", SUPPLIER_FIELDS)
+      .populate("items.product", PRODUCT_FIELDS);
   }
+
+  /* -------------------------------------------------------------------------- */
+  /*                                  Delete                                    */
+  /* -------------------------------------------------------------------------- */
 
   async delete(id: string) {
     return Purchase.findByIdAndDelete(id);
   }
 
+  /* -------------------------------------------------------------------------- */
+  /*                                  Export                                    */
+  /* -------------------------------------------------------------------------- */
+
   async findAllForExport() {
     return Purchase.find({
       isActive: true,
     })
-      .populate("supplier")
+      .populate("supplier", SUPPLIER_FIELDS)
+      .populate("items.product", PRODUCT_FIELDS)
       .sort({
         purchaseDate: -1,
-      });
+      })
+      .lean()
+      .exec();
   }
+
+  /* -------------------------------------------------------------------------- */
+  /*                               Bulk Create                                  */
+  /* -------------------------------------------------------------------------- */
 
   async bulkCreate(purchases: Partial<IPurchase>[]) {
     return Purchase.insertMany(purchases, {
@@ -142,12 +287,32 @@ class PurchaseRepository {
     });
   }
 
+  /* -------------------------------------------------------------------------- */
+  /*                              Purchase Numbers                              */
+  /* -------------------------------------------------------------------------- */
+
+  async getPurchaseCodes() {
+    return Purchase.find().select("purchaseNo -_id").lean();
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*                               Invoice Numbers                              */
+  /* -------------------------------------------------------------------------- */
+
+  async getInvoiceCodes() {
+    return Purchase.find().select("invoiceNo -_id").lean();
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*                            Find Purchase Nos                               */
+  /* -------------------------------------------------------------------------- */
+
   async findByPurchaseNos(purchaseNos: string[]) {
     return Purchase.find({
       purchaseNo: {
         $in: purchaseNos,
       },
-    }).select("purchaseNo");
+    }).select("purchaseNo invoiceNo");
   }
 }
 

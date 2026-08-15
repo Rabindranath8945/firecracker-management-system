@@ -26,6 +26,16 @@ class UserService {
     return userRepository.findByDeviceId(deviceId);
   }
 
+  async getCurrentBusiness(userId: string): Promise<string | null> {
+    const user = await userRepository.findById(userId);
+
+    if (!user) {
+      throw new Error("User not found.");
+    }
+
+    return user.currentBusiness?.toString() ?? null;
+  }
+
   async updateLastLogin(userId: string): Promise<IUser | null> {
     return userRepository.updateLastLogin(userId);
   }

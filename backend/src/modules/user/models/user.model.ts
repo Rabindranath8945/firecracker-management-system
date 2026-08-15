@@ -51,7 +51,6 @@ const UserSchema = new Schema<IUser>(
     currentBusiness: {
       type: Schema.Types.ObjectId,
       ref: "Business",
-      default: null,
     },
 
     email: {

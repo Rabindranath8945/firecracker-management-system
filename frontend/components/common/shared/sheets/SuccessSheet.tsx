@@ -21,26 +21,56 @@ export default function SuccessSheet({
   secondaryActions = [],
 }: SuccessSheetProps) {
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open === true} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="max-h-[92vh] overflow-y-auto rounded-t-[32px] border-0 bg-gradient-to-b from-background via-background to-slate-50 px-6 pb-8 pt-5 shadow-2xl dark:to-slate-950"
+        className="
+          flex
+          max-h-[92vh]
+          flex-col
+          overflow-hidden
+          rounded-t-[32px]
+          border-0
+          bg-background
+          p-0
+          shadow-2xl
+          [&>button]:hidden
+        "
       >
-        <SuccessHeader
-          title={title}
-          {...(description ? { description } : {})}
-          {...(icon ? { icon } : {})}
-          onClose={() => onOpenChange(false)}
-        />
+        <div className="shrink-0 px-6 pt-4">
+          <div className="mx-auto h-1 w-12 rounded-full bg-muted-foreground/20" />
+        </div>
 
-        <SuccessSummary title="Details" items={summary} />
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pb-5 pt-3">
+          <SuccessHeader
+            title={title}
+            {...(description !== undefined ? { description } : {})}
+            {...(icon !== undefined ? { icon } : {})}
+            onClose={() => onOpenChange(false)}
+          />
 
-        {status.length > 0 && <SuccessStatus items={status} />}
+          <div className="mt-5 space-y-4">
+            <SuccessSummary title="Details" items={summary} />
 
-        <SuccessActions
-          primaryAction={primaryAction}
-          secondaryActions={secondaryActions}
-        />
+            {status.length > 0 && <SuccessStatus items={status} />}
+          </div>
+        </div>
+
+        <div
+          className="
+            shrink-0
+            border-t
+            bg-background
+            px-6
+            pb-[calc(1rem+env(safe-area-inset-bottom))]
+            pt-3
+          "
+        >
+          <SuccessActions
+            primaryAction={primaryAction}
+            secondaryActions={secondaryActions}
+          />
+        </div>
       </SheetContent>
     </Sheet>
   );

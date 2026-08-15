@@ -1,14 +1,21 @@
 import { Request, Response } from "express";
 
 import SupplierRepository from "../repositories/supplier.repository.js";
-import { generateSequenceCode } from "../../../common/utils/generate-code.js";
 import SupplierService from "../services/supplier.service.js";
+
+import { generateSequenceCode } from "../../../common/utils/generate-code.js";
+
 import { excelService } from "../../../common/excel/index.js";
 import { SupplierExcelRow } from "../../../common/excel/types/supplier-excel-row.types.js";
+
 import { transformSupplierRows } from "../excel/supplier-transformer.js";
 import { validateSupplierRows } from "../excel/supplier-validator.js";
 
 class SupplierController {
+  /* ---------------------------------------------------------------------- */
+  /* CREATE                                                                 */
+  /* ---------------------------------------------------------------------- */
+
   create = async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({
@@ -17,7 +24,6 @@ class SupplierController {
       });
     }
 
-    // Get all supplier codes
     const suppliers = await SupplierRepository.find();
 
     const supplierCode = generateSequenceCode(
@@ -40,9 +46,14 @@ class SupplierController {
     });
   };
 
+  /* ---------------------------------------------------------------------- */
+  /* GET ALL                                                                */
+  /* ---------------------------------------------------------------------- */
+
   getAll = async (req: Request, res: Response) => {
     const suppliers = await SupplierService.getAll({
       page: Number(req.query.page) || 1,
+
       limit: Number(req.query.limit) || 20,
 
       search: req.query.search ? String(req.query.search) : undefined,
@@ -65,6 +76,10 @@ class SupplierController {
     });
   };
 
+  /* ---------------------------------------------------------------------- */
+  /* GET BY ID                                                              */
+  /* ---------------------------------------------------------------------- */
+
   getById = async (req: Request, res: Response) => {
     const supplier = await SupplierService.getById(String(req.params.id));
 
@@ -74,6 +89,24 @@ class SupplierController {
       data: supplier,
     });
   };
+
+  /* ---------------------------------------------------------------------- */
+  /* GET BALANCE                                                             */
+  /* ---------------------------------------------------------------------- */
+
+  getBalance = async (req: Request, res: Response) => {
+    const balance = await SupplierService.getBalance(String(req.params.id));
+
+    return res.status(200).json({
+      success: true,
+      message: "Supplier balance fetched successfully.",
+      data: balance,
+    });
+  };
+
+  /* ---------------------------------------------------------------------- */
+  /* UPDATE                                                                 */
+  /* ---------------------------------------------------------------------- */
 
   update = async (req: Request, res: Response) => {
     if (!req.user) {
@@ -96,6 +129,10 @@ class SupplierController {
     });
   };
 
+  /* ---------------------------------------------------------------------- */
+  /* DELETE                                                                 */
+  /* ---------------------------------------------------------------------- */
+
   delete = async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({
@@ -111,6 +148,10 @@ class SupplierController {
       message: "Supplier deleted successfully.",
     });
   };
+
+  /* ---------------------------------------------------------------------- */
+  /* EXPORT EXCEL                                                           */
+  /* ---------------------------------------------------------------------- */
 
   exportExcel = async (_req: Request, res: Response) => {
     const suppliers = await SupplierService.exportExcel();
@@ -221,6 +262,10 @@ class SupplierController {
 
     return res.end(buffer);
   };
+
+  /* ---------------------------------------------------------------------- */
+  /* IMPORT EXCEL                                                           */
+  /* ---------------------------------------------------------------------- */
 
   importExcel = async (req: Request, res: Response) => {
     if (!req.file) {

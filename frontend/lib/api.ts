@@ -1,11 +1,10 @@
-import axios, {
-  AxiosError,
-  type AxiosRequestConfig,
-  type InternalAxiosRequestConfig,
-} from "axios";
+import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
+
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api/v1";
 
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api/v1",
+  baseURL: API_BASE_URL,
 
   timeout: 30000,
 
@@ -40,6 +39,10 @@ type RetryableRequestConfig = InternalAxiosRequestConfig & {
 
 api.interceptors.request.use(
   (config) => {
+    /* ---------------------------------------------------------------------- */
+    /* Access Token                                                           */
+    /* ---------------------------------------------------------------------- */
+
     if (typeof window !== "undefined") {
       const token = localStorage.getItem("accessToken");
 
@@ -48,9 +51,27 @@ api.interceptors.request.use(
       }
     }
 
+    /* ---------------------------------------------------------------------- */
+    /* FormData / OCR                                                          */
+    /* ---------------------------------------------------------------------- */
+
+    if (config.data instanceof FormData) {
+      /*
+       * Do not manually set Content-Type for FormData.
+       * The browser/Axios will automatically add:
+       *
+       * multipart/form-data; boundary=...
+       */
+
+      delete config.headers["Content-Type"];
+    }
+
     return config;
   },
-  (error) => Promise.reject(error),
+
+  (error) => {
+    return Promise.reject(error);
+  },
 );
 
 /* -------------------------------------------------------------------------- */
@@ -74,7 +95,10 @@ function processPendingRequests(error: unknown, token?: string) {
   pendingRequests.forEach(({ resolve, reject }) => {
     if (error) {
       reject(error);
-    } else if (token) {
+      return;
+    }
+
+    if (token) {
       resolve(token);
     }
   });
@@ -87,10 +111,16 @@ function processPendingRequests(error: unknown, token?: string) {
 /* -------------------------------------------------------------------------- */
 
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    return response;
+  },
 
   async (error: AxiosError) => {
     const originalRequest = error.config as RetryableRequestConfig | undefined;
+
+    /* ---------------------------------------------------------------------- */
+    /* Only handle 401                                                        */
+    /* ---------------------------------------------------------------------- */
 
     if (
       error.response?.status !== 401 ||
@@ -102,9 +132,17 @@ api.interceptors.response.use(
 
     originalRequest._retry = true;
 
+    /* ---------------------------------------------------------------------- */
+    /* Server-side request                                                    */
+    /* ---------------------------------------------------------------------- */
+
     if (typeof window === "undefined") {
       return Promise.reject(error);
     }
+
+    /* ---------------------------------------------------------------------- */
+    /* Get Refresh Token                                                      */
+    /* ---------------------------------------------------------------------- */
 
     const refreshToken = localStorage.getItem("refreshToken");
 
@@ -142,16 +180,16 @@ api.interceptors.response.use(
 
     try {
       const response = await axios.post<RefreshResponse>(
-        `${
-          process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api/v1"
-        }/auth/refresh`,
+        `${API_BASE_URL}/auth/refresh`,
         {
           refreshToken,
         },
         {
           withCredentials: true,
+
           headers: {
             "Content-Type": "application/json",
+
             Accept: "application/json",
           },
         },
@@ -168,7 +206,7 @@ api.interceptors.response.use(
       localStorage.setItem("refreshToken", newRefreshToken);
 
       /* -------------------------------------------------------------------- */
-      /* Retry Requests Waiting for Refresh                                   */
+      /* Retry Pending Requests                                               */
       /* -------------------------------------------------------------------- */
 
       processPendingRequests(null, accessToken);
@@ -181,6 +219,10 @@ api.interceptors.response.use(
 
       return api(originalRequest);
     } catch (refreshError) {
+      /* -------------------------------------------------------------------- */
+      /* Refresh Failed                                                        */
+      /* -------------------------------------------------------------------- */
+
       processPendingRequests(refreshError);
 
       localStorage.removeItem("accessToken");

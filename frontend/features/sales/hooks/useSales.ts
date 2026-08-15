@@ -9,5 +9,7 @@ export function useSales(params: SalesQueryParams = {}) {
     queryKey: ["sales", params],
 
     queryFn: () => SalesService.getSales(params),
+
+    staleTime: 30_000,
   });
 }

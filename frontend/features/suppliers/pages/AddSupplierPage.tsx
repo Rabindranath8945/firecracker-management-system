@@ -8,7 +8,7 @@ import { PARTY_CONFIG } from "@/features/shared/master-data/party/constants";
 import type { PartyFormValues } from "@/features/shared/master-data/party/lib/party-schema";
 
 import { createSupplier } from "../services/supplier.service";
-import type { Supplier } from "../types/supplier";
+import type { Supplier } from "../types/supplier.type";
 
 import ProgressDialog from "@/features/shared/ui/dialogs/ProgressDialog";
 import SuccessSheet from "@/components/common/shared/sheets/SuccessSheet";

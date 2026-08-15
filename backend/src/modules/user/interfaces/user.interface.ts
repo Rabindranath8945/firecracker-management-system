@@ -8,38 +8,29 @@ import {
 
 export interface IUser {
   firstName: string;
-
   lastName: string;
-
   email: string;
-
   mobile: string;
-
   password: string;
 
   avatar?: string;
-
   owner?: Types.ObjectId;
 
+  currentBusiness?: string;
+
   role: UserRole;
-
   permissions: UserPermission[];
-
   status: UserStatus;
 
   isOwner: boolean;
-
   isActive: boolean;
 
   lastLogin?: Date;
-
   lastSeen?: Date;
 
   createdBy?: Types.ObjectId;
-
   updatedBy?: Types.ObjectId;
 
   createdAt: Date;
-
   updatedAt: Date;
 }

@@ -1,145 +1,249 @@
 "use client";
 
+import { Check, Phone, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Building2, Phone, Search, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
-interface Supplier {
-  id: string;
+/* -------------------------------------------------------------------------- */
+/* Purchase Supplier                                                          */
+/* -------------------------------------------------------------------------- */
+
+export interface PurchaseSupplier {
+  _id: string;
   name: string;
   mobile: string;
-  due: number;
+  supplierCode: string;
+  currentDue: number;
+}
+/* -------------------------------------------------------------------------- */
+/* Props                                                                      */
+/* -------------------------------------------------------------------------- */
+
+interface PurchaseSupplierSheetProps {
+  open: boolean;
+
+  suppliers: PurchaseSupplier[];
+
+  selectedSupplierId: string;
+
+  onClose: () => void;
+
+  onSelect: (supplier: PurchaseSupplier) => void;
+
+  onClear: () => void;
 }
 
-interface Props {
-  open: boolean;
-  suppliers: Supplier[];
-  onClose: () => void;
-  onSelect: (supplier: Supplier) => void;
-}
+/* -------------------------------------------------------------------------- */
+/* Component                                                                  */
+/* -------------------------------------------------------------------------- */
 
 export default function PurchaseSupplierSheet({
   open,
   suppliers,
+  selectedSupplierId,
   onClose,
   onSelect,
-}: Props) {
+  onClear,
+}: PurchaseSupplierSheetProps) {
   const [search, setSearch] = useState("");
 
+  /* ------------------------------------------------------------------------ */
+  /* Filter Suppliers                                                         */
+  /* ------------------------------------------------------------------------ */
+
   const filteredSuppliers = useMemo(() => {
-    if (!search.trim()) return suppliers;
+    const keyword = search.trim().toLowerCase();
 
-    const keyword = search.toLowerCase();
+    if (!keyword) {
+      return suppliers;
+    }
 
-    return suppliers.filter(
-      (supplier) =>
+    return suppliers.filter((supplier) => {
+      return (
         supplier.name.toLowerCase().includes(keyword) ||
-        supplier.mobile.includes(keyword),
-    );
-  }, [search, suppliers]);
+        supplier.mobile.toLowerCase().includes(keyword) ||
+        supplier.supplierCode.toLowerCase().includes(keyword)
+      );
+    });
+  }, [suppliers, search]);
 
-  if (!open) return null;
+  /* ------------------------------------------------------------------------ */
+  /* Close Sheet                                                              */
+  /* ------------------------------------------------------------------------ */
+
+  function handleOpenChange(value: boolean) {
+    if (!value) {
+      onClose();
+    }
+  }
+
+  /* ------------------------------------------------------------------------ */
+  /* Clear Supplier                                                           */
+  /* ------------------------------------------------------------------------ */
+
+  function handleClear() {
+    onClear();
+    setSearch("");
+  }
+
+  /* ------------------------------------------------------------------------ */
+  /* Render                                                                   */
+  /* ------------------------------------------------------------------------ */
 
   return (
-    <>
-      <div className="fixed inset-0 z-40 bg-black/40" onClick={onClose} />
-
-      <div
-        className="
-          fixed
-          inset-x-0
-          bottom-0
-          z-50
-          h-[80vh]
-          rounded-t-[32px]
-          bg-background
-          shadow-2xl
-        "
+    <Sheet open={open} onOpenChange={handleOpenChange}>
+      <SheetContent
+        side="bottom"
+        className="max-h-[90vh] rounded-t-[32px] px-5 pb-6"
       >
-        <div className="mx-auto mt-3 h-1.5 w-14 rounded-full bg-muted" />
+        {/* ---------------------------------------------------------------- */}
+        {/* Header                                                           */}
+        {/* ---------------------------------------------------------------- */}
 
-        <div className="flex items-center justify-between p-6 pb-4">
-          <div>
-            <h2 className="text-xl font-bold">Select Supplier</h2>
+        <SheetHeader className="pb-4">
+          <SheetTitle>Select Supplier</SheetTitle>
+        </SheetHeader>
 
-            <p className="text-sm text-muted-foreground">
-              Search supplier by name or mobile
-            </p>
-          </div>
+        {/* ---------------------------------------------------------------- */}
+        {/* Search                                                           */}
+        {/* ---------------------------------------------------------------- */}
 
-          <Button size="icon" variant="ghost" onClick={onClose}>
-            <X className="size-5" />
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+
+          <Input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search supplier..."
+            className="h-12 rounded-2xl pl-10"
+          />
+        </div>
+
+        {/* ---------------------------------------------------------------- */}
+        {/* Clear Supplier                                                   */}
+        {/* ---------------------------------------------------------------- */}
+
+        {selectedSupplierId && (
+          <Button
+            type="button"
+            variant="outline"
+            className="mb-4 h-11 w-full rounded-2xl"
+            onClick={handleClear}
+          >
+            <Trash2 className="mr-2 size-4" />
+            Clear Supplier
           </Button>
-        </div>
+        )}
 
-        <div className="px-6">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
+        {/* ---------------------------------------------------------------- */}
+        {/* Supplier List                                                    */}
+        {/* ---------------------------------------------------------------- */}
 
-            <Input
-              value={search}
-              placeholder="Search supplier..."
-              className="h-12 rounded-2xl pl-12"
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-        </div>
+        <div className="max-h-[55vh] space-y-2 overflow-y-auto">
+          {filteredSuppliers.length === 0 ? (
+            <div className="py-10 text-center">
+              <p className="font-medium">No suppliers found</p>
 
-        <div className="mt-5 space-y-3 overflow-y-auto px-6 pb-8">
-          {filteredSuppliers.map((supplier) => (
-            <button
-              key={supplier.id}
-              type="button"
-              onClick={() => {
-                onSelect(supplier);
-                onClose();
-              }}
-              className="
-                flex
-                w-full
-                items-center
-                justify-between
-                rounded-2xl
-                border
-                bg-card
-                p-4
-                text-left
-                transition-all
-                hover:border-primary
-              "
-            >
-              <div className="flex items-center gap-4">
-                <div className="rounded-2xl bg-primary/10 p-3">
-                  <Building2 className="size-6 text-primary" />
-                </div>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Try another search.
+              </p>
+            </div>
+          ) : (
+            filteredSuppliers.map((supplier) => {
+              const selected = supplier._id === selectedSupplierId;
 
-                <div>
-                  <h3 className="font-semibold">{supplier.name}</h3>
+              const currentDue = Number(supplier.currentDue ?? 0);
 
-                  <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-                    <Phone className="size-4" />
-                    {supplier.mobile}
-                  </div>
-                </div>
-              </div>
-
-              <div className="text-right">
-                <p className="text-xs text-muted-foreground">Due</p>
-
-                <p
-                  className={`font-bold ${
-                    supplier.due > 0 ? "text-red-600" : "text-green-600"
-                  }`}
+              return (
+                <button
+                  key={supplier._id}
+                  type="button"
+                  onClick={() => onSelect(supplier)}
+                  className={`
+                    w-full
+                    rounded-2xl
+                    border
+                    p-4
+                    text-left
+                    transition
+                    ${
+                      selected
+                        ? "border-primary bg-primary/5"
+                        : "bg-card hover:border-primary/50"
+                    }
+                  `}
                 >
-                  ₹{supplier.due.toLocaleString()}
-                </p>
-              </div>
-            </button>
-          ))}
+                  <div className="flex items-center gap-3">
+                    {/* ---------------------------------------------------- */}
+                    {/* Avatar                                               */}
+                    {/* ---------------------------------------------------- */}
+
+                    <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 font-bold text-primary">
+                      {supplier.name.charAt(0).toUpperCase()}
+                    </div>
+
+                    {/* ---------------------------------------------------- */}
+                    {/* Supplier Details                                     */}
+                    {/* ---------------------------------------------------- */}
+
+                    <div className="min-w-0 flex-1">
+                      {/* Name */}
+
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="truncate font-semibold">
+                          {supplier.name}
+                        </h3>
+
+                        {selected && (
+                          <Check className="size-5 shrink-0 text-primary" />
+                        )}
+                      </div>
+
+                      {/* Mobile */}
+
+                      <div className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                        <Phone className="size-3" />
+
+                        <span>{supplier.mobile}</span>
+                      </div>
+
+                      {/* Code + Due */}
+
+                      <div className="mt-2 flex items-center justify-between">
+                        <span className="text-[11px] text-muted-foreground">
+                          {supplier.supplierCode}
+                        </span>
+
+                        <span
+                          className={
+                            currentDue > 0
+                              ? "text-xs font-semibold text-red-600"
+                              : "text-xs font-semibold text-green-600"
+                          }
+                        >
+                          Due ₹
+                          {currentDue.toLocaleString("en-IN", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              );
+            })
+          )}
         </div>
-      </div>
-    </>
+      </SheetContent>
+    </Sheet>
   );
 }

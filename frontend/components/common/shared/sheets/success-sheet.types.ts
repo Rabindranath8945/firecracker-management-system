@@ -1,9 +1,21 @@
-import { ReactNode } from "react";
+import type { ReactNode } from "react";
+
+export interface SuccessSummaryItem {
+  label: string;
+  value: string;
+}
 
 export interface SuccessStatusItem {
   label: string;
   value: string;
   color?: "success" | "warning" | "error" | "info";
+}
+
+export interface SuccessAction {
+  label: string;
+  icon?: ReactNode;
+  variant?: "default" | "outline" | "ghost";
+  onClick: () => void;
 }
 
 export interface SuccessSheetProps {
@@ -12,25 +24,13 @@ export interface SuccessSheetProps {
 
   title: string;
   description?: string;
-  icon?: React.ReactNode;
+  icon?: ReactNode;
 
-  summary: {
-    label: string;
-    value: string;
-  }[];
+  summary: SuccessSummaryItem[];
 
   status?: SuccessStatusItem[];
 
-  primaryAction: {
-    label: string;
-    icon?: React.ReactNode;
-    onClick: () => void;
-  };
+  primaryAction: SuccessAction;
 
-  secondaryActions?: {
-    label: string;
-    icon?: React.ReactNode;
-    variant?: "default" | "outline" | "ghost";
-    onClick: () => void;
-  }[];
+  secondaryActions?: SuccessAction[];
 }

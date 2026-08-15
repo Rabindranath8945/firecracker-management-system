@@ -25,25 +25,39 @@ interface DateFilterSheetProps {
   onToDateChange: (value: string) => void;
 
   onApply: () => void;
+  onReset?: () => void;
 }
 
 const PRESETS = [
   "Today",
   "Yesterday",
+  "This Week",
   "Last 7 Days",
   "This Month",
   "Last Month",
   "This Year",
-];
+] as const;
+
+function formatLocalDate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
 
 export default function DateFilterSheet({
   open,
   onOpenChange,
+
   fromDate,
   toDate,
+
   onFromDateChange,
   onToDateChange,
+
   onApply,
+  onReset,
 }: DateFilterSheetProps) {
   const [selectedPreset, setSelectedPreset] = useState("");
 
@@ -52,21 +66,40 @@ export default function DateFilterSheet({
 
     const today = new Date();
 
-    const format = (date: Date) => date.toISOString().split("T")[0] ?? "";
-
     switch (preset) {
-      case "Today":
-        onFromDateChange(format(today));
-        onToDateChange(format(today));
+      case "Today": {
+        const date = formatLocalDate(today);
+
+        onFromDateChange(date);
+        onToDateChange(date);
+
         break;
+      }
 
       case "Yesterday": {
-        const d = new Date(today);
+        const yesterday = new Date(today);
 
-        d.setDate(d.getDate() - 1);
+        yesterday.setDate(yesterday.getDate() - 1);
 
-        onFromDateChange(format(d));
-        onToDateChange(format(d));
+        const date = formatLocalDate(yesterday);
+
+        onFromDateChange(date);
+        onToDateChange(date);
+
+        break;
+      }
+
+      case "This Week": {
+        const start = new Date(today);
+
+        const day = start.getDay();
+
+        const difference = day === 0 ? 6 : day - 1;
+
+        start.setDate(start.getDate() - difference);
+
+        onFromDateChange(formatLocalDate(start));
+        onToDateChange(formatLocalDate(today));
 
         break;
       }
@@ -76,8 +109,8 @@ export default function DateFilterSheet({
 
         start.setDate(start.getDate() - 6);
 
-        onFromDateChange(format(start));
-        onToDateChange(format(today));
+        onFromDateChange(formatLocalDate(start));
+        onToDateChange(formatLocalDate(today));
 
         break;
       }
@@ -85,8 +118,8 @@ export default function DateFilterSheet({
       case "This Month": {
         const start = new Date(today.getFullYear(), today.getMonth(), 1);
 
-        onFromDateChange(format(start));
-        onToDateChange(format(today));
+        onFromDateChange(formatLocalDate(start));
+        onToDateChange(formatLocalDate(today));
 
         break;
       }
@@ -96,8 +129,8 @@ export default function DateFilterSheet({
 
         const end = new Date(today.getFullYear(), today.getMonth(), 0);
 
-        onFromDateChange(format(start));
-        onToDateChange(format(end));
+        onFromDateChange(formatLocalDate(start));
+        onToDateChange(formatLocalDate(end));
 
         break;
       }
@@ -105,12 +138,21 @@ export default function DateFilterSheet({
       case "This Year": {
         const start = new Date(today.getFullYear(), 0, 1);
 
-        onFromDateChange(format(start));
-        onToDateChange(format(today));
+        onFromDateChange(formatLocalDate(start));
+        onToDateChange(formatLocalDate(today));
 
         break;
       }
     }
+  }
+
+  function handleReset() {
+    setSelectedPreset("");
+
+    onFromDateChange("");
+    onToDateChange("");
+
+    onReset?.();
   }
 
   return (
@@ -125,7 +167,7 @@ export default function DateFilterSheet({
             </div>
 
             <div>
-              <p className="text-lg font-semibold">Custom Date Filter</p>
+              <p className="text-lg font-semibold">Date Filter</p>
 
               <p className="text-sm font-normal text-muted-foreground">
                 Select a date range for sales.
@@ -149,7 +191,10 @@ export default function DateFilterSheet({
                 <Input
                   type="date"
                   value={fromDate}
-                  onChange={(e) => onFromDateChange(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedPreset("");
+                    onFromDateChange(e.target.value);
+                  }}
                   className="border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
                 />
               </div>
@@ -166,7 +211,11 @@ export default function DateFilterSheet({
                 <Input
                   type="date"
                   value={toDate}
-                  onChange={(e) => onToDateChange(e.target.value)}
+                  min={fromDate || undefined}
+                  onChange={(e) => {
+                    setSelectedPreset("");
+                    onToDateChange(e.target.value);
+                  }}
                   className="border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
                 />
               </div>
@@ -178,10 +227,11 @@ export default function DateFilterSheet({
           <div>
             <h3 className="mb-3 text-sm font-semibold">Quick Range</h3>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {PRESETS.map((preset) => (
                 <Button
                   key={preset}
+                  type="button"
                   variant="outline"
                   onClick={() => applyPreset(preset)}
                   className={cn(
@@ -199,9 +249,19 @@ export default function DateFilterSheet({
 
         {/* Footer */}
 
-        <div className="sticky bottom-0 border-t bg-background p-6">
+        <div className="sticky bottom-0 flex gap-3 border-t bg-background p-6">
           <Button
-            className="h-12 w-full rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-base font-semibold hover:opacity-95"
+            type="button"
+            variant="outline"
+            onClick={handleReset}
+            className="h-12 flex-1 rounded-2xl"
+          >
+            Clear
+          </Button>
+
+          <Button
+            type="button"
+            className="h-12 flex-1 rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 text-base font-semibold hover:opacity-95"
             onClick={() => {
               onApply();
               onOpenChange(false);

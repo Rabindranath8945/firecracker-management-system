@@ -7,7 +7,7 @@ import PartyForm from "@/features/shared/master-data/party/components/PartyForm"
 import { PARTY_CONFIG } from "@/features/shared/master-data/party/constants";
 import type { PartyFormValues } from "@/features/shared/master-data/party/lib/party-schema";
 
-import { createCustomer } from "../services/customer.service";
+import customerService from "../services/customer.service";
 import type { Customer } from "../types/customer";
 
 import ProgressDialog from "@/features/shared/ui/dialogs/ProgressDialog";
@@ -26,7 +26,7 @@ export default function AddCustomerPage() {
     try {
       setSaving(true);
 
-      const customer = await createCustomer(values);
+      const customer = await customerService.createCustomer(values);
 
       setCreatedCustomer(customer);
 

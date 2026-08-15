@@ -1,4 +1,4 @@
-import type { Supplier } from "../types/supplier";
+import type { Supplier } from "../types/supplier.type";
 
 export const suppliers: Supplier[] = [
   {

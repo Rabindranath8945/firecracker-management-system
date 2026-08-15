@@ -6,7 +6,7 @@ class DashboardService {
 
     return {
       /* ---------------------------------------------------------------------- */
-      /* Business                                                                */
+      /* Business                                                               */
       /* ---------------------------------------------------------------------- */
 
       business: {
@@ -19,37 +19,68 @@ class DashboardService {
       },
 
       /* ---------------------------------------------------------------------- */
-      /* KPI                                                                     */
+      /* KPI                                                                    */
       /* ---------------------------------------------------------------------- */
 
-      todaySales: data.todaySales,
-      todayProfit: data.todayProfit,
-      monthlyProfit: data.monthlyProfit,
+      todaySales: Number(data.todaySales ?? 0),
 
-      monthlyRevenue: data.monthlyRevenue,
-      outstandingPayments: 0,
+      todayProfit: Number(data.todayProfit ?? 0),
 
-      totalCustomers: data.totalCustomers,
-      lowStock: data.lowStock,
+      monthlyRevenue: Number(data.monthlyRevenue ?? 0),
 
-      weeklySales: 0,
-      salesGrowth: 0,
+      outstandingPayments: Number(data.outstandingPayments ?? 0),
 
-      /* ---------------------------------------------------------------------- */
-      /* Sales Chart                                                             */
-      /* ---------------------------------------------------------------------- */
+      totalCustomers: Number(data.totalCustomers ?? 0),
 
-      salesChart: [],
+      lowStock: Number(data.lowStock ?? 0),
+
+      weeklySales: Number(data.weeklySales ?? 0),
+
+      salesGrowth: Number(data.salesGrowth ?? 0),
 
       /* ---------------------------------------------------------------------- */
-      /* Dashboard Widgets                                                       */
+      /* Sales Chart                                                            */
       /* ---------------------------------------------------------------------- */
 
-      lowStockProducts: [],
+      salesChart: data.salesChart.map((item) => ({
+        day: item.day,
+        sales: Number(item.sales ?? 0),
+      })),
 
-      recentActivities: [],
+      /* ---------------------------------------------------------------------- */
+      /* Low Stock                                                             */
+      /* ---------------------------------------------------------------------- */
 
-      insights: [],
+      lowStockProducts: data.lowStockProducts.map((product) => ({
+        id: product.id,
+        name: product.name,
+        stock: Number(product.stock ?? 0),
+        minStock: Number(product.minStock ?? 0),
+      })),
+
+      /* ---------------------------------------------------------------------- */
+      /* Recent Activities                                                      */
+      /* ---------------------------------------------------------------------- */
+
+      recentActivities: data.recentActivities.map((activity) => ({
+        id: activity.id,
+        title: activity.title,
+        subtitle: activity.subtitle,
+        value: activity.value,
+        time: activity.time,
+        type: activity.type,
+      })),
+
+      /* ---------------------------------------------------------------------- */
+      /* Business Insights                                                      */
+      /* ---------------------------------------------------------------------- */
+
+      insights: data.insights.map((insight) => ({
+        id: insight.id,
+        title: insight.title,
+        description: insight.description,
+        type: insight.type,
+      })),
     };
   }
 }

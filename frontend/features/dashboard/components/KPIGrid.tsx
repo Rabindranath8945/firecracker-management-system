@@ -10,39 +10,58 @@ interface KPIGridProps {
   dashboard: DashboardSummary;
 }
 
+function formatCurrency(value: number) {
+  return `₹${Number(value ?? 0).toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function formatNumber(value: number) {
+  return Number(value ?? 0).toLocaleString("en-IN");
+}
+
 export default function KPIGrid({ dashboard }: KPIGridProps) {
   return (
-    <section className="grid grid-cols-2 gap-4 xl:grid-cols-3">
+    <section
+      className="
+        grid
+        grid-cols-2
+        gap-3
+        sm:gap-4
+        xl:grid-cols-3
+      "
+    >
       {KPI_STATS.map((item) => {
         let value = "";
 
         switch (item.key) {
           case "todaySales":
-            value = `₹${dashboard.todaySales.toLocaleString("en-IN")}`;
+            value = formatCurrency(dashboard.todaySales);
             break;
 
           case "todayProfit":
-            value = `₹${dashboard.todayProfit.toLocaleString("en-IN")}`;
+            value = formatCurrency(dashboard.todayProfit);
             break;
 
           case "monthlyRevenue":
-            value = `₹${dashboard.monthlyRevenue.toLocaleString("en-IN")}`;
+            value = formatCurrency(dashboard.monthlyRevenue);
             break;
 
           case "outstandingPayments":
-            value = `₹${dashboard.outstandingPayments.toLocaleString("en-IN")}`;
+            value = formatCurrency(dashboard.outstandingPayments);
             break;
 
           case "totalCustomers":
-            value = dashboard.totalCustomers.toLocaleString("en-IN");
+            value = formatNumber(dashboard.totalCustomers);
             break;
 
           case "lowStock":
-            value = dashboard.lowStock.toLocaleString("en-IN");
+            value = formatNumber(dashboard.lowStock);
             break;
 
           default:
-            value = "";
+            value = "₹0.00";
         }
 
         return (

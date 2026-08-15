@@ -1,6 +1,14 @@
 "use client";
 
-import { CheckCircle2, Printer, Share2, Plus, Receipt, X } from "lucide-react";
+import {
+  CheckCircle2,
+  Printer,
+  Share2,
+  Plus,
+  Receipt,
+  X,
+  ChevronRight,
+} from "lucide-react";
 
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -55,16 +63,6 @@ export default function PaymentSuccessSheet({
 
   const previousDueCollected = Math.max(0, dueCollected);
 
-  /**
-   * Total money actually received from the customer.
-   *
-   * Example:
-   *
-   * New Sale       ₹218.30
-   * Previous Due   ₹900.00
-   * ----------------------
-   * Total          ₹1118.30
-   */
   const totalCollected = salePaidAmount + previousDueCollected;
 
   const isCredit = sale.payment?.method === "CREDIT";
@@ -72,6 +70,8 @@ export default function PaymentSuccessSheet({
   const displayAmount = isCredit ? sale.dueAmount : totalCollected;
 
   const displayAmountLabel = isCredit ? "Amount Due" : "Amount Collected";
+
+  /* ---------------------------------------------------------------------- */
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -81,12 +81,16 @@ export default function PaymentSuccessSheet({
           max-h-[95vh]
           overflow-y-auto
           rounded-t-[2rem]
+          border-0
+          bg-slate-50
           p-0
         "
       >
-        {/* Header */}
+        {/* ================================================================ */}
+        {/* SUCCESS HEADER                                                   */}
+        {/* ================================================================ */}
 
-        <div className="relative px-5 pb-4 pt-7 text-center">
+        <div className="relative px-5 pb-5 pt-7 text-center">
           <button
             type="button"
             onClick={() => onOpenChange(false)}
@@ -100,122 +104,183 @@ export default function PaymentSuccessSheet({
               items-center
               justify-center
               rounded-full
-              bg-slate-100
+              bg-white
               text-slate-500
+              shadow-sm
+              ring-1
+              ring-slate-200
               transition
-              hover:bg-slate-200
+              hover:bg-slate-50
+              active:scale-95
             "
             aria-label="Close"
           >
             <X className="h-4 w-4" />
           </button>
 
-          {/* Success Icon */}
+          {/* Success icon */}
 
-          <div
-            className="
-              mx-auto
-              flex
-              h-20
-              w-20
-              items-center
-              justify-center
-              rounded-full
-              bg-emerald-100
-              ring-8
-              ring-emerald-50
-            "
-          >
-            <CheckCircle2 className="h-11 w-11 text-emerald-600" />
+          <div className="relative mx-auto w-fit">
+            <div
+              className="
+                flex
+                h-[76px]
+                w-[76px]
+                items-center
+                justify-center
+                rounded-full
+                bg-emerald-500
+                shadow-lg
+                shadow-emerald-200
+                ring-8
+                ring-emerald-50
+              "
+            >
+              <CheckCircle2
+                className="h-10 w-10 text-white"
+                strokeWidth={2.5}
+              />
+            </div>
           </div>
 
-          <h2 className="mt-5 text-2xl font-black tracking-tight">
+          <h2 className="mt-5 text-2xl font-black tracking-tight text-slate-900">
             Payment Successful
           </h2>
 
-          <p className="mt-1 text-sm text-muted-foreground">
+          <p className="mt-1 text-sm text-slate-500">
             Invoice created successfully
           </p>
         </div>
 
-        {/* Amount */}
+        {/* ================================================================ */}
+        {/* AMOUNT CARD                                                       */}
+        {/* ================================================================ */}
 
         <div className="px-5">
           <Card
             className="
+              relative
               overflow-hidden
-              rounded-3xl
+              rounded-[28px]
               border-0
               bg-gradient-to-br
-              from-violet-600
-              via-violet-500
+              from-violet-700
+              via-violet-600
               to-fuchsia-600
-              p-6
+              p-5
               text-white
               shadow-xl
+              shadow-violet-200
             "
           >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-white/75">{displayAmountLabel}</p>
+            {/* Decorative glow */}
 
-                <h3 className="mt-1 text-4xl font-black">
-                  ₹{displayAmount.toLocaleString("en-IN")}
-                </h3>
+            <div
+              className="
+                pointer-events-none
+                absolute
+                -right-10
+                -top-10
+                h-32
+                w-32
+                rounded-full
+                bg-white/10
+                blur-2xl
+              "
+            />
+
+            <div className="relative">
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-xs font-medium text-white/70">
+                    {displayAmountLabel}
+                  </p>
+
+                  <h3 className="mt-1 text-4xl font-black tracking-tight">
+                    ₹{displayAmount.toLocaleString("en-IN")}
+                  </h3>
+                </div>
+
+                <div
+                  className="
+                    flex
+                    h-11
+                    w-11
+                    items-center
+                    justify-center
+                    rounded-2xl
+                    bg-white/15
+                    ring-1
+                    ring-white/10
+                    backdrop-blur
+                  "
+                >
+                  <Receipt className="h-6 w-6" />
+                </div>
               </div>
 
-              <div className="rounded-2xl bg-white/15 p-3 backdrop-blur">
-                <Receipt className="h-7 w-7" />
-              </div>
-            </div>
+              <div className="mt-5 grid grid-cols-2 gap-4 border-t border-white/15 pt-4">
+                <div>
+                  <p className="text-[10px] font-medium text-white/60">
+                    Invoice No
+                  </p>
 
-            <div className="mt-5 flex items-center justify-between border-t border-white/20 pt-4">
-              <div>
-                <p className="text-[11px] text-white/65">Invoice No</p>
+                  <p className="mt-1 truncate text-sm font-bold">
+                    {sale.invoiceNo}
+                  </p>
+                </div>
 
-                <p className="mt-0.5 font-bold">{sale.invoiceNo}</p>
-              </div>
+                <div className="text-right">
+                  <p className="text-[10px] font-medium text-white/60">
+                    Sale No
+                  </p>
 
-              <div className="text-right">
-                <p className="text-[11px] text-white/65">Sale No</p>
-
-                <p className="mt-0.5 font-bold">{sale.saleNo}</p>
+                  <p className="mt-1 truncate text-sm font-bold">
+                    {sale.saleNo}
+                  </p>
+                </div>
               </div>
             </div>
           </Card>
         </div>
 
-        {/* Sale Details */}
+        {/* ================================================================ */}
+        {/* SALE SUMMARY                                                      */}
+        {/* ================================================================ */}
 
-        <div className="space-y-3 px-5 pt-5">
-          <Card className="rounded-3xl border p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Customer</span>
+        <div className="space-y-3 px-5 pt-4">
+          <Card
+            className="
+              rounded-[24px]
+              border-slate-200
+              bg-white
+              p-4
+              shadow-sm
+            "
+          >
+            <div className="space-y-3">
+              <InfoRow label="Customer" value={customerName} />
 
-              <span className="max-w-[60%] truncate text-right font-semibold">
-                {customerName}
-              </span>
-            </div>
+              <InfoRow label="Payment" value={paymentMethod} badge />
 
-            <div className="mt-3 flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Payment</span>
-
-              <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700">
-                {paymentMethod}
-              </span>
-            </div>
-
-            <div className="mt-3 flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Items</span>
-
-              <span className="font-semibold">{sale.items?.length ?? 0}</span>
+              <InfoRow label="Items" value={String(sale.items?.length ?? 0)} />
             </div>
           </Card>
 
-          {/* Status */}
+          {/* ============================================================ */}
+          {/* STATUS                                                        */}
+          {/* ============================================================ */}
 
-          <Card className="rounded-3xl border p-4 shadow-sm">
-            <p className="mb-3 text-sm font-bold">Sale Status</p>
+          <Card
+            className="
+              rounded-[24px]
+              border-slate-200
+              bg-white
+              p-4
+              shadow-sm
+            "
+          >
+            <p className="mb-3 text-sm font-bold text-slate-900">Sale Status</p>
 
             <div className="space-y-3">
               <StatusRow label="Payment" value="Completed" />
@@ -227,35 +292,122 @@ export default function PaymentSuccessSheet({
           </Card>
         </div>
 
-        {/* Actions */}
+        {/* ================================================================ */}
+        {/* ACTIONS                                                          */}
+        {/* ================================================================ */}
 
         <div className="space-y-3 px-5 pb-8 pt-5">
+          {/* Print + WhatsApp */}
+
           <div className="grid grid-cols-2 gap-3">
+            {/* Print A4 */}
+
             <Button
               type="button"
               variant="outline"
               onClick={onPrint}
-              className="h-12 rounded-2xl font-semibold"
+              className="
+                group
+                h-[58px]
+                rounded-2xl
+                border-slate-200
+                bg-white
+                shadow-sm
+                transition-all
+                hover:border-violet-200
+                hover:bg-violet-50
+                hover:shadow-md
+                active:scale-[0.98]
+              "
             >
-              <Printer className="mr-2 h-4 w-4" />
-              Print Invoice
+              <span
+                className="
+                  mr-2.5
+                  flex
+                  h-9
+                  w-9
+                  items-center
+                  justify-center
+                  rounded-xl
+                  bg-violet-100
+                  text-violet-700
+                  transition
+                  group-hover:bg-violet-200
+                "
+              >
+                <Printer className="h-4 w-4" />
+              </span>
+
+              <span className="flex flex-col items-start">
+                <span className="text-xs font-bold text-slate-900">
+                  Print Invoice
+                </span>
+
+                <span className="text-[9px] font-medium text-slate-400">
+                  A4 Format
+                </span>
+              </span>
             </Button>
+
+            {/* WhatsApp */}
 
             <Button
               type="button"
               variant="outline"
               onClick={onShare}
-              className="h-12 rounded-2xl font-semibold"
+              className="
+                group
+                h-[58px]
+                rounded-2xl
+                border-slate-200
+                bg-white
+                shadow-sm
+                transition-all
+                hover:border-emerald-200
+                hover:bg-emerald-50
+                hover:shadow-md
+                active:scale-[0.98]
+              "
             >
-              <Share2 className="mr-2 h-4 w-4" />
-              WhatsApp
+              <span
+                className="
+                  mr-2.5
+                  flex
+                  h-9
+                  w-9
+                  items-center
+                  justify-center
+                  rounded-xl
+                  bg-emerald-100
+                  text-emerald-600
+                  transition
+                  group-hover:bg-emerald-200
+                "
+              >
+                <Share2 className="h-4 w-4" />
+              </span>
+
+              <span className="flex flex-col items-start">
+                <span className="text-xs font-bold text-slate-900">
+                  WhatsApp
+                </span>
+
+                <span className="text-[9px] font-medium text-slate-400">
+                  Share Invoice
+                </span>
+              </span>
             </Button>
           </div>
+
+          {/* ============================================================ */}
+          {/* ADD NEW SALE                                                   */}
+          {/* ============================================================ */}
 
           <Button
             type="button"
             onClick={onNewSale}
             className="
+              group
               h-14
               w-full
               rounded-2xl
@@ -263,22 +415,84 @@ export default function PaymentSuccessSheet({
               from-violet-600
               via-violet-500
               to-fuchsia-600
-              text-base
+              text-sm
               font-bold
+              text-white
               shadow-lg
-              transition
+              shadow-violet-200
+              transition-all
               hover:shadow-xl
+              hover:shadow-violet-300
               active:scale-[0.98]
             "
           >
-            <Plus className="mr-2 h-5 w-5" />
-            Start New Sale
+            <span
+              className="
+                mr-2
+                flex
+                h-8
+                w-8
+                items-center
+                justify-center
+                rounded-xl
+                bg-white/15
+              "
+            >
+              <Plus className="h-4 w-4" />
+            </span>
+            Add New Sale
+            <ChevronRight
+              className="
+                ml-auto
+                h-5
+                w-5
+                opacity-70
+                transition-transform
+                group-hover:translate-x-1
+              "
+            />
           </Button>
+
+          <p className="text-center text-[9px] font-medium text-slate-400">
+            Sale completed successfully
+          </p>
         </div>
       </SheetContent>
     </Sheet>
   );
 }
+
+/* ========================================================================== */
+/* Info Row                                                                   */
+/* ========================================================================== */
+
+interface InfoRowProps {
+  label: string;
+  value: string;
+  badge?: boolean;
+}
+
+function InfoRow({ label, value, badge = false }: InfoRowProps) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <span className="text-xs font-medium text-slate-500">{label}</span>
+
+      {badge ? (
+        <span className="rounded-full bg-violet-100 px-3 py-1 text-[10px] font-bold text-violet-700">
+          {value}
+        </span>
+      ) : (
+        <span className="max-w-[65%] truncate text-right text-xs font-bold text-slate-900">
+          {value}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/* ========================================================================== */
+/* Status Row                                                                 */
+/* ========================================================================== */
 
 interface StatusRowProps {
   label: string;
@@ -288,12 +502,12 @@ interface StatusRowProps {
 function StatusRow({ label, value }: StatusRowProps) {
   return (
     <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2.5">
         <div
           className="
             flex
-            h-6
-            w-6
+            h-7
+            w-7
             items-center
             justify-center
             rounded-full
@@ -303,10 +517,10 @@ function StatusRow({ label, value }: StatusRowProps) {
           <CheckCircle2 className="h-4 w-4 text-emerald-600" />
         </div>
 
-        <span className="text-sm font-medium">{label}</span>
+        <span className="text-xs font-semibold text-slate-700">{label}</span>
       </div>
 
-      <span className="text-sm font-semibold text-emerald-600">{value}</span>
+      <span className="text-xs font-bold text-emerald-600">{value}</span>
     </div>
   );
 }

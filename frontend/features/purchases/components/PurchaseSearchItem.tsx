@@ -20,61 +20,95 @@ export default function PurchaseSearchItem({
       type="button"
       onClick={() => onSelect(product)}
       className="
+        group
+        flex
         w-full
+        items-center
+        gap-3
         rounded-2xl
         border
         bg-card
-        p-4
+        px-3
+        py-3
         text-left
+        shadow-sm
         transition-all
-        hover:border-primary
+        hover:border-emerald-400
+        hover:bg-emerald-50/30
         hover:shadow-md
-        active:scale-[0.98]
+        active:scale-[0.99]
+        dark:hover:border-emerald-500
+        dark:hover:bg-emerald-500/5
       "
     >
-      <div className="flex items-center gap-4">
-        {/* Product Image */}
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
-          {product.image ? (
-            <img
-              src={product.image}
-              alt={product.name}
-              className="h-12 w-12 rounded-xl object-cover"
-            />
-          ) : (
-            <Package className="size-6 text-primary" />
+      {/* ------------------------------------------------------------------ */}
+      {/* Product Image                                                       */}
+      {/* ------------------------------------------------------------------ */}
+
+      <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-emerald-50 dark:bg-emerald-500/10">
+        {product.image ? (
+          <img
+            src={product.image}
+            alt={product.name}
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <Package className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+        )}
+      </div>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Product Information                                                 */}
+      {/* ------------------------------------------------------------------ */}
+
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <h3 className="truncate text-sm font-semibold">{product.name}</h3>
+
+          {lowStock && (
+            <span className="shrink-0 rounded-full bg-red-100 px-1.5 py-0.5 text-[9px] font-semibold text-red-600 dark:bg-red-500/10 dark:text-red-400">
+              Low
+            </span>
           )}
         </div>
 
-        {/* Product Info */}
-        <div className="min-w-0 flex-1">
-          <h3 className="truncate text-base font-semibold">{product.name}</h3>
+        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+          {product.productCode}
+        </p>
 
-          <p className="mt-1 text-sm text-muted-foreground">{product.sku}</p>
+        <div className="mt-1.5 flex items-center gap-2">
+          {/* Purchase Price */}
 
-          <div className="mt-2 flex flex-wrap gap-2">
-            <span className="rounded-full bg-primary/10 px-2 py-1 text-xs">
-              ₹ {product.purchasePrice}
-            </span>
+          <span className="font-bold text-sm text-emerald-600 dark:text-emerald-400">
+            ₹{product.purchasePrice.toLocaleString("en-IN")}
+          </span>
 
-            <span className="rounded-full bg-muted px-2 py-1 text-xs">
-              GST {product.gst}%
-            </span>
+          {/* GST */}
 
-            <span
-              className={`rounded-full px-2 py-1 text-xs ${
-                lowStock
-                  ? "bg-red-100 text-red-600"
-                  : "bg-green-100 text-green-600"
-              }`}
-            >
-              Stock {product.stock}
-            </span>
-          </div>
+          <span className="text-[10px] text-muted-foreground">
+            GST {product.tax}%
+          </span>
+
+          {/* Stock */}
+
+          <span
+            className={
+              lowStock
+                ? "text-[10px] font-medium text-red-600 dark:text-red-400"
+                : "text-[10px] font-medium text-muted-foreground"
+            }
+          >
+            Stock {product.stock}
+          </span>
         </div>
+      </div>
 
-        {/* Arrow */}
-        <ChevronRight className="size-5 text-muted-foreground" />
+      {/* ------------------------------------------------------------------ */}
+      {/* Select Arrow                                                        */}
+      {/* ------------------------------------------------------------------ */}
+
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-muted/60 transition-colors group-hover:bg-emerald-100 dark:group-hover:bg-emerald-500/15">
+        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-emerald-600 dark:group-hover:text-emerald-400" />
       </div>
     </button>
   );

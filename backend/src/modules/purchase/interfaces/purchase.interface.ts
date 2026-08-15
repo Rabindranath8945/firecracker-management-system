@@ -1,6 +1,10 @@
 import { Document, Types } from "mongoose";
 import { ISupplier } from "../../supplier/interfaces/supplier.interface.js";
 
+/* -------------------------------------------------------------------------- */
+/*                          Payment Types                                    */
+/* -------------------------------------------------------------------------- */
+
 export type PurchasePaymentMethod =
   | "CASH"
   | "BANK"
@@ -11,6 +15,10 @@ export type PurchasePaymentMethod =
 
 export type PurchaseStatus = "PAID" | "PARTIAL" | "DUE";
 
+/* -------------------------------------------------------------------------- */
+/*                            Purchase Item                                   */
+/* -------------------------------------------------------------------------- */
+
 export interface IPurchaseItem {
   product: Types.ObjectId;
 
@@ -18,10 +26,22 @@ export interface IPurchaseItem {
 
   purchasePrice: number;
 
+  sellingPrice: number;
+
+  discount: number;
+
+  gstRate: number;
+
   tax: number;
+
+  subtotal: number;
 
   total: number;
 }
+
+/* -------------------------------------------------------------------------- */
+/*                              Purchase                                      */
+/* -------------------------------------------------------------------------- */
 
 export interface IPurchase extends Document {
   purchaseNo: string;
@@ -32,6 +52,8 @@ export interface IPurchase extends Document {
 
   purchaseDate: Date;
 
+  dueDate?: Date;
+
   items: IPurchaseItem[];
 
   subtotal: number;
@@ -39,6 +61,8 @@ export interface IPurchase extends Document {
   taxAmount: number;
 
   discount: number;
+
+  transportCharge: number;
 
   grandTotal: number;
 

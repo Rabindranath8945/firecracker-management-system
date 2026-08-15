@@ -62,6 +62,10 @@ class CustomerService {
     }).select("mobile");
   }
 
+  async findDuplicateName(name: string) {
+    return CustomerRepository.findByName(name);
+  }
+
   async findAllForExport() {
     return Customer.find({
       isActive: true,

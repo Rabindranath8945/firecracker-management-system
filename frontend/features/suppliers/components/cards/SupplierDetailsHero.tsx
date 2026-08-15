@@ -2,7 +2,7 @@
 
 import { Building2, CalendarDays, Mail, MapPin, Phone } from "lucide-react";
 
-import type { Supplier } from "../../types/supplier";
+import type { Supplier } from "../../types/supplier.type";
 
 interface SupplierHeroProps {
   supplier: Supplier;

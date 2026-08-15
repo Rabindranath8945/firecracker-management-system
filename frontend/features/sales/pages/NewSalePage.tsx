@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
 
 import SaleHeader from "../components/header/SaleHeader";
 import ProductSearch from "../components/search/ProductSearch";
@@ -25,15 +26,12 @@ export default function NewSalePage() {
   /* -------------------------------------------------------------------------- */
 
   const [search, setSearch] = useState("");
-
   const [shortcut, setShortcut] = useState("");
-
   const [categoryId, setCategoryId] = useState("");
-
   const [subCategoryId, setSubCategoryId] = useState("");
 
   /* -------------------------------------------------------------------------- */
-  /* Products                                                                   */
+  /* Products                                                                    */
   /* -------------------------------------------------------------------------- */
 
   const { products, isLoading: productLoading } = useProducts({
@@ -43,32 +41,40 @@ export default function NewSalePage() {
   });
 
   /* -------------------------------------------------------------------------- */
-  /* Categories                                                                 */
+  /* Categories                                                                  */
   /* -------------------------------------------------------------------------- */
 
   const { data: categories = [], isLoading: categoryLoading } = useCategories();
 
   /* -------------------------------------------------------------------------- */
-  /* Sub Categories                                                             */
+  /* Sub Categories                                                              */
   /* -------------------------------------------------------------------------- */
 
   const { data: subCategories = [], isLoading: subCategoryLoading } =
     useSubCategories(categoryId);
 
   /* -------------------------------------------------------------------------- */
-  /* Cart                                                                       */
+  /* Cart                                                                        */
   /* -------------------------------------------------------------------------- */
 
   const totalItems = useSaleStore((state) => state.totalItems);
-
   const grandTotal = useSaleStore((state) => state.grandTotal);
-
   const addItem = useSaleStore((state) => state.addItem);
 
   /* -------------------------------------------------------------------------- */
 
   return (
     <main className="space-y-5 px-4 py-5 pb-32">
+      {/* Back Button */}
+      <button
+        type="button"
+        onClick={() => router.back()}
+        className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 transition hover:text-gray-900"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back
+      </button>
+
       <SaleHeader />
 
       <ProductSearch value={search} onChange={setSearch} onScan={() => {}} />
