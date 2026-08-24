@@ -1,247 +1,587 @@
 "use client";
 
-import { useState } from "react";
-import { FileText, Eye, Hash, Printer } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  CheckCircle2,
+  Eye,
+  FileText,
+  Hash,
+  Loader2,
+  Printer,
+} from "lucide-react";
 
 import SettingsFormLayout from "../components/SettingsFormLayout";
 import SettingsInput from "../components/SettingsInput";
 import SettingsSection from "../components/SettingsSection";
 import SettingSwitch from "../components/SettingSwitch";
+import { invoiceSettingsService } from "../services/invoice-settings.service";
+
+interface InvoiceSettings {
+  prefix: string;
+  nextNumber: number;
+  footer: string;
+  terms: string;
+  showLogo: boolean;
+  showGST: boolean;
+  showCustomerMobile: boolean;
+  showCustomerAddress: boolean;
+}
+
+const DEFAULT_SETTINGS: InvoiceSettings = {
+  prefix: "INV",
+  nextNumber: 1,
+  footer: "",
+  terms: "",
+  showLogo: true,
+  showGST: true,
+  showCustomerMobile: true,
+  showCustomerAddress: true,
+};
 
 export default function InvoiceSettingsPage() {
-  const [showLogo, setShowLogo] = useState(true);
-  const [showGST, setShowGST] = useState(true);
-  const [showSignature, setShowSignature] = useState(true);
-  const [showFooter, setShowFooter] = useState(true);
+  const [settings, setSettings] = useState<InvoiceSettings>(DEFAULT_SETTINGS);
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  /* -------------------------------------------------------------------------- */
+  /* LOAD                                                                       */
+  /* -------------------------------------------------------------------------- */
+
+  const loadSettings = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const result = await invoiceSettingsService.getSettings();
+
+      setSettings({
+        prefix: result.prefix ?? "INV",
+        nextNumber: Math.max(1, Number(result.nextNumber ?? 1)),
+        footer: result.footer ?? "",
+        terms: result.terms ?? "",
+        showLogo: Boolean(result.showLogo),
+        showGST: Boolean(result.showGST),
+        showCustomerMobile: Boolean(result.showCustomerMobile),
+        showCustomerAddress: Boolean(result.showCustomerAddress),
+      });
+    } catch (err) {
+      console.error("Failed to load invoice settings:", err);
+
+      setError("Unable to load invoice settings. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadSettings();
+  }, [loadSettings]);
+
+  /* -------------------------------------------------------------------------- */
+  /* UPDATE                                                                     */
+  /* -------------------------------------------------------------------------- */
+
+  const updateField = <K extends keyof InvoiceSettings>(
+    field: K,
+    value: InvoiceSettings[K],
+  ) => {
+    setSettings((current) => ({
+      ...current,
+      [field]: value,
+    }));
+
+    setSaved(false);
+    setError(null);
+  };
+
+  /* -------------------------------------------------------------------------- */
+  /* SAVE                                                                       */
+  /* -------------------------------------------------------------------------- */
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      setSaved(false);
+      setError(null);
+
+      await invoiceSettingsService.updateSettings(settings);
+
+      setSaved(true);
+    } catch (err) {
+      console.error("Failed to save invoice settings:", err);
+
+      setError("Unable to save invoice settings. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /* -------------------------------------------------------------------------- */
+  /* PREVIEW NUMBER                                                             */
+  /* -------------------------------------------------------------------------- */
+
+  const invoiceNumber = useMemo(() => {
+    const prefix = settings.prefix.trim().toUpperCase() || "INV";
+
+    const number = Math.max(1, Number(settings.nextNumber) || 1);
+
+    return `${prefix}-${number}`;
+  }, [settings.prefix, settings.nextNumber]);
+
+  /* -------------------------------------------------------------------------- */
+  /* LOADING                                                                    */
+  /* -------------------------------------------------------------------------- */
+
+  if (loading) {
+    return (
+      <SettingsFormLayout
+        title="Invoice Settings"
+        description="Configure invoice numbering, printing and appearance."
+      >
+        <div className="flex min-h-[420px] items-center justify-center">
+          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            Loading invoice settings...
+          </div>
+        </div>
+      </SettingsFormLayout>
+    );
+  }
 
   return (
     <SettingsFormLayout
       title="Invoice Settings"
       description="Configure invoice numbering, printing and appearance."
-      onSave={() => {}}
     >
-      <div className="space-y-6">
-        {/* ------------------------------------------------------------- */}
-        {/* Header */}
-        {/* ------------------------------------------------------------- */}
+      <div className="pb-10">
+        {/* ================================================================== */}
+        {/* MAIN SETTINGS SURFACE                                             */}
+        {/* ================================================================== */}
 
-        <div className="rounded-3xl border bg-card p-6 shadow-sm">
-          <div className="flex items-start gap-5">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-100">
-              <FileText className="h-8 w-8 text-sky-600" />
+        <div className="overflow-hidden rounded-3xl border border-border/70 bg-card shadow-sm">
+          {/* ---------------------------------------------------------------- */}
+          {/* TOP HEADER                                                       */}
+          {/* ---------------------------------------------------------------- */}
+
+          <div className="border-b border-border/60 px-5 py-6 sm:px-7">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <FileText className="h-6 w-6" />
+                </div>
+
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-lg font-semibold tracking-tight">
+                      Invoice Configuration
+                    </h2>
+
+                    {saved && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-600">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        Saved
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Manage numbering and the information shown on invoices.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => void handleSave()}
+                disabled={saving}
+                className="inline-flex h-10 shrink-0 items-center justify-center rounded-xl bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
+              </button>
             </div>
 
-            <div className="flex-1">
-              <h2 className="text-xl font-bold">Invoice Configuration</h2>
+            {error && (
+              <div className="mt-5 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm font-medium text-destructive">
+                {error}
+              </div>
+            )}
+          </div>
 
-              <p className="mt-2 text-sm text-muted-foreground">
-                Customize invoice numbering, printing and invoice layout for
-                your business.
-              </p>
+          {/* ---------------------------------------------------------------- */}
+          {/* BODY                                                             */}
+          {/* ---------------------------------------------------------------- */}
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700">
-                  Numbering
-                </span>
+          <div className="grid lg:grid-cols-[minmax(0,1fr)_320px]">
+            {/* ============================================================= */}
+            {/* LEFT                                                           */}
+            {/* ============================================================= */}
 
-                <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">
-                  Appearance
-                </span>
+            <div className="min-w-0">
+              {/* ----------------------------------------------------------- */}
+              {/* NUMBERING                                                   */}
+              {/* ----------------------------------------------------------- */}
 
-                <span className="rounded-full bg-orange-100 px-3 py-1 text-xs font-medium text-orange-700">
-                  Printing
-                </span>
+              <SettingsSection
+                title="Invoice Numbering"
+                description="Control how new invoice numbers are generated."
+                icon={Hash}
+              >
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <SettingsInput
+                    label="Invoice Prefix"
+                    placeholder="INV"
+                    value={settings.prefix}
+                    onChange={(event) =>
+                      updateField("prefix", event.target.value.toUpperCase())
+                    }
+                  />
+
+                  <SettingsInput
+                    label="Next Number"
+                    type="number"
+                    value={String(settings.nextNumber)}
+                    onChange={(event) => {
+                      const value = Number(event.target.value);
+
+                      updateField(
+                        "nextNumber",
+                        Math.max(1, Number.isFinite(value) ? value : 1),
+                      );
+                    }}
+                  />
+                </div>
+
+                <div className="mt-5 flex items-center justify-between rounded-xl bg-muted/40 px-4 py-3">
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Next invoice number
+                    </p>
+
+                    <p className="mt-1 font-mono text-sm font-semibold">
+                      {invoiceNumber}
+                    </p>
+                  </div>
+
+                  <Hash className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </SettingsSection>
+
+              {/* ----------------------------------------------------------- */}
+              {/* INFORMATION                                                 */}
+              {/* ----------------------------------------------------------- */}
+
+              <SettingsSection
+                title="Invoice Information"
+                description="Choose what customers can see on the invoice."
+                icon={FileText}
+              >
+                <div className="divide-y divide-border/50">
+                  <SettingSwitch
+                    title="Business Logo"
+                    description="Show your business logo on the invoice."
+                    checked={settings.showLogo}
+                    onCheckedChange={(checked) =>
+                      updateField("showLogo", checked)
+                    }
+                  />
+
+                  <SettingSwitch
+                    title="GST Number"
+                    description="Display your registered GST number."
+                    checked={settings.showGST}
+                    onCheckedChange={(checked) =>
+                      updateField("showGST", checked)
+                    }
+                  />
+
+                  <SettingSwitch
+                    title="Customer Mobile"
+                    description="Display the customer's mobile number."
+                    checked={settings.showCustomerMobile}
+                    onCheckedChange={(checked) =>
+                      updateField("showCustomerMobile", checked)
+                    }
+                  />
+
+                  <SettingSwitch
+                    title="Customer Address"
+                    description="Display the customer's billing address."
+                    checked={settings.showCustomerAddress}
+                    onCheckedChange={(checked) =>
+                      updateField("showCustomerAddress", checked)
+                    }
+                  />
+                </div>
+              </SettingsSection>
+
+              {/* ----------------------------------------------------------- */}
+              {/* CONTENT                                                     */}
+              {/* ----------------------------------------------------------- */}
+
+              <SettingsSection
+                title="Invoice Content"
+                description="Add standard terms and a footer message."
+                icon={Printer}
+              >
+                <div className="space-y-5">
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="invoice-terms"
+                      className="text-sm font-medium"
+                    >
+                      Terms & Conditions
+                    </label>
+
+                    <textarea
+                      id="invoice-terms"
+                      rows={4}
+                      value={settings.terms}
+                      onChange={(event) =>
+                        updateField("terms", event.target.value)
+                      }
+                      placeholder="Enter your invoice terms and conditions..."
+                      className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none transition placeholder:text-muted-foreground/60 focus:border-primary focus:ring-2 focus:ring-primary/10"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="invoice-footer"
+                      className="text-sm font-medium"
+                    >
+                      Footer Message
+                    </label>
+
+                    <textarea
+                      id="invoice-footer"
+                      rows={3}
+                      value={settings.footer}
+                      onChange={(event) =>
+                        updateField("footer", event.target.value)
+                      }
+                      placeholder="Thank you for your business..."
+                      className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none transition placeholder:text-muted-foreground/60 focus:border-primary focus:ring-2 focus:ring-primary/10"
+                    />
+                  </div>
+                </div>
+              </SettingsSection>
+            </div>
+
+            {/* ============================================================= */}
+            {/* PREVIEW                                                        */}
+            {/* ============================================================= */}
+
+            <div className="border-t border-border/60 bg-muted/20 p-5 lg:border-l lg:border-t-0 lg:p-6">
+              <div className="sticky top-6">
+                <div className="mb-4 flex items-center gap-2">
+                  <Eye className="h-4 w-4 text-primary" />
+
+                  <div>
+                    <p className="text-sm font-semibold">Invoice Preview</p>
+
+                    <p className="text-xs text-muted-foreground">
+                      Live preview
+                    </p>
+                  </div>
+                </div>
+
+                {/* ======================================================== */}
+                {/* INVOICE                                                    */}
+                {/* ======================================================== */}
+
+                <div className="overflow-hidden rounded-2xl border border-border bg-background shadow-sm">
+                  {/* Invoice top */}
+
+                  <div className="p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <div
+                          className="mb-3 flex h-9 w-16 items-center justify-center rounded-lg bg-muted text-[9px] font-medium text-muted-foreground transition-opacity"
+                          style={{
+                            opacity: settings.showLogo ? 1 : 0.25,
+                          }}
+                        >
+                          LOGO
+                        </div>
+
+                        <p className="text-sm font-semibold">TAX INVOICE</p>
+
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          Mahendra Tech Solutions
+                        </p>
+                      </div>
+
+                      <div className="text-right">
+                        <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                          Invoice No.
+                        </p>
+
+                        <p className="mt-1 font-mono text-sm font-semibold text-primary">
+                          {invoiceNumber}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Customer */}
+
+                    <div className="mt-6 rounded-xl bg-muted/40 p-3">
+                      <p className="text-[9px] uppercase tracking-wide text-muted-foreground">
+                        Bill To
+                      </p>
+
+                      <p className="mt-1 text-xs font-semibold">
+                        Customer Name
+                      </p>
+
+                      {settings.showCustomerMobile && (
+                        <p className="mt-1 text-[10px] text-muted-foreground">
+                          +91 XXXXX XXXXX
+                        </p>
+                      )}
+
+                      {settings.showCustomerAddress && (
+                        <p className="mt-1 text-[10px] text-muted-foreground">
+                          Customer address
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Items */}
+
+                    <div className="mt-5 space-y-2">
+                      <PreviewLine
+                        label="Product / Service"
+                        value="Amount"
+                        strong
+                      />
+
+                      <PreviewLine label="Item example" value="₹1,000" />
+
+                      <PreviewLine label="Item example" value="₹500" />
+                    </div>
+
+                    {/* GST */}
+
+                    {settings.showGST && (
+                      <div className="mt-4 flex items-center justify-between border-t border-border/50 pt-3">
+                        <span className="text-[10px] text-muted-foreground">
+                          GST
+                        </span>
+
+                        <span className="text-[10px] font-medium">
+                          Included
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Total */}
+
+                    <div className="mt-4 flex items-center justify-between rounded-xl bg-primary/5 px-3 py-3">
+                      <span className="text-xs font-semibold">Total</span>
+
+                      <span className="text-sm font-bold text-primary">
+                        ₹1,500
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Footer */}
+
+                  {(settings.terms || settings.footer) && (
+                    <div className="border-t border-border/60 bg-muted/20 px-5 py-4">
+                      {settings.terms && (
+                        <div>
+                          <p className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+                            Terms
+                          </p>
+
+                          <p className="mt-1 line-clamp-2 text-[9px] leading-4 text-muted-foreground">
+                            {settings.terms}
+                          </p>
+                        </div>
+                      )}
+
+                      {settings.footer && (
+                        <p className="mt-3 border-t border-dashed border-border/50 pt-3 text-center text-[9px] text-muted-foreground">
+                          {settings.footer}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Preview status */}
+
+                <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                  Changes are reflected instantly
+                </div>
               </div>
             </div>
           </div>
+
+          {/* ---------------------------------------------------------------- */}
+          {/* BOTTOM ACTION                                                   */}
+          {/* ---------------------------------------------------------------- */}
+
+          <div className="flex items-center justify-between border-t border-border/60 px-5 py-5 sm:px-7">
+            <p className="hidden text-xs text-muted-foreground sm:block">
+              Changes will apply to newly generated invoices.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => void handleSave()}
+              disabled={saving}
+              className="ml-auto inline-flex h-10 items-center justify-center rounded-xl bg-primary px-6 text-sm font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Changes"
+              )}
+            </button>
+          </div>
         </div>
-
-        {/* ------------------------------------------------------------- */}
-        {/* Summary */}
-        {/* ------------------------------------------------------------- */}
-
-        <div className="grid gap-4 md:grid-cols-3">
-          <SummaryCard
-            icon={Hash}
-            title="Invoice Prefix"
-            value="INV"
-            color="blue"
-          />
-
-          <SummaryCard
-            icon={Printer}
-            title="Paper Size"
-            value="A4"
-            color="emerald"
-          />
-
-          <SummaryCard
-            icon={Eye}
-            title="Preview"
-            value="Ready"
-            color="orange"
-          />
-        </div>
-
-        {/* ------------------------------------------------------------- */}
-        {/* Numbering */}
-        {/* ------------------------------------------------------------- */}
-
-        <SettingsSection
-          title="Invoice Numbering"
-          description="Configure invoice numbering."
-          icon={Hash}
-        >
-          <div className="grid gap-5 md:grid-cols-3">
-            <SettingsInput label="Sales Prefix" defaultValue="INV" />
-
-            <SettingsInput label="Purchase Prefix" defaultValue="PUR" />
-
-            <SettingsInput
-              label="Starting Number"
-              defaultValue="1001"
-              type="number"
-            />
-          </div>
-        </SettingsSection>
-
-        {/* ------------------------------------------------------------- */}
-        {/* Appearance */}
-        {/* ------------------------------------------------------------- */}
-
-        <SettingsSection
-          title="Invoice Appearance"
-          description="Customize invoice information."
-          icon={FileText}
-        >
-          <div className="space-y-4">
-            <SettingSwitch
-              title="Show Business Logo"
-              description="Display company logo on invoice."
-              checked={showLogo}
-              onCheckedChange={setShowLogo}
-            />
-
-            <SettingSwitch
-              title="Show GST Number"
-              description="Print GST number on invoice."
-              checked={showGST}
-              onCheckedChange={setShowGST}
-            />
-
-            <SettingSwitch
-              title="Show Signature"
-              description="Display authorized signature."
-              checked={showSignature}
-              onCheckedChange={setShowSignature}
-            />
-
-            <SettingSwitch
-              title="Show Footer Message"
-              description="Display thank you message."
-              checked={showFooter}
-              onCheckedChange={setShowFooter}
-            />
-          </div>
-        </SettingsSection>
-
-        {/* ------------------------------------------------------------- */}
-        {/* Printing */}
-        {/* ------------------------------------------------------------- */}
-
-        <SettingsSection
-          title="Printing"
-          description="Configure printing preferences."
-          icon={Printer}
-        >
-          <div className="grid gap-5 md:grid-cols-3">
-            <SettingsInput label="Paper Size" defaultValue="A4" />
-
-            <SettingsInput
-              label="Default Copies"
-              defaultValue="1"
-              type="number"
-            />
-
-            <SettingsInput label="Invoice Title" defaultValue="TAX INVOICE" />
-          </div>
-        </SettingsSection>
-
-        {/* ------------------------------------------------------------- */}
-        {/* Preview */}
-        {/* ------------------------------------------------------------- */}
-
-        <SettingsSection
-          title="Invoice Preview"
-          description="Current invoice configuration."
-          icon={Eye}
-        >
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <PreviewCard title="Sales Invoice" value="INV-1001" />
-
-            <PreviewCard title="Purchase" value="PUR-1001" />
-
-            <PreviewCard title="Paper Size" value="A4" />
-
-            <PreviewCard title="Copies" value="1 Copy" />
-          </div>
-        </SettingsSection>
       </div>
     </SettingsFormLayout>
   );
 }
 
-interface SummaryCardProps {
-  icon: React.ElementType;
-  title: string;
+/* -------------------------------------------------------------------------- */
+/* PREVIEW LINE                                                               */
+/* -------------------------------------------------------------------------- */
+
+interface PreviewLineProps {
+  label: string;
   value: string;
-  color: "blue" | "emerald" | "orange";
+  strong?: boolean;
 }
 
-function SummaryCard({ icon: Icon, title, value, color }: SummaryCardProps) {
-  const styles = {
-    blue: {
-      bg: "bg-blue-100",
-      text: "text-blue-600",
-    },
-    emerald: {
-      bg: "bg-emerald-100",
-      text: "text-emerald-600",
-    },
-    orange: {
-      bg: "bg-orange-100",
-      text: "text-orange-600",
-    },
-  };
-
+function PreviewLine({ label, value, strong = false }: PreviewLineProps) {
   return (
-    <div className="rounded-3xl border bg-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
-      <div
-        className={`flex h-12 w-12 items-center justify-center rounded-2xl ${styles[color].bg}`}
-      >
-        <Icon className={`h-6 w-6 ${styles[color].text}`} />
-      </div>
+    <div
+      className={`flex items-center justify-between border-b border-border/40 pb-2 text-[10px] ${
+        strong ? "font-semibold text-foreground" : "text-muted-foreground"
+      }`}
+    >
+      <span>{label}</span>
 
-      <p className="mt-4 text-sm text-muted-foreground">{title}</p>
-
-      <h3 className="mt-1 text-xl font-bold">{value}</h3>
-    </div>
-  );
-}
-
-interface PreviewCardProps {
-  title: string;
-  value: string;
-}
-
-function PreviewCard({ title, value }: PreviewCardProps) {
-  return (
-    <div className="rounded-2xl border bg-muted/40 p-5 transition-all duration-300 hover:border-primary/30 hover:bg-background">
-      <p className="text-xs uppercase tracking-wide text-muted-foreground">
-        {title}
-      </p>
-
-      <p className="mt-3 text-lg font-semibold">{value}</p>
+      <span>{value}</span>
     </div>
   );
 }

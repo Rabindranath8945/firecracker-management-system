@@ -90,8 +90,8 @@ class SalesController {
     });
   };
 
-  getNextCode = async (_req: Request, res: Response) => {
-    const saleNo = await SalesService.getNextCode();
+  getNextCode = async (req: Request, res: Response) => {
+    const saleNo = await SalesService.getNextCode(req.user!.userId);
 
     return res.status(200).json({
       success: true,

@@ -1,16 +1,25 @@
 import PDFDocument from "pdfkit";
 
+import type { PdfDocument } from "../types/pdf.types.js";
+
 class PdfCoreService {
-  create() {
-    return new PDFDocument({
+  create(orientation: "portrait" | "landscape" = "portrait"): PdfDocument {
+    const doc = new PDFDocument({
       size: "A4",
+      layout: orientation,
       margin: 40,
+
+      /*
+       * Keep enough space at the bottom for the footer.
+       */
       bufferPages: true,
     });
+
+    return doc as PdfDocument;
   }
 
-  async toBuffer(doc: PDFKit.PDFDocument): Promise<Buffer> {
-    return new Promise((resolve, reject) => {
+  toBuffer(doc: PdfDocument): Promise<Buffer> {
+    return new Promise<Buffer>((resolve, reject) => {
       const chunks: Buffer[] = [];
 
       doc.on("data", (chunk: Buffer) => {

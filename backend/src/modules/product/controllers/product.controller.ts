@@ -288,8 +288,8 @@ class ProductController {
     });
   };
 
-  getNextCode = async (_req: Request, res: Response) => {
-    const productCode = await ProductService.getNextCode();
+  getNextCode = async (req: Request, res: Response) => {
+    const productCode = await ProductService.getNextCode(req.user!.userId);
 
     return res.status(200).json({
       success: true,

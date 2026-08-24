@@ -4,6 +4,8 @@ import CustomerRepository from "../repositories/customer.repository.js";
 import Customer from "../models/customer.model.js";
 import { ICustomer } from "../interfaces/customer.interface.js";
 import { CustomerExcelRow } from "../../../common/excel/types/customer-excel-row.types.js";
+import SettingsRepository from "../../settings/repositories/settings.repository.js";
+import { generateSequenceCode } from "../../../common/utils/generate-code.js";
 
 import {
   CreateCustomerDto,
@@ -30,17 +32,21 @@ class CustomerService {
     if (mobileExists) {
       throw new Error("Mobile number already exists.");
     }
-    const lastCustomer = await CustomerRepository.findLastCustomer();
 
-    let customerCode = "CUS00001";
+    const prefix = await SettingsRepository.getNumberingPrefix(
+      userId,
+      "customer",
+    );
 
-    if (lastCustomer?.customerCode) {
-      const match = lastCustomer.customerCode.match(/\d+$/);
+    const customers = await CustomerRepository.findCodes();
 
-      const nextNumber = match ? Number(match[0]) + 1 : 1;
+    const customerCode = generateSequenceCode(
+      customers
+        .map((customer) => customer.customerCode)
+        .filter((code): code is string => Boolean(code)),
+      prefix,
+    );
 
-      customerCode = `CUS${nextNumber.toString().padStart(5, "0")}`;
-    }
     return CustomerRepository.create({
       ...data,
       customerCode,

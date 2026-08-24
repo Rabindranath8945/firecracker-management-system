@@ -18,7 +18,15 @@ router.get("/unread", authenticate, NotificationController.unread);
 
 router.get("/unread-count", authenticate, NotificationController.unreadCount);
 
-router.get("/:id", authenticate, NotificationController.getById);
+/* -------------------------------------------------------------------------- */
+/*                                   Update                                   */
+/* -------------------------------------------------------------------------- */
+
+router.patch("/read-all", authenticate, NotificationController.markAllRead);
+
+router.patch("/:id/read", authenticate, NotificationController.markRead);
+
+router.patch("/:id", authenticate, NotificationController.update);
 
 /* -------------------------------------------------------------------------- */
 /*                                   Create                                   */
@@ -27,21 +35,15 @@ router.get("/:id", authenticate, NotificationController.getById);
 router.post("/", authenticate, NotificationController.create);
 
 /* -------------------------------------------------------------------------- */
-/*                                   Update                                   */
-/* -------------------------------------------------------------------------- */
-
-router.patch("/:id", authenticate, NotificationController.update);
-
-router.patch("/:id/read", authenticate, NotificationController.markRead);
-
-router.patch("/read-all", authenticate, NotificationController.markAllRead);
-
-/* -------------------------------------------------------------------------- */
 /*                                   Delete                                   */
 /* -------------------------------------------------------------------------- */
 
-router.delete("/:id", authenticate, NotificationController.delete);
-
 router.delete("/clear/all", authenticate, NotificationController.clear);
+
+/* -------------------------------------------------------------------------- */
+/*                                   Single                                   */
+/* -------------------------------------------------------------------------- */
+
+router.get("/:id", authenticate, NotificationController.getById);
 
 export default router;

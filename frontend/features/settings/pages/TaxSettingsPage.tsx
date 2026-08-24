@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { BadgePercent, Building2, Landmark, Receipt } from "lucide-react";
 
 import { CURRENCY_OPTIONS, GST_OPTIONS } from "../constants/settings-options";
@@ -11,21 +11,146 @@ import SettingsSection from "../components/SettingsSection";
 import SettingsSelect from "../components/SettingsSelect";
 import SettingSwitch from "../components/SettingSwitch";
 
+import {
+  taxSettingsService,
+  type TaxSettings,
+} from "../services/tax-settings.service";
+
+interface BusinessSettings {
+  gstNo: string;
+  panNo: string;
+  businessType: string;
+}
+
+interface SettingsData {
+  tax: TaxSettings;
+  business: BusinessSettings;
+}
+
 export default function TaxSettingsPage() {
-  const [currency, setCurrency] = useState("INR");
-  const [gstRate, setGstRate] = useState("18");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
   const [enableGST, setEnableGST] = useState(true);
+  const [gstRate, setGstRate] = useState("18");
+  const [taxType, setTaxType] = useState("EXCLUSIVE");
+  const [currency, setCurrency] = useState("INR");
+
+  const [gstNumber, setGstNumber] = useState("");
+  const [panNumber, setPanNumber] = useState("");
+  const [businessType, setBusinessType] = useState("");
+
+  /* ---------------------------------------------------------------------- */
+  /* Load                                                                  */
+  /* ---------------------------------------------------------------------- */
+
+  const loadSettings = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const data: SettingsData = await taxSettingsService.getSettings();
+
+      setEnableGST(data.tax.enabled);
+      setGstRate(String(data.tax.defaultGST));
+      setTaxType(data.tax.taxType);
+      setCurrency(data.tax.currency);
+
+      setGstNumber(data.business.gstNo ?? "");
+      setPanNumber(data.business.panNo ?? "");
+      setBusinessType(data.business.businessType ?? "");
+    } catch (err) {
+      console.error("Failed to load tax settings:", err);
+
+      setError("Unable to load tax settings.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadSettings();
+  }, [loadSettings]);
+
+  /* ---------------------------------------------------------------------- */
+  /* Save                                                                  */
+  /* ---------------------------------------------------------------------- */
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      setError(null);
+      setSuccess(false);
+
+      const rate = Number(gstRate);
+
+      if (!Number.isFinite(rate) || rate < 0 || rate > 100) {
+        setError("GST rate must be between 0 and 100.");
+        return;
+      }
+
+      const updatedTax = await taxSettingsService.updateSettings({
+        enabled: enableGST,
+        defaultGST: rate,
+        taxType,
+        currency,
+        currencySymbol: currency === "INR" ? "₹" : currency,
+      });
+
+      // Keep UI synchronized with backend response.
+      setEnableGST(updatedTax.enabled);
+      setGstRate(String(updatedTax.defaultGST));
+      setTaxType(updatedTax.taxType);
+      setCurrency(updatedTax.currency);
+
+      setSuccess(true);
+
+      window.setTimeout(() => {
+        setSuccess(false);
+      }, 2500);
+    } catch (err) {
+      console.error("Failed to save tax settings:", err);
+
+      setError("Unable to save tax settings. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /* ---------------------------------------------------------------------- */
+  /* Loading                                                                */
+  /* ---------------------------------------------------------------------- */
+
+  if (loading) {
+    return (
+      <SettingsFormLayout
+        title="Tax & GST"
+        description="Manage GST, taxation and business registration."
+      >
+        <div className="flex min-h-[400px] items-center justify-center">
+          <p className="text-sm text-muted-foreground">
+            Loading tax settings...
+          </p>
+        </div>
+      </SettingsFormLayout>
+    );
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /* Render                                                                 */
+  /* ---------------------------------------------------------------------- */
 
   return (
     <SettingsFormLayout
       title="Tax & GST"
       description="Manage GST, taxation and business registration."
-      onSave={() => {}}
+      onSave={handleSave}
     >
       <div className="space-y-6">
-        {/* ------------------------------------------------------------- */}
         {/* Header */}
-        {/* ------------------------------------------------------------- */}
 
         <div className="rounded-3xl border bg-card p-6 shadow-sm">
           <div className="flex items-start gap-5">
@@ -58,9 +183,21 @@ export default function TaxSettingsPage() {
           </div>
         </div>
 
-        {/* ------------------------------------------------------------- */}
+        {/* Status */}
+
+        {error && (
+          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
+            Tax settings saved successfully.
+          </div>
+        )}
+
         {/* Summary */}
-        {/* ------------------------------------------------------------- */}
 
         <div className="grid gap-4 md:grid-cols-3">
           <SummaryCard
@@ -80,14 +217,12 @@ export default function TaxSettingsPage() {
           <SummaryCard
             icon={Building2}
             title="Business"
-            value="Registered"
+            value={businessType || "Configured"}
             color="orange"
           />
         </div>
 
-        {/* ------------------------------------------------------------- */}
         {/* GST */}
-        {/* ------------------------------------------------------------- */}
 
         <SettingsSection
           title="GST Configuration"
@@ -97,12 +232,12 @@ export default function TaxSettingsPage() {
           <div className="space-y-5">
             <SettingSwitch
               title="Enable GST"
-              description="Apply GST to all purchase and sales transactions."
+              description="Apply GST to purchase and sales transactions."
               checked={enableGST}
               onCheckedChange={setEnableGST}
             />
 
-            <div className="grid gap-5 md:grid-cols-2">
+            <div className="grid gap-5 md:grid-cols-3">
               <SettingsSelect
                 label="Default GST Rate"
                 value={gstRate}
@@ -116,13 +251,27 @@ export default function TaxSettingsPage() {
                 onChange={setCurrency}
                 options={CURRENCY_OPTIONS}
               />
+
+              <SettingsSelect
+                label="Tax Type"
+                value={taxType}
+                onChange={setTaxType}
+                options={[
+                  {
+                    label: "Exclusive",
+                    value: "EXCLUSIVE",
+                  },
+                  {
+                    label: "Inclusive",
+                    value: "INCLUSIVE",
+                  },
+                ]}
+              />
             </div>
           </div>
         </SettingsSection>
 
-        {/* ------------------------------------------------------------- */}
-        {/* Business Details */}
-        {/* ------------------------------------------------------------- */}
+        {/* Business */}
 
         <SettingsSection
           title="Business Registration"
@@ -130,19 +279,41 @@ export default function TaxSettingsPage() {
           icon={Landmark}
         >
           <div className="grid gap-5 md:grid-cols-2">
-            <SettingsInput label="GST Number" placeholder="22AAAAA0000A1Z5" />
+            <SettingsInput
+              label="GST Number"
+              value={gstNumber}
+              disabled
+              placeholder="22AAAAA0000A1Z5"
+            />
 
-            <SettingsInput label="PAN Number" placeholder="ABCDE1234F" />
+            <SettingsInput
+              label="PAN Number"
+              value={panNumber}
+              disabled
+              placeholder="ABCDE1234F"
+            />
 
-            <SettingsInput label="Business Type" placeholder="Proprietorship" />
+            <SettingsInput
+              label="Business Type"
+              value={businessType}
+              disabled
+              placeholder="Proprietorship"
+            />
 
-            <SettingsInput label="State Code" placeholder="19" />
+            <SettingsInput
+              label="Currency Symbol"
+              value={currency === "INR" ? "₹" : currency}
+              disabled
+              placeholder="₹"
+            />
           </div>
+
+          <p className="mt-4 text-xs text-muted-foreground">
+            Business registration details are managed from Business Profile.
+          </p>
         </SettingsSection>
 
-        {/* ------------------------------------------------------------- */}
         {/* Preview */}
-        {/* ------------------------------------------------------------- */}
 
         <SettingsSection
           title="Current Tax Summary"
@@ -159,13 +330,35 @@ export default function TaxSettingsPage() {
 
             <PreviewCard title="Currency" value={currency} />
 
-            <PreviewCard title="Business Type" value="Proprietorship" />
+            <PreviewCard
+              title="Tax Type"
+              value={taxType === "INCLUSIVE" ? "Inclusive" : "Exclusive"}
+            />
           </div>
         </SettingsSection>
+
+        {/* Save */}
+
+        <div className="flex justify-end border-t pt-6">
+          <button
+            type="button"
+            onClick={() => {
+              void handleSave();
+            }}
+            disabled={saving}
+            className="rounded-xl bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {saving ? "Saving..." : "Save Changes"}
+          </button>
+        </div>
       </div>
     </SettingsFormLayout>
   );
 }
+
+/* -------------------------------------------------------------------------- */
+/* Summary Card                                                               */
+/* -------------------------------------------------------------------------- */
 
 interface SummaryCardProps {
   icon: React.ElementType;
@@ -180,10 +373,12 @@ function SummaryCard({ icon: Icon, title, value, color }: SummaryCardProps) {
       bg: "bg-green-100",
       text: "text-green-600",
     },
+
     blue: {
       bg: "bg-blue-100",
       text: "text-blue-600",
     },
+
     orange: {
       bg: "bg-orange-100",
       text: "text-orange-600",
@@ -204,6 +399,10 @@ function SummaryCard({ icon: Icon, title, value, color }: SummaryCardProps) {
     </div>
   );
 }
+
+/* -------------------------------------------------------------------------- */
+/* Preview Card                                                               */
+/* -------------------------------------------------------------------------- */
 
 interface PreviewCardProps {
   title: string;

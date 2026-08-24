@@ -10,14 +10,14 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 
-interface Props {
+type CustomerStatus = "ACTIVE" | "ALL" | "INACTIVE";
+
+interface CustomerFilterSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-
-  status: string;
+  status: CustomerStatus;
   sort: string;
-
-  onStatusChange: (value: string) => void;
+  onStatusChange: (value: CustomerStatus) => void;
   onSortChange: (value: string) => void;
 }
 
@@ -28,14 +28,20 @@ export default function CustomerFilterSheet({
   sort,
   onStatusChange,
   onSortChange,
-}: Props) {
-  const statusItems = [
+}: CustomerFilterSheetProps) {
+  const statusItems: {
+    label: string;
+    value: CustomerStatus;
+  }[] = [
     { label: "All", value: "ALL" },
     { label: "Active", value: "ACTIVE" },
     { label: "Inactive", value: "INACTIVE" },
   ];
 
-  const sortItems = [
+  const sortItems: {
+    label: string;
+    value: string;
+  }[] = [
     { label: "Name (A–Z)", value: "NAME_ASC" },
     { label: "Name (Z–A)", value: "NAME_DESC" },
     { label: "Newest", value: "NEWEST" },

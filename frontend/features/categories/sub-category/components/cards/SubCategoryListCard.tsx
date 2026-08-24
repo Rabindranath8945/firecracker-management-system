@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Eye,
   FolderOpen,
   FolderTree,
   MoreVertical,
@@ -27,13 +26,18 @@ export default function SubCategoryListCard({
 }: SubCategoryListCardProps) {
   const router = useRouter();
 
+  const categoryName =
+    typeof subCategory.category === "object" && subCategory.category !== null
+      ? subCategory.category.name
+      : "Uncategorized";
+
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_6px_18px_rgba(15,23,42,0.06)] transition-all duration-300 hover:border-blue-200 hover:shadow-xl">
       {/* Body */}
 
       <div
         onClick={() =>
-          router.push(`/categories/sub-category/${subCategory.id}`)
+          router.push(`/categories/sub-category/${subCategory._id}`)
         }
         className="cursor-pointer px-4 py-3"
       >
@@ -43,9 +47,7 @@ export default function SubCategoryListCard({
           <div
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white shadow-md"
             style={{
-              background: subCategory.color
-                ? subCategory.color
-                : "linear-gradient(135deg,#2563eb,#06b6d4)",
+              background: "linear-gradient(135deg,#2563eb,#06b6d4)",
             }}
           >
             <FolderOpen className="h-5 w-5" />
@@ -65,7 +67,7 @@ export default function SubCategoryListCard({
                 <div className="mt-1 flex items-center gap-1 text-sm text-slate-500">
                   <FolderTree className="h-3.5 w-3.5 text-blue-500" />
 
-                  <span>{subCategory.categoryName}</span>
+                  <span>{categoryName}</span>
                 </div>
               </div>
 
@@ -100,12 +102,12 @@ export default function SubCategoryListCard({
                   className="border-blue-200 bg-blue-50 text-[11px] text-blue-700"
                 >
                   <Package className="mr-1 h-3 w-3" />
-                  {subCategory.productCount}
+                  {subCategory.productCount ?? 0}
                 </Badge>
               </div>
 
               <span className="text-sm font-semibold text-slate-600">
-                {subCategory.subCategoryNo}
+                {subCategory.subCategoryCode}
               </span>
             </div>
           </div>
@@ -115,22 +117,11 @@ export default function SubCategoryListCard({
       {/* Actions */}
 
       <div className="grid grid-cols-2 border-t border-slate-100 bg-slate-50">
-        {/* <Button
-          variant="ghost"
-          className="h-9 rounded-none text-xs"
-          onClick={() =>
-            router.push(`/categories/sub-category/${subCategory.id}`)
-          }
-        >
-          <Eye className="mr-1 h-3.5 w-3.5" />
-          View
-        </Button> */}
-
         <Button
           variant="ghost"
           className="h-9 rounded-none border-x border-slate-100 text-xs"
           onClick={() =>
-            router.push(`/categories/sub-category/${subCategory.id}/edit`)
+            router.push(`/categories/sub-category/${subCategory._id}/edit`)
           }
         >
           <Pencil className="mr-1 h-3.5 w-3.5 text-blue-600" />

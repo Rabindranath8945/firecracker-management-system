@@ -14,8 +14,7 @@ interface SettingsSelectProps {
   value: string;
   onChange: (value: string) => void;
   options: Option[];
-
-  description?: string;
+  description?: string | undefined;
 }
 
 export default function SettingsSelect({
@@ -28,10 +27,10 @@ export default function SettingsSelect({
   return (
     <div className="space-y-2">
       <div>
-        <Label className="font-medium">{label}</Label>
+        <Label className="text-sm font-medium text-slate-700">{label}</Label>
 
         {description && (
-          <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+          <p className="mt-1 text-xs leading-5 text-slate-500">{description}</p>
         )}
       </div>
 

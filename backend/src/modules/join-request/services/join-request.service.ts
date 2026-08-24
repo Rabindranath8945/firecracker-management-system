@@ -6,7 +6,7 @@ import BusinessRepository from "../../business/repositories/business.repository.
 import { createJoinRequestSchema } from "../validators/join-request.validator.js";
 
 import UserService from "../../user/services/user.service.js";
-import { UserRole } from "../../user/models/user.model.js";
+import type { UserRole } from "../../user/constants/user.constants.js";
 
 class JoinRequestService {
   /* -------------------------------------------------------------------------- */

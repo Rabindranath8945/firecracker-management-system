@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
@@ -12,7 +12,11 @@ import ProgressScreen from "../components/ProgressScreen";
 
 import type { BusinessInfo, OnboardingStep } from "../types/onboarding.types";
 
-export default function OnboardingPage() {
+/* -------------------------------------------------------------------------- */
+/* ONBOARDING CONTENT                                                         */
+/* -------------------------------------------------------------------------- */
+
+function OnboardingContent() {
   const router = useRouter();
 
   const searchParams = useSearchParams();
@@ -24,9 +28,9 @@ export default function OnboardingPage() {
 
   const [step, setStep] = useState<OnboardingStep>(initialStep);
 
-  /* -------------------------------------------------------------------------- */
-  /*                           Create Business                                  */
-  /* -------------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------ */
+  /* Create Business                                                          */
+  /* ------------------------------------------------------------------------ */
 
   const setupBusiness = async () => {
     const info = JSON.parse(
@@ -60,80 +64,100 @@ export default function OnboardingPage() {
     });
   };
 
-  switch (step) {
-    /* ---------------------------------------------------------------------- */
-    /*                         Business Type                                  */
-    /* ---------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------ */
+  /* Business Selection                                                       */
+  /* ------------------------------------------------------------------------ */
 
-    case "business":
-      return (
-        <BusinessSelectionScreen
-          onNext={(businessType) => {
-            sessionStorage.setItem("business-type", businessType);
+  if (step === "business") {
+    return (
+      <BusinessSelectionScreen
+        onNext={(businessType) => {
+          sessionStorage.setItem("business-type", businessType);
 
-            setStep("business-info");
-          }}
-        />
-      );
-
-    /* ---------------------------------------------------------------------- */
-    /*                      Business Information                              */
-    /* ---------------------------------------------------------------------- */
-
-    case "business-info":
-      return (
-        <BusinessInfoScreen
-          onNext={(data) => {
-            sessionStorage.setItem("business-info", JSON.stringify(data));
-
-            setStep("progress");
-          }}
-          onSkip={() => {
-            sessionStorage.setItem(
-              "business-info",
-              JSON.stringify({
-                businessName: "My Business",
-                ownerName: "",
-                mobile: "",
-                gstNo: "",
-                address: "",
-              }),
-            );
-
-            setStep("progress");
-          }}
-        />
-      );
-
-    /* ---------------------------------------------------------------------- */
-    /*                           Create Business                              */
-    /* ---------------------------------------------------------------------- */
-
-    case "progress":
-      return (
-        <ProgressScreen
-          onComplete={async () => {
-            try {
-              await setupBusiness();
-
-              localStorage.setItem("onboarding-completed", "true");
-
-              sessionStorage.removeItem("business-info");
-              sessionStorage.removeItem("business-type");
-
-              toast.success("Business created successfully.");
-
-              router.replace("/business/select");
-            } catch (error) {
-              console.error(error);
-
-              toast.error("Unable to create your business.");
-            }
-          }}
-        />
-      );
-
-    default:
-      return null;
+          setStep("business-info");
+        }}
+      />
+    );
   }
+
+  /* ------------------------------------------------------------------------ */
+  /* Business Information                                                     */
+  /* ------------------------------------------------------------------------ */
+
+  if (step === "business-info") {
+    return (
+      <BusinessInfoScreen
+        onNext={(data) => {
+          sessionStorage.setItem("business-info", JSON.stringify(data));
+
+          setStep("progress");
+        }}
+        onSkip={() => {
+          sessionStorage.setItem(
+            "business-info",
+            JSON.stringify({
+              businessName: "My Business",
+              ownerName: "",
+              mobile: "",
+              gstNo: "",
+              address: "",
+            }),
+          );
+
+          setStep("progress");
+        }}
+      />
+    );
+  }
+
+  /* ------------------------------------------------------------------------ */
+  /* Progress / Create Business                                               */
+  /* ------------------------------------------------------------------------ */
+
+  if (step === "progress") {
+    return (
+      <ProgressScreen
+        onComplete={async () => {
+          try {
+            await setupBusiness();
+
+            localStorage.setItem("onboarding-completed", "true");
+
+            sessionStorage.removeItem("business-info");
+            sessionStorage.removeItem("business-type");
+
+            toast.success("Business created successfully.");
+
+            router.replace("/business/select");
+          } catch (error) {
+            console.error("Failed to create business:", error);
+
+            toast.error("Unable to create your business.");
+          }
+        }}
+      />
+    );
+  }
+
+  return null;
+}
+
+/* -------------------------------------------------------------------------- */
+/* PAGE                                                                       */
+/* -------------------------------------------------------------------------- */
+
+export default function OnboardingPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-background">
+          <div className="text-sm text-muted-foreground">
+            Loading onboarding...
+          </div>
+        </main>
+      }
+    >
+      <OnboardingContent />
+    </Suspense>
+  );
 }

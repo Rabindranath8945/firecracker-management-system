@@ -58,7 +58,7 @@ class JoinRequestController {
 
     const user = await UserService.getUserById(userId);
 
-    if (!user?.business) {
+    if (!user?.currentBusiness) {
       return res.status(400).json({
         success: false,
         message: "Business not found.",
@@ -66,7 +66,7 @@ class JoinRequestController {
     }
 
     const requests = await JoinRequestService.getPending(
-      user.business.toString(),
+      user.currentBusiness.toString(),
     );
 
     return res.json({

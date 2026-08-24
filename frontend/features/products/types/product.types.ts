@@ -2,13 +2,13 @@ export type ProductStatus = "ACTIVE" | "INACTIVE";
 
 export interface ProductCategory {
   _id: string;
-  categoryCode: string;
+
   name: string;
 }
 
 export interface ProductSubCategory {
   _id: string;
-  subCategoryCode: string;
+
   name: string;
 }
 

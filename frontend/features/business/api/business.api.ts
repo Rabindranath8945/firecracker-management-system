@@ -13,6 +13,10 @@ export const businessApi = {
     return api.post<ApiResponse<Business>>("/business", payload);
   },
 
+  getCurrent() {
+    return api.get<ApiResponse<Business | null>>("/business/current");
+  },
+
   getMine() {
     return api.get<ApiResponse<Business[]>>("/business/me");
   },

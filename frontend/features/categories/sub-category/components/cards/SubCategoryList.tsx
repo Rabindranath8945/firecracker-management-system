@@ -34,7 +34,7 @@ export default function SubCategoryList({
     <div className="space-y-6">
       {subCategories.map((subCategory) => (
         <SubCategoryListCard
-          key={subCategory.id}
+          key={subCategory._id}
           subCategory={subCategory}
           onDelete={onDelete}
         />

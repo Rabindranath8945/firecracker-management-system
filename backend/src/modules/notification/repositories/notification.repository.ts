@@ -1,5 +1,6 @@
 import Notification from "../models/notification.model.js";
-import { INotification } from "../interfaces/notification.interface.js";
+
+import type { INotification } from "../interfaces/notification.interface.js";
 
 class NotificationRepository {
   /* -------------------------------------------------------------------------- */
@@ -19,29 +20,56 @@ class NotificationRepository {
   /* -------------------------------------------------------------------------- */
 
   async find() {
-    return Notification.find().sort({
-      createdAt: -1,
-    });
+    return Notification.find().sort({ createdAt: -1 }).limit(100).lean().exec();
   }
 
   async findById(id: string) {
-    return Notification.findById(id);
+    return Notification.findById(id).lean().exec();
   }
+
+  async findByIdForUser(id: string, userId: string) {
+    return Notification.findOne({
+      _id: id,
+      createdBy: userId,
+    })
+      .lean()
+      .exec();
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*                                   Latest                                   */
+  /* -------------------------------------------------------------------------- */
+
+  async latestForUser(userId: string, limit = 20) {
+    return Notification.find({
+      createdBy: userId,
+    })
+      .sort({ createdAt: -1 })
+      .limit(Math.min(limit, 50))
+      .lean()
+      .exec();
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*                                   Unread                                   */
+  /* -------------------------------------------------------------------------- */
 
   async unreadCount(userId: string) {
     return Notification.countDocuments({
       createdBy: userId,
       read: false,
-    });
+    }).exec();
   }
 
   async findUnread(userId: string) {
     return Notification.find({
       createdBy: userId,
       read: false,
-    }).sort({
-      createdAt: -1,
-    });
+    })
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .lean()
+      .exec();
   }
 
   async findUnreadLowStock(userId: string, productId: string) {
@@ -50,38 +78,48 @@ class NotificationRepository {
       type: "LOW_STOCK",
       read: false,
       "data.productId": productId,
-    });
-  }
-
-  async latest(limit = 20) {
-    return Notification.find()
-      .sort({
-        createdAt: -1,
-      })
-      .limit(limit);
+    })
+      .lean()
+      .exec();
   }
 
   /* -------------------------------------------------------------------------- */
   /*                                   Update                                   */
   /* -------------------------------------------------------------------------- */
 
-  async update(id: string, data: Partial<INotification>) {
-    return Notification.findByIdAndUpdate(id, data, {
-      new: true,
-      runValidators: true,
-    });
+  async update(id: string, userId: string, data: Partial<INotification>) {
+    return Notification.findOneAndUpdate(
+      {
+        _id: id,
+        createdBy: userId,
+      },
+      data,
+      {
+        new: true,
+        runValidators: true,
+      },
+    )
+      .lean()
+      .exec();
   }
 
-  async markRead(id: string) {
-    return Notification.findByIdAndUpdate(
-      id,
+  async markRead(id: string, userId: string) {
+    return Notification.findOneAndUpdate(
       {
-        read: true,
+        _id: id,
+        createdBy: userId,
+      },
+      {
+        $set: {
+          read: true,
+        },
       },
       {
         new: true,
       },
-    );
+    )
+      .lean()
+      .exec();
   }
 
   async markAllRead(userId: string) {
@@ -91,23 +129,30 @@ class NotificationRepository {
         read: false,
       },
       {
-        read: true,
+        $set: {
+          read: true,
+        },
       },
-    );
+    ).exec();
   }
 
   /* -------------------------------------------------------------------------- */
   /*                                   Delete                                   */
   /* -------------------------------------------------------------------------- */
 
-  async delete(id: string) {
-    return Notification.findByIdAndDelete(id);
+  async delete(id: string, userId: string) {
+    return Notification.findOneAndDelete({
+      _id: id,
+      createdBy: userId,
+    })
+      .lean()
+      .exec();
   }
 
   async clear(userId: string) {
     return Notification.deleteMany({
       createdBy: userId,
-    });
+    }).exec();
   }
 }
 

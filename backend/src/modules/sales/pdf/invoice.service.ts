@@ -14,6 +14,8 @@ class InvoiceService {
       title: "TAX INVOICE",
 
       company: {
+        businessId: sale.businessId.toString(),
+
         name: "Firecracker Management System",
 
         address: "Business Address",
@@ -24,7 +26,6 @@ class InvoiceService {
 
         gstNo: "GSTIN",
       },
-
       customer: sale.customer
         ? {
             name: sale.customer.name,

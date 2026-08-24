@@ -8,12 +8,11 @@ import {
   ChartColumn,
   CircleDollarSign,
   CreditCard,
+  FileSpreadsheet,
   FileText,
-  ListTree,
   PackageSearch,
   Receipt,
   Settings,
-  ShoppingBag,
   Tags,
   Truck,
   UserRound,
@@ -75,13 +74,6 @@ const modules: StoreModule[] = [
     color: "pink",
   },
   {
-    title: "Sub Categories",
-    description: "Organize products under categories",
-    href: "/sub-categories",
-    icon: ListTree,
-    color: "teal",
-  },
-  {
     title: "Reports",
     description: "Business performance and analytics",
     href: "/reports",
@@ -115,6 +107,14 @@ const modules: StoreModule[] = [
     href: "/settings",
     icon: Settings,
     color: "slate",
+  },
+
+  {
+    title: "Import & Export",
+    description: "Import and export your business data",
+    href: "/import-export",
+    icon: FileSpreadsheet,
+    color: "teal",
   },
 ];
 
@@ -291,7 +291,7 @@ export default function MorePage() {
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]" />
 
                 <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-sky-400">
-                  ERP Control Center
+                  OneHub ERP Control Center
                 </p>
               </div>
 
@@ -476,7 +476,7 @@ export default function MorePage() {
             <div className="h-px w-10 bg-slate-200 dark:bg-border" />
 
             <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-              Premium ERP
+              OneHub ERP
             </span>
 
             <div className="h-px w-10 bg-slate-200 dark:bg-border" />

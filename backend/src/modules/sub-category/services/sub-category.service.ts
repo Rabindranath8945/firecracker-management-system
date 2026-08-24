@@ -4,7 +4,7 @@ import SubCategoryRepository from "../repositories/sub-category.repository.js";
 import CategoryRepository from "../../category/repositories/category.repository.js";
 import { generateSequenceCode } from "../../../common/utils/generate-code.js";
 
-import {
+import type {
   CreateSubCategoryDto,
   UpdateSubCategoryDto,
 } from "../validators/sub-category.validator.js";
@@ -15,20 +15,29 @@ interface SubCategoryQuery {
   search?: string;
   sort?: string;
   order?: "asc" | "desc";
-
   category?: string;
-
   isActive?: boolean;
 }
 
 class SubCategoryService {
+  /* ------------------------------------------------------------------------ */
+  /* DTO MAPPER                                                               */
+  /* ------------------------------------------------------------------------ */
+
   private mapDto(data: CreateSubCategoryDto | UpdateSubCategoryDto) {
     return {
       ...data,
-
-      category: data.category ? new Types.ObjectId(data.category) : undefined,
+      ...(data.category !== undefined
+        ? {
+            category: new Types.ObjectId(data.category),
+          }
+        : {}),
     };
   }
+
+  /* ------------------------------------------------------------------------ */
+  /* CREATE                                                                    */
+  /* ------------------------------------------------------------------------ */
 
   async create(data: CreateSubCategoryDto, userId: string) {
     if (!Types.ObjectId.isValid(userId)) {
@@ -54,6 +63,10 @@ class SubCategoryService {
     });
   }
 
+  /* ------------------------------------------------------------------------ */
+  /* GENERATE CODE                                                             */
+  /* ------------------------------------------------------------------------ */
+
   private async generateSubCategoryCode() {
     const subCategories = await SubCategoryRepository.findCodes();
 
@@ -63,17 +76,25 @@ class SubCategoryService {
     );
   }
 
+  /* ------------------------------------------------------------------------ */
+  /* GET ALL                                                                   */
+  /* ------------------------------------------------------------------------ */
+
   async getAll(query: SubCategoryQuery) {
     return SubCategoryRepository.findAll({
       page: query.page ?? 1,
       limit: query.limit ?? 20,
-      search: query.search,
+      search: query.search?.trim() || undefined,
       sort: query.sort,
-      order: query.order,
+      order: query.order ?? "asc",
       category: query.category,
-      isActive: query.isActive ?? true,
+      isActive: query.isActive !== undefined ? query.isActive : undefined,
     });
   }
+
+  /* ------------------------------------------------------------------------ */
+  /* GET BY ID                                                                 */
+  /* ------------------------------------------------------------------------ */
 
   async getById(id: string) {
     if (!Types.ObjectId.isValid(id)) {
@@ -89,6 +110,10 @@ class SubCategoryService {
     return subCategory;
   }
 
+  /* ------------------------------------------------------------------------ */
+  /* UPDATE                                                                    */
+  /* ------------------------------------------------------------------------ */
+
   async update(id: string, data: UpdateSubCategoryDto, userId: string) {
     if (!Types.ObjectId.isValid(id)) {
       throw new Error("Invalid sub category id.");
@@ -98,11 +123,11 @@ class SubCategoryService {
       throw new Error("Invalid user.");
     }
 
-    if (data.category && !Types.ObjectId.isValid(data.category)) {
+    if (data.category !== undefined && !Types.ObjectId.isValid(data.category)) {
       throw new Error("Invalid category.");
     }
 
-    if (data.category) {
+    if (data.category !== undefined) {
       const category = await CategoryRepository.findById(data.category);
 
       if (!category) {
@@ -110,9 +135,9 @@ class SubCategoryService {
       }
     }
 
-    const subCategory = await SubCategoryRepository.findById(id);
+    const existing = await SubCategoryRepository.findById(id);
 
-    if (!subCategory) {
+    if (!existing) {
       throw new Error("Sub category not found.");
     }
 
@@ -121,6 +146,10 @@ class SubCategoryService {
       updatedBy: new Types.ObjectId(userId),
     });
   }
+
+  /* ------------------------------------------------------------------------ */
+  /* DELETE                                                                    */
+  /* ------------------------------------------------------------------------ */
 
   async delete(id: string, userId: string) {
     if (!Types.ObjectId.isValid(id)) {
@@ -131,9 +160,9 @@ class SubCategoryService {
       throw new Error("Invalid user.");
     }
 
-    const subCategory = await SubCategoryRepository.findById(id);
+    const existing = await SubCategoryRepository.findById(id);
 
-    if (!subCategory) {
+    if (!existing) {
       throw new Error("Sub category not found.");
     }
 

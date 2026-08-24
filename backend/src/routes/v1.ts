@@ -17,14 +17,16 @@ import invoiceRoutes from "../modules/sales/routes/invoice.route.js";
 import { SettingsRoutes } from "../modules/settings/index.js";
 import { SecurityRoutes } from "../modules/security/index.js";
 import { AppSetupRoutes } from "../modules/app-setup/index.js";
-import { BackupRoutes } from "../modules/backup/index.js";
-import purchaseOcrRoutes from "../modules/purchase-ocr/routes/purchase-ocr.routes.js";
 import userRoutes from "../modules/user/routes/user.routes.js";
 import businessRoutes from "../modules/business/routes/business.routes.js";
 import joinRequestRoutes from "../modules/join-request/routes/join-request.routes.js";
 import dashboardRoutes from "../modules/dashboard/routes/dashboard.routes.js";
 import customerPaymentRoutes from "../modules/customer/routes/customer-payment.routes.js";
 import supplierPaymentRoutes from "../modules/supplier/routes/supplier-payment.routes.js";
+import syncRouter from "../modules/sync/routes/sync.routes.js";
+import notificationRoutes from "../modules/notification/routes/notification.routes.js";
+import invitationRoutes from "../modules/invitation/routes/invitation.routes.js";
+import importExportRoutes from "../modules/import-export/routes/import-export.routes.js";
 
 const router = Router();
 
@@ -61,10 +63,7 @@ router.use("/settings", SettingsRoutes);
 router.use("/security", SecurityRoutes);
 // App Setup
 router.use("/app-setup", AppSetupRoutes);
-// Backup Routes
-router.use("/backup", BackupRoutes);
-// Purchase Ocr Routes
-router.use("/purchase-ocr", purchaseOcrRoutes);
+
 // User Routes
 router.use("/users", userRoutes);
 // Business Rotes
@@ -73,5 +72,13 @@ router.use("/business", businessRoutes);
 router.use("/join-requests", joinRequestRoutes);
 // Dashboard Routes
 router.use("/dashboard", dashboardRoutes);
+// Sync Routes
+router.use("/sync", syncRouter);
+// Notification Routes
+router.use("/notifications", notificationRoutes);
+// Invitation Routes
+router.use("/invitations", invitationRoutes);
+// Import / Export Routes
+router.use("/import-export", importExportRoutes);
 
 export default router;

@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 type Status =
   | "Paid"
+  | "Due"
   | "Pending"
   | "Cancelled"
   | "Completed"
@@ -24,6 +25,11 @@ const STATUS_STYLES = {
   },
 
   Pending: {
+    icon: Clock3,
+    className: "bg-amber-50 text-amber-700 border-amber-200",
+  },
+
+  Due: {
     icon: Clock3,
     className: "bg-amber-50 text-amber-700 border-amber-200",
   },

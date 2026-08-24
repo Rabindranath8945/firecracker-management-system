@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -18,19 +19,17 @@ export default function JoinBusinessSearchPage() {
   const router = useRouter();
 
   const [search, setSearch] = useState("");
-
   const [loading, setLoading] = useState(false);
 
+  const [businesses, setBusinesses] = useState<Business[]>([]);
   const [business, setBusiness] = useState<Business | null>(null);
 
   const { searchBusiness } = useBusiness();
-
   const { createRequest } = useJoinRequest();
 
   const handleSearch = async () => {
     if (!search.trim()) {
       toast.error("Please enter a Business ID or Business Name.");
-
       return;
     }
 
@@ -39,10 +38,26 @@ export default function JoinBusinessSearchPage() {
 
       const result = await searchBusiness(search);
 
-      setBusiness(result);
+      setBusinesses(result);
+
+      if (result.length === 0) {
+        setBusiness(null);
+        toast.error("Business not found.");
+        return;
+      }
+
+      // Select the first matching business.
+      if (result.length === 0) {
+        setBusiness(null);
+        toast.error("Business not found.");
+        return;
+      }
+
+      setBusiness(result[0] ?? null);
     } catch (error) {
       console.error(error);
 
+      setBusinesses([]);
       setBusiness(null);
 
       toast.error("Business not found.");
@@ -157,6 +172,9 @@ export default function JoinBusinessSearchPage() {
           <QrCode className="mr-2 h-5 w-5 text-sky-600" />
           Scan Business QR
         </Button>
+
+        {/* Business Result */}
+
         {business && (
           <div className="mt-8 rounded-3xl border border-sky-100 bg-sky-50 p-6">
             <div className="flex items-center justify-between">
@@ -206,6 +224,17 @@ export default function JoinBusinessSearchPage() {
           </div>
         )}
 
+        {/* Search Results */}
+
+        {businesses.length > 1 && (
+          <div className="mt-4 text-center text-sm text-slate-500">
+            {businesses.length} businesses found. Showing the first matching
+            business.
+          </div>
+        )}
+
+        {/* How to Join */}
+
         <div className="mt-8 rounded-3xl border border-sky-100 bg-sky-50 p-5">
           <h3 className="font-semibold text-slate-900">How do I join?</h3>
 
@@ -218,6 +247,8 @@ export default function JoinBusinessSearchPage() {
         </div>
 
         <div className="flex-1" />
+
+        {/* Footer */}
 
         <footer className="pb-8 text-center">
           <p className="text-sm text-slate-500">Version 1.0.0</p>

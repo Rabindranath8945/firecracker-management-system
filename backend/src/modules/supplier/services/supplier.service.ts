@@ -5,6 +5,9 @@ import SupplierRepository from "../repositories/supplier.repository.js";
 import { SupplierExcelRow } from "../../../common/excel/types/supplier-excel-row.types.js";
 import { ISupplier } from "../interfaces/supplier.interface.js";
 
+import SettingsRepository from "../../settings/repositories/settings.repository.js";
+import { generateSequenceCode } from "../../../common/utils/generate-code.js";
+
 import {
   CreateSupplierDto,
   UpdateSupplierDto,
@@ -33,21 +36,19 @@ class SupplierService {
       throw new Error("Invalid user.");
     }
 
-    /* -------------------------------------------------------------------- */
-    /* Supplier Code                                                        */
-    /* -------------------------------------------------------------------- */
-
-    const supplierCodeExists = await SupplierRepository.findByCode(
-      data.supplierCode,
+    const prefix = await SettingsRepository.getNumberingPrefix(
+      userId,
+      "supplier",
     );
 
-    if (supplierCodeExists) {
-      throw new Error("Supplier code already exists.");
-    }
+    const suppliers = await SupplierRepository.findCodes();
 
-    /* -------------------------------------------------------------------- */
-    /* Mobile                                                               */
-    /* -------------------------------------------------------------------- */
+    const supplierCode = generateSequenceCode(
+      suppliers
+        .map((supplier) => supplier.supplierCode)
+        .filter((code): code is string => Boolean(code)),
+      prefix,
+    );
 
     const mobileExists = await SupplierRepository.findByMobile(data.mobile);
 
@@ -55,12 +56,10 @@ class SupplierService {
       throw new Error("Mobile number already exists.");
     }
 
-    /* -------------------------------------------------------------------- */
-    /* Create                                                               */
-    /* -------------------------------------------------------------------- */
-
     return SupplierRepository.create({
       ...data,
+
+      supplierCode,
 
       createdBy: new Types.ObjectId(userId),
     });

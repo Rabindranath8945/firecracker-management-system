@@ -18,7 +18,7 @@ export default function SupplierStats({ suppliers }: Props) {
   const inactiveSuppliers = totalSuppliers - activeSuppliers;
 
   const payable = suppliers.reduce(
-    (sum, supplier) => sum + supplier.balance,
+    (sum, supplier) => sum + supplier.currentDue,
     0,
   );
 

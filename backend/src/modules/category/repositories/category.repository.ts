@@ -11,13 +11,30 @@ interface CategoryQueryOptions {
 }
 
 class CategoryRepository {
+  /* ------------------------------------------------------------------------ */
+  /* CREATE                                                                   */
+  /* ------------------------------------------------------------------------ */
+
   async create(data: Partial<ICategory>) {
     return Category.create(data);
   }
 
+  /* ------------------------------------------------------------------------ */
+  /* FIND CODES                                                               */
+  /* ------------------------------------------------------------------------ */
+
   async findCodes() {
-    return Category.find().select("categoryCode");
+    return Category.find(
+      {},
+      {
+        categoryCode: 1,
+      },
+    ).lean();
   }
+
+  /* ------------------------------------------------------------------------ */
+  /* BULK CREATE                                                              */
+  /* ------------------------------------------------------------------------ */
 
   async bulkCreate(data: Partial<ICategory>[]) {
     return Category.insertMany(data, {
@@ -25,79 +42,159 @@ class CategoryRepository {
     });
   }
 
+  /* ------------------------------------------------------------------------ */
+  /* CLEAR BUSINESS DATA                                                      */
+  /* ------------------------------------------------------------------------ */
+
   async clearBusinessData(businessId: string) {
     return Category.deleteMany({
       businessId,
     });
   }
 
+  /* ------------------------------------------------------------------------ */
+  /* FIND BY ID                                                               */
+  /* ------------------------------------------------------------------------ */
+
   async findById(id: string) {
-    return Category.findById(id);
+    return Category.findById(id).populate("productCount");
   }
 
+  /* ------------------------------------------------------------------------ */
+  /* FIND BY CODE                                                             */
+  /* ------------------------------------------------------------------------ */
+
   async findByCode(categoryCode: string) {
-    return Category.findOne({ categoryCode });
+    return Category.findOne({
+      categoryCode,
+    }).populate("productCount");
   }
+
+  /* ------------------------------------------------------------------------ */
+  /* FIND ALL FOR IMPORT                                                      */
+  /* ------------------------------------------------------------------------ */
 
   async findAllForImport() {
     return Category.find({
       isActive: true,
-    }).select("_id name");
+    })
+      .select("_id name")
+      .lean();
   }
+
+  /* ------------------------------------------------------------------------ */
+  /* FIND ALL                                                                 */
+  /* ------------------------------------------------------------------------ */
 
   async findAll(options: CategoryQueryOptions = {}) {
     const {
       page = 1,
       limit = 20,
       search,
-      sort = "createdAt",
-      order = "desc",
-      isActive = true,
+      sort = "name",
+      order = "asc",
+      isActive,
     } = options;
 
-    const query: Record<string, unknown> = {
-      isActive,
-    };
+    /* ---------------------------------------------------------------------- */
+    /* QUERY                                                                  */
+    /* ---------------------------------------------------------------------- */
 
-    if (search) {
+    const query: Record<string, unknown> = {};
+
+    /* ---------------------------------------------------------------------- */
+    /* STATUS                                                                 */
+    /* ---------------------------------------------------------------------- */
+
+    if (typeof isActive === "boolean") {
+      query.isActive = isActive;
+    }
+
+    /* ---------------------------------------------------------------------- */
+    /* SEARCH                                                                 */
+    /* ---------------------------------------------------------------------- */
+
+    if (search?.trim()) {
+      const keyword = search.trim();
+
       query.$or = [
-        { name: new RegExp(search, "i") },
-        { categoryCode: new RegExp(search, "i") },
+        {
+          name: {
+            $regex: keyword,
+            $options: "i",
+          },
+        },
+        {
+          categoryCode: {
+            $regex: keyword,
+            $options: "i",
+          },
+        },
       ];
     }
 
-    const skip = (page - 1) * limit;
+    /* ---------------------------------------------------------------------- */
+    /* PAGINATION                                                             */
+    /* ---------------------------------------------------------------------- */
+
+    const safePage = Math.max(1, page);
+
+    const safeLimit = Math.min(Math.max(1, limit), 100);
+
+    const skip = (safePage - 1) * safeLimit;
+
+    /* ---------------------------------------------------------------------- */
+    /* SORT                                                                   */
+    /* ---------------------------------------------------------------------- */
+
+    const sortOrder = order === "desc" ? -1 : 1;
+
+    /* ---------------------------------------------------------------------- */
+    /* QUERY                                                                  */
+    /* ---------------------------------------------------------------------- */
 
     const [items, total] = await Promise.all([
       Category.find(query)
+        .populate("productCount")
         .sort({
-          [sort]: order === "asc" ? 1 : -1,
+          [sort]: sortOrder,
         })
         .skip(skip)
-        .limit(limit),
+        .limit(safeLimit)
+        .lean({
+          virtuals: true,
+        }),
 
       Category.countDocuments(query),
     ]);
 
+    /* ---------------------------------------------------------------------- */
+    /* RESPONSE                                                               */
+    /* ---------------------------------------------------------------------- */
+
     return {
       items,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-        hasNextPage: page < Math.ceil(total / limit),
-        hasPreviousPage: page > 1,
-      },
+      total,
+      page: safePage,
+      limit: safeLimit,
+      totalPages: total === 0 ? 0 : Math.ceil(total / safeLimit),
     };
   }
+
+  /* ------------------------------------------------------------------------ */
+  /* UPDATE                                                                   */
+  /* ------------------------------------------------------------------------ */
 
   async update(id: string, data: Partial<ICategory>) {
     return Category.findByIdAndUpdate(id, data, {
       new: true,
       runValidators: true,
-    });
+    }).populate("productCount");
   }
+
+  /* ------------------------------------------------------------------------ */
+  /* DELETE                                                                   */
+  /* ------------------------------------------------------------------------ */
 
   async delete(id: string) {
     return Category.findByIdAndDelete(id);

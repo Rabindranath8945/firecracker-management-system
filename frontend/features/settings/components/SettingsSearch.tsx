@@ -12,7 +12,7 @@ export default function SettingsSearch({
   onChange,
 }: SettingsSearchProps) {
   return (
-    <div className="rounded-3xl border bg-card p-5 shadow-sm">
+    <div className="max-w-xl">
       <SearchInput
         value={value}
         onChange={onChange}

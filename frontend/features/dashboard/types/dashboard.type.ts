@@ -6,6 +6,7 @@ export interface DashboardSummary {
 
   owner: {
     name: string;
+    role: string;
   };
 
   todaySales: number;

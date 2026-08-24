@@ -19,6 +19,7 @@ import DeleteDialog from "@/features/shared/ui/dialogs/DeleteDialog";
 import ProgressDialog from "@/features/shared/ui/dialogs/ProgressDialog";
 
 import EmptyState from "@/features/shared/ui/cards/EmptyState";
+import SupplierManagementHero from "../components/cards/SupplierManagementHero";
 
 export default function SuppliersPage() {
   const router = useRouter();
@@ -139,6 +140,8 @@ export default function SuppliersPage() {
 
   return (
     <PageContainer className="space-y-6 pb-24">
+      <SupplierManagementHero />
+
       <SupplierSummary suppliers={filteredSuppliers} />
 
       <SupplierSearch

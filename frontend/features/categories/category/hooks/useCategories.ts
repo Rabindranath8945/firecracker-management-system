@@ -9,6 +9,14 @@ import type { ProductCategory } from "@/features/products/types/product.types";
 export function useCategories() {
   return useQuery<ProductCategory[]>({
     queryKey: ["categories"],
-    queryFn: CategoryService.getCategories,
+
+    queryFn: async (): Promise<ProductCategory[]> => {
+      const categories = await CategoryService.getCategories();
+
+      return categories.map((category) => ({
+        _id: category.id,
+        name: category.name,
+      }));
+    },
   });
 }

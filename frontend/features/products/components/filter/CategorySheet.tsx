@@ -21,28 +21,26 @@ interface CategorySheetProps {
   onSelect: (category: string) => void;
 }
 
-interface Category {
-  _id: string;
-  name: string;
-}
-
 export default function CategorySheet({
   open,
   onOpenChange,
   value,
   onSelect,
 }: CategorySheetProps) {
-  const { data, isLoading } = useQuery<Category[]>({
+  const { data, isLoading } = useQuery({
     queryKey: ["categories"],
     queryFn: CategoryService.getCategories,
   });
 
-  const categories: Category[] = [
+  const categories = [
     {
       _id: "ALL",
       name: "All",
     },
-    ...(data ?? []),
+    ...(data ?? []).map((category) => ({
+      _id: category.id,
+      name: category.name,
+    })),
   ];
 
   return (

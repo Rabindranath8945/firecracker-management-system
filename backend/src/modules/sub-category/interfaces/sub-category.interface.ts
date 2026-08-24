@@ -1,6 +1,8 @@
-import { Document, Types } from "mongoose";
+import { Types } from "mongoose";
 
-export interface ISubCategory extends Document {
+export interface ISubCategory {
+  _id?: Types.ObjectId;
+
   subCategoryCode: string;
 
   name: string;
@@ -15,9 +17,14 @@ export interface ISubCategory extends Document {
 
   createdBy: Types.ObjectId;
 
-  updatedBy?: Types.ObjectId;
+  updatedBy?: Types.ObjectId | null;
 
-  createdAt: Date;
+  /**
+   * Virtual field populated from Product collection.
+   */
+  productCount?: number;
 
-  updatedAt: Date;
+  createdAt?: Date;
+
+  updatedAt?: Date;
 }

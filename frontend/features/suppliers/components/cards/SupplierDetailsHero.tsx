@@ -8,7 +8,7 @@ interface SupplierHeroProps {
   supplier: Supplier;
 }
 
-export default function SupplierHero({ supplier }: SupplierHeroProps) {
+export default function SupplierDetailsHero({ supplier }: SupplierHeroProps) {
   const createdDate = supplier.createdAt
     ? new Intl.DateTimeFormat("en-IN", {
         day: "numeric",

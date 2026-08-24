@@ -1,19 +1,19 @@
 import { Types } from "mongoose";
 
-import BusinessRepository from "../repositories/business.repository.js";
+import BusinessRepository from "../../business/repositories/business.repository.js";
 import UserService from "../../user/services/user.service.js";
 
 import {
   createBusinessSchema,
   updateBusinessSchema,
-} from "../validators/currentBusiness.validator.js";
+} from "../../business/validators/business.validator.js";
 
-import { generateBusinessId } from "../utils/currentBusiness-id.js";
+import { generateBusinessId } from "../../business/utils/business-id.js";
 
 class BusinessService {
-  /* -------------------------------------------------------------------------- */
-  /*                                  Create                                    */
-  /* -------------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------ */
+  /* CREATE                                                                   */
+  /* ------------------------------------------------------------------------ */
 
   async create(data: unknown, ownerId: string) {
     if (!Types.ObjectId.isValid(ownerId)) {
@@ -38,21 +38,23 @@ class BusinessService {
       createdBy: new Types.ObjectId(ownerId),
     });
 
-    await UserService.assignBusiness(ownerId, business._id.toString());
+    await UserService.setCurrentBusiness(ownerId, business._id.toString());
 
     return business;
   }
 
-  /* -------------------------------------------------------------------------- */
-  /*                                  Get Mine                                  */
-  /* -------------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------ */
+  /* GET MY BUSINESS                                                          */
+  /* ------------------------------------------------------------------------ */
 
   async getMyBusiness(ownerId: string) {
     if (!Types.ObjectId.isValid(ownerId)) {
       throw new Error("Invalid owner.");
     }
 
-    const business = await BusinessRepository.findByOwner(ownerId);
+    const businesses = await BusinessRepository.findByOwner(ownerId);
+
+    const business = businesses[0];
 
     if (!business) {
       throw new Error("Business not found.");
@@ -61,9 +63,9 @@ class BusinessService {
     return business;
   }
 
-  /* -------------------------------------------------------------------------- */
-  /*                              Search Business                               */
-  /* -------------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------ */
+  /* FIND BY BUSINESS ID                                                      */
+  /* ------------------------------------------------------------------------ */
 
   async findByBusinessId(businessId: string) {
     const business = await BusinessRepository.findByBusinessId(businessId);
@@ -75,17 +77,25 @@ class BusinessService {
     return business;
   }
 
+  /* ------------------------------------------------------------------------ */
+  /* SEARCH                                                                   */
+  /* ------------------------------------------------------------------------ */
+
   async search(query: string) {
     return BusinessRepository.search(query);
   }
 
-  /* -------------------------------------------------------------------------- */
-  /*                                  Update                                    */
-  /* -------------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------ */
+  /* UPDATE                                                                   */
+  /* ------------------------------------------------------------------------ */
 
   async update(id: string, data: unknown, updatedBy: string) {
     if (!Types.ObjectId.isValid(id)) {
       throw new Error("Invalid business.");
+    }
+
+    if (!Types.ObjectId.isValid(updatedBy)) {
+      throw new Error("Invalid updater.");
     }
 
     const validated = updateBusinessSchema.parse(data);
@@ -103,9 +113,9 @@ class BusinessService {
     return business;
   }
 
-  /* -------------------------------------------------------------------------- */
-  /*                                  Delete                                    */
-  /* -------------------------------------------------------------------------- */
+  /* ------------------------------------------------------------------------ */
+  /* DELETE                                                                   */
+  /* ------------------------------------------------------------------------ */
 
   async delete(id: string) {
     if (!Types.ObjectId.isValid(id)) {

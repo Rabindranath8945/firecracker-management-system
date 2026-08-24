@@ -7,7 +7,7 @@ import PartyForm from "@/features/shared/master-data/party/components/PartyForm"
 import { PARTY_CONFIG } from "@/features/shared/master-data/party/constants";
 import type { PartyFormValues } from "@/features/shared/master-data/party/lib/party-schema";
 
-import { updateCustomer } from "../services/customer.service";
+import CustomerService from "../services/customer.service";
 
 import SuccessSheet from "@/components/common/shared/sheets/SuccessSheet";
 import ProgressDialog from "@/features/shared/ui/dialogs/ProgressDialog";
@@ -24,14 +24,13 @@ export default function EditCustomerPage({
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
-
   const [successOpen, setSuccessOpen] = useState(false);
 
   async function handleSubmit(values: PartyFormValues) {
     try {
       setLoading(true);
 
-      await updateCustomer(customerId, values);
+      await CustomerService.updateCustomer(customerId, values);
 
       setSuccessOpen(true);
     } catch (error) {
@@ -43,6 +42,10 @@ export default function EditCustomerPage({
 
   return (
     <>
+      {/* ------------------------------------------------------------------ */}
+      {/* Customer Form                                                      */}
+      {/* ------------------------------------------------------------------ */}
+
       <PartyForm
         mode="edit"
         loading={loading}
@@ -51,31 +54,46 @@ export default function EditCustomerPage({
         onSubmit={handleSubmit}
       />
 
+      {/* ------------------------------------------------------------------ */}
+      {/* Success                                                             */}
+      {/* ------------------------------------------------------------------ */}
+
       <SuccessSheet
         open={successOpen}
         onOpenChange={setSuccessOpen}
-        title="Customer Updated"
+        title="Customer Updated Successfully"
+        description="The customer information has been updated successfully."
         summary={[
           {
             label: "Customer",
-            value: defaultValues.name ?? "",
+            value: defaultValues.name ?? "—",
           },
           {
             label: "Mobile",
-            value: defaultValues.mobile ?? "",
+            value: defaultValues.mobile ?? "—",
           },
         ]}
         primaryAction={{
           label: "View Customer",
-          onClick: () => router.push(`/customers/${customerId}`),
+          onClick: () => {
+            setSuccessOpen(false);
+            router.push(`/customers/${customerId}`);
+          },
         }}
         secondaryActions={[
           {
             label: "Back to Customers",
-            onClick: () => router.push("/customers"),
+            onClick: () => {
+              setSuccessOpen(false);
+              router.push("/customers");
+            },
           },
         ]}
       />
+
+      {/* ------------------------------------------------------------------ */}
+      {/* Loading                                                             */}
+      {/* ------------------------------------------------------------------ */}
 
       <ProgressDialog
         open={loading}

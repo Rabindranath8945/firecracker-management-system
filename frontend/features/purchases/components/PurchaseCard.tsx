@@ -23,7 +23,7 @@ export function PurchaseCard({ purchase }: PurchaseCardProps) {
         <div className="flex justify-between">
           <span>Supplier</span>
 
-          <span className="font-medium">{purchase.supplierName}</span>
+          <span className="font-medium">{purchase.supplier?.name ?? "--"}</span>
         </div>
 
         <div className="flex justify-between">

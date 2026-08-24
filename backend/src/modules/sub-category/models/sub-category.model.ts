@@ -4,6 +4,10 @@ import { ISubCategory } from "../interfaces/sub-category.interface.js";
 
 const SubCategorySchema = new Schema<ISubCategory>(
   {
+    /* ---------------------------------------------------------------------- */
+    /* Sub Category Code                                                      */
+    /* ---------------------------------------------------------------------- */
+
     subCategoryCode: {
       type: String,
       required: true,
@@ -12,11 +16,19 @@ const SubCategorySchema = new Schema<ISubCategory>(
       uppercase: true,
     },
 
+    /* ---------------------------------------------------------------------- */
+    /* Name                                                                   */
+    /* ---------------------------------------------------------------------- */
+
     name: {
       type: String,
       required: true,
       trim: true,
     },
+
+    /* ---------------------------------------------------------------------- */
+    /* Parent Category                                                        */
+    /* ---------------------------------------------------------------------- */
 
     category: {
       type: Schema.Types.ObjectId,
@@ -24,11 +36,19 @@ const SubCategorySchema = new Schema<ISubCategory>(
       required: true,
     },
 
+    /* ---------------------------------------------------------------------- */
+    /* Description                                                            */
+    /* ---------------------------------------------------------------------- */
+
     description: {
       type: String,
       default: "",
       trim: true,
     },
+
+    /* ---------------------------------------------------------------------- */
+    /* Image                                                                  */
+    /* ---------------------------------------------------------------------- */
 
     image: {
       type: String,
@@ -36,10 +56,18 @@ const SubCategorySchema = new Schema<ISubCategory>(
       trim: true,
     },
 
+    /* ---------------------------------------------------------------------- */
+    /* Status                                                                 */
+    /* ---------------------------------------------------------------------- */
+
     isActive: {
       type: Boolean,
       default: true,
     },
+
+    /* ---------------------------------------------------------------------- */
+    /* Audit                                                                  */
+    /* ---------------------------------------------------------------------- */
 
     createdBy: {
       type: Schema.Types.ObjectId,
@@ -53,12 +81,53 @@ const SubCategorySchema = new Schema<ISubCategory>(
       default: null,
     },
   },
+
   {
     timestamps: true,
+
+    /* ---------------------------------------------------------------------- */
+    /* Virtuals                                                               */
+    /* ---------------------------------------------------------------------- */
+
+    toJSON: {
+      virtuals: true,
+    },
+
+    toObject: {
+      virtuals: true,
+    },
   },
 );
 
-// Prevent duplicate sub category names within the same category
+/* ========================================================================== */
+/* PRODUCT COUNT                                                              */
+/* ========================================================================== */
+
+/**
+ * Counts products assigned to this sub-category.
+ *
+ * Product model must contain:
+ *
+ * subCategory: {
+ *   type: Schema.Types.ObjectId,
+ *   ref: "SubCategory"
+ * }
+ */
+SubCategorySchema.virtual("productCount", {
+  ref: "Product",
+  localField: "_id",
+  foreignField: "subCategory",
+  count: true,
+});
+
+/* ========================================================================== */
+/* INDEXES                                                                    */
+/* ========================================================================== */
+
+/**
+ * Prevent duplicate sub-category names
+ * inside the same parent category.
+ */
 SubCategorySchema.index(
   {
     category: 1,
@@ -69,9 +138,22 @@ SubCategorySchema.index(
   },
 );
 
-// Speed up category-based lookups
+/**
+ * Faster lookup by parent category.
+ */
 SubCategorySchema.index({
   category: 1,
 });
+
+/**
+ * Faster active/inactive filtering.
+ */
+SubCategorySchema.index({
+  isActive: 1,
+});
+
+/* ========================================================================== */
+/* MODEL                                                                      */
+/* ========================================================================== */
 
 export default model<ISubCategory>("SubCategory", SubCategorySchema);

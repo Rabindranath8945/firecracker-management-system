@@ -55,6 +55,35 @@ class BusinessController {
   };
 
   /* -------------------------------------------------------------------------- */
+  /*                           Get Current Business                             */
+  /* -------------------------------------------------------------------------- */
+
+  getCurrent = async (req: Request, res: Response) => {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized.",
+      });
+    }
+
+    const business = await BusinessService.getCurrentBusiness(userId);
+
+    if (!business) {
+      return res.json({
+        success: true,
+        data: null,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: toDto(business),
+    });
+  };
+
+  /* -------------------------------------------------------------------------- */
   /*                            Search Business                                 */
   /* -------------------------------------------------------------------------- */
 

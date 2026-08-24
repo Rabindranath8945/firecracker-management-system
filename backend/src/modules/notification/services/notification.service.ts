@@ -1,6 +1,6 @@
 import NotificationRepository from "../repositories/notification.repository.js";
 
-import {
+import type {
   CreateNotificationInput,
   UpdateNotificationInput,
 } from "../validators/notification.validator.js";
@@ -26,8 +26,12 @@ class NotificationService {
     return this.ensureExists(await NotificationRepository.findById(id));
   }
 
-  async latest(limit = 20) {
-    return NotificationRepository.latest(limit);
+  async latest(userId: string, limit = 20) {
+    return NotificationRepository.latestForUser(userId, limit);
+  }
+
+  async latestForUser(userId: string, limit = 20) {
+    return NotificationRepository.latestForUser(userId, limit);
   }
 
   async unread(userId: string) {
@@ -50,7 +54,11 @@ class NotificationService {
   }
 
   async createMany(data: CreateNotificationInput[]) {
-    return NotificationRepository.bulkCreate(data);
+    return NotificationRepository.bulkCreate(
+      data.map((item) => ({
+        ...item,
+      })),
+    );
   }
 
   /* -------------------------------------------------------------------------- */
@@ -58,18 +66,23 @@ class NotificationService {
   /* -------------------------------------------------------------------------- */
 
   async update(id: string, userId: string, input: UpdateNotificationInput) {
-    const notification = await this.getById(id);
+    const notification = await NotificationRepository.findByIdForUser(
+      id,
+      userId,
+    );
 
-    return NotificationRepository.update(notification.id, {
-      ...input,
-      updatedBy: userId as never,
-    });
+    this.ensureExists(notification);
+
+    return this.ensureExists(
+      await NotificationRepository.update(id, userId, {
+        ...input,
+        updatedBy: userId as never,
+      }),
+    );
   }
 
-  async markRead(id: string) {
-    await this.getById(id);
-
-    return NotificationRepository.markRead(id);
+  async markRead(id: string, userId: string) {
+    return this.ensureExists(await NotificationRepository.markRead(id, userId));
   }
 
   async markAllRead(userId: string) {
@@ -80,10 +93,8 @@ class NotificationService {
   /*                                   Delete                                   */
   /* -------------------------------------------------------------------------- */
 
-  async delete(id: string) {
-    await this.getById(id);
-
-    return NotificationRepository.delete(id);
+  async delete(id: string, userId: string) {
+    return this.ensureExists(await NotificationRepository.delete(id, userId));
   }
 
   async clear(userId: string) {

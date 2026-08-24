@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
   Printer,
@@ -15,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 import type { Sale } from "../../types/Sales.types";
+import { useSaleStore } from "../../store/useSaleStore";
 
 interface PaymentSuccessSheetProps {
   open: boolean;
@@ -51,6 +53,8 @@ export default function PaymentSuccessSheet({
   /* Sale information                                                       */
   /* ---------------------------------------------------------------------- */
 
+  const router = useRouter();
+
   const customerName = sale.customer?.name ?? "Walk-in Customer";
 
   const paymentMethod = sale.payment?.method ?? "CASH";
@@ -70,6 +74,8 @@ export default function PaymentSuccessSheet({
   const displayAmount = isCredit ? sale.dueAmount : totalCollected;
 
   const displayAmountLabel = isCredit ? "Amount Due" : "Amount Collected";
+
+  const clearCart = useSaleStore((state) => state.clearCart);
 
   /* ---------------------------------------------------------------------- */
 
@@ -93,26 +99,30 @@ export default function PaymentSuccessSheet({
         <div className="relative px-5 pb-5 pt-7 text-center">
           <button
             type="button"
-            onClick={() => onOpenChange(false)}
+            onClick={() => {
+              clearCart();
+              onOpenChange(false);
+              router.replace("/sales");
+            }}
             className="
-              absolute
-              right-5
-              top-5
-              flex
-              h-9
-              w-9
-              items-center
-              justify-center
-              rounded-full
-              bg-white
-              text-slate-500
-              shadow-sm
-              ring-1
-              ring-slate-200
-              transition
-              hover:bg-slate-50
-              active:scale-95
-            "
+    absolute
+    right-5
+    top-5
+    flex
+    h-9
+    w-9
+    items-center
+    justify-center
+    rounded-full
+    bg-white
+    text-slate-500
+    shadow-sm
+    ring-1
+    ring-slate-200
+    transition
+    hover:bg-slate-50
+    active:scale-95
+  "
             aria-label="Close"
           >
             <X className="h-4 w-4" />
@@ -450,6 +460,55 @@ export default function PaymentSuccessSheet({
                 transition-transform
                 group-hover:translate-x-1
               "
+            />
+          </Button>
+
+          {/* ============================================================ */}
+          {/* GO TO SALES PAGE                                             */}
+          {/* ============================================================ */}
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              clearCart();
+              onOpenChange(false);
+              router.replace("/sales");
+            }}
+            className="
+    group
+    relative
+    h-12
+    w-full
+    justify-center
+    rounded-2xl
+    border-slate-200
+    bg-white
+    text-center
+    text-sm
+    font-bold
+    text-slate-700
+    shadow-sm
+    transition-all
+    hover:border-violet-200
+    hover:bg-violet-50
+    hover:text-violet-700
+    hover:shadow-md
+    active:scale-[0.98]
+  "
+          >
+            Go To Sales Page
+            <ChevronRight
+              className="
+    absolute
+      right-4
+      h-4
+      w-4
+      text-slate-400
+      transition-transform
+      group-hover:translate-x-1
+      group-hover:text-violet-600
+    "
             />
           </Button>
 

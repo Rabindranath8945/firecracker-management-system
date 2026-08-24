@@ -2,7 +2,7 @@ import { Types } from "mongoose";
 
 import SalesRepository from "../repositories/sales.repository.js";
 import { generateSequenceCode } from "../../../common/utils/generate-code.js";
-
+import SettingsRepository from "../../settings/repositories/settings.repository.js";
 import {
   createSaleSchema,
   updateSaleSchema,
@@ -55,12 +55,20 @@ class SalesService {
     return SalesRepository.getTodaySummary();
   }
 
-  async getNextCode() {
+  async getNextCode(userId: string) {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new Error("Invalid user.");
+    }
+
+    const prefix = await SettingsRepository.getNumberingPrefix(userId, "sale");
+
     const sales = await SalesRepository.getSaleCodes();
 
     return generateSequenceCode(
-      sales.map((sale) => sale.saleNo),
-      "SAL",
+      sales
+        .map((sale) => sale.saleNo)
+        .filter((code): code is string => Boolean(code)),
+      prefix,
     );
   }
 

@@ -210,7 +210,7 @@ export default function ProductForm({
               setSuccessOpen(open);
 
               if (!open) {
-                void resetForm();
+                router.replace("/products");
               }
             }}
             title="Product Created Successfully"

@@ -50,6 +50,11 @@ const NotificationSchema = new Schema<INotification>(
 
 NotificationSchema.index({
   createdBy: 1,
+  createdAt: -1,
+});
+
+NotificationSchema.index({
+  createdBy: 1,
   read: 1,
 });
 

@@ -1,10 +1,8 @@
 "use client";
 
 import Link from "next/link";
-
 import { ArrowRight } from "lucide-react";
 
-import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 import type { SettingCard as SettingCardType } from "../types/settings";
@@ -14,60 +12,108 @@ interface SettingCardProps {
 }
 
 const colorMap = {
-  blue: "from-blue-500 to-cyan-500",
-  emerald: "from-emerald-500 to-green-500",
-  orange: "from-orange-500 to-amber-500",
-  purple: "from-violet-500 to-purple-500",
-  cyan: "from-cyan-500 to-sky-500",
-  amber: "from-amber-500 to-yellow-500",
-  rose: "from-rose-500 to-pink-500",
-  slate: "from-slate-600 to-slate-500",
-};
+  blue: {
+    icon: "bg-blue-50 text-blue-600",
+    hover: "group-hover:border-blue-200",
+  },
+
+  emerald: {
+    icon: "bg-emerald-50 text-emerald-600",
+    hover: "group-hover:border-emerald-200",
+  },
+
+  orange: {
+    icon: "bg-orange-50 text-orange-600",
+    hover: "group-hover:border-orange-200",
+  },
+
+  purple: {
+    icon: "bg-purple-50 text-purple-600",
+    hover: "group-hover:border-purple-200",
+  },
+
+  cyan: {
+    icon: "bg-cyan-50 text-cyan-600",
+    hover: "group-hover:border-cyan-200",
+  },
+
+  amber: {
+    icon: "bg-amber-50 text-amber-600",
+    hover: "group-hover:border-amber-200",
+  },
+
+  rose: {
+    icon: "bg-rose-50 text-rose-600",
+    hover: "group-hover:border-rose-200",
+  },
+
+  slate: {
+    icon: "bg-slate-100 text-slate-600",
+    hover: "group-hover:border-slate-300",
+  },
+} satisfies Record<
+  SettingCardType["color"],
+  {
+    icon: string;
+    hover: string;
+  }
+>;
 
 export default function SettingCard({ setting }: SettingCardProps) {
   const Icon = setting.icon;
+  const colors = colorMap[setting.color];
 
   return (
-    <Link href={setting.href}>
-      <Card
+    <Link href={setting.href} className="block outline-none">
+      <div
         className={cn(
-          "group overflow-hidden rounded-3xl border bg-card transition-all duration-300",
-          "hover:-translate-y-1 hover:border-primary/20 hover:shadow-xl",
+          "group flex items-center gap-4",
+          "rounded-[22px] border border-slate-200/80",
+          "bg-white px-5 py-4 sm:px-6 sm:py-5",
+          "shadow-[0_4px_18px_-14px_rgba(15,23,42,0.35)]",
+          "transition-all duration-200",
+          "hover:-translate-y-0.5 hover:shadow-[0_10px_28px_-18px_rgba(15,23,42,0.35)]",
+          "focus-visible:ring-2 focus-visible:ring-primary/30",
+          colors.hover,
         )}
       >
-        <CardContent className="p-5">
-          <div className="flex items-center gap-4">
-            {/* Icon */}
+        {/* Icon */}
 
-            <div
-              className={cn(
-                "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br text-white shadow-lg",
-                colorMap[setting.color],
-              )}
-            >
-              <Icon className="h-7 w-7" />
-            </div>
+        <div
+          className={cn(
+            "flex h-11 w-11 shrink-0 items-center justify-center",
+            "rounded-xl",
+            colors.icon,
+          )}
+        >
+          <Icon className="h-5 w-5" />
+        </div>
 
-            {/* Content */}
+        {/* Content */}
 
-            <div className="min-w-0 flex-1">
-              <h3 className="text-base font-semibold tracking-tight">
-                {setting.title}
-              </h3>
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-sm font-semibold text-slate-900 sm:text-[15px]">
+            {setting.title}
+          </h3>
 
-              <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
-                {setting.description}
-              </p>
-            </div>
+          <p className="mt-1 line-clamp-1 text-xs leading-5 text-slate-500 sm:text-sm">
+            {setting.description}
+          </p>
+        </div>
 
-            {/* Arrow */}
+        {/* Arrow */}
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted transition-all duration-300 group-hover:bg-primary group-hover:text-white">
-              <ArrowRight className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        <div
+          className={cn(
+            "flex h-9 w-9 shrink-0 items-center justify-center",
+            "rounded-xl bg-slate-50 text-slate-400",
+            "transition-all duration-200",
+            "group-hover:bg-primary group-hover:text-white",
+          )}
+        >
+          <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+        </div>
+      </div>
     </Link>
   );
 }

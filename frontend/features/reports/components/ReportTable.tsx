@@ -15,40 +15,68 @@ import { cn } from "@/lib/utils";
 
 import type { ReportColumn } from "../types/report";
 
-interface ReportTableProps<T extends { id: string }> {
+/* ==========================================================================
+ * TYPES
+ * ========================================================================== */
+
+interface ReportTableProps<
+  T extends {
+    id?: string;
+    _id?: string;
+  },
+> {
   columns: ReportColumn<T>[];
+
   data: T[];
 
   emptyTitle?: string;
+
   emptyDescription?: string;
 }
 
-export default function ReportTable<T extends { id: string }>({
+/* ==========================================================================
+ * COMPONENT
+ * ========================================================================== */
+
+export default function ReportTable<
+  T extends {
+    id?: string;
+    _id?: string;
+  },
+>({
   columns,
   data,
   emptyTitle = "No Records Found",
   emptyDescription = "No data matches your current filters.",
 }: ReportTableProps<T>) {
+  /* ------------------------------------------------------------------------
+   * EMPTY STATE
+   * ---------------------------------------------------------------------- */
+
   if (data.length === 0) {
     return <EmptyState title={emptyTitle} description={emptyDescription} />;
   }
 
-  return (
-    <div className="overflow-hidden rounded-3xl border bg-card shadow-sm">
-      {/* Table */}
+  /* ------------------------------------------------------------------------
+   * TABLE
+   * ---------------------------------------------------------------------- */
 
+  return (
+    <div className="overflow-hidden rounded-3xl border border-border/60 bg-card shadow-sm">
       <div className="overflow-x-auto">
         <Table>
-          <TableHeader className="bg-slate-50">
-            <TableRow className="hover:bg-slate-50">
+          {/* -------------------------------------------------------------- */}
+          {/* HEADER                                                         */}
+          {/* -------------------------------------------------------------- */}
+
+          <TableHeader className="bg-slate-50/80">
+            <TableRow className="border-b hover:bg-slate-50/80">
               {columns.map((column) => (
                 <TableHead
                   key={String(column.key)}
                   className={cn(
                     "h-14 whitespace-nowrap px-6 text-xs font-semibold uppercase tracking-wider text-slate-600",
-
                     column.align === "center" && "text-center",
-
                     column.align === "right" && "text-right",
                   )}
                 >
@@ -58,52 +86,56 @@ export default function ReportTable<T extends { id: string }>({
             </TableRow>
           </TableHeader>
 
+          {/* -------------------------------------------------------------- */}
+          {/* BODY                                                           */}
+          {/* -------------------------------------------------------------- */}
+
           <TableBody>
-            {data.map((row, index) => (
-              <TableRow
-                key={row.id}
-                className={cn(
-                  "transition-all duration-200",
+            {data.map((row, index) => {
+              const rowId = row.id ?? row._id ?? `report-row-${index}`;
 
-                  index % 2 && "bg-slate-50/30",
-
-                  "hover:bg-primary/5",
-                )}
-              >
-                {columns.map((column) => (
-                  <TableCell
-                    key={String(column.key)}
-                    className={cn(
-                      "px-6 py-4",
-
-                      column.align === "center" && "text-center",
-
-                      column.align === "right" && "text-right",
-                    )}
-                  >
-                    {column.render
-                      ? column.render(row)
-                      : String(row[column.key] ?? "")}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
+              return (
+                <TableRow
+                  key={rowId}
+                  className={cn(
+                    "border-b transition-colors duration-200",
+                    index % 2 === 1 && "bg-slate-50/30",
+                    "hover:bg-primary/5",
+                  )}
+                >
+                  {columns.map((column) => (
+                    <TableCell
+                      key={String(column.key)}
+                      className={cn(
+                        "px-6 py-4 align-middle",
+                        column.align === "center" && "text-center",
+                        column.align === "right" && "text-right",
+                      )}
+                    >
+                      {column.render
+                        ? column.render(row)
+                        : String(row[column.key] ?? "")}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
 
-      {/* Footer */}
+      {/* ------------------------------------------------------------------ */}
+      {/* FOOTER                                                             */}
+      {/* ------------------------------------------------------------------ */}
 
-      <div className="flex items-center justify-between border-t bg-slate-50 px-6 py-4">
+      <div className="flex items-center justify-between border-t bg-slate-50/70 px-6 py-4">
         <p className="text-sm text-muted-foreground">
-          Showing
-          <span className="mx-1 font-semibold text-foreground">
-            {data.length}
-          </span>
-          records
+          Showing{" "}
+          <span className="font-semibold text-foreground">{data.length}</span>{" "}
+          {data.length === 1 ? "record" : "records"}
         </p>
 
-        <div className="rounded-full bg-primary/10 px-4 py-1 text-sm font-semibold text-primary">
+        <div className="rounded-full bg-primary/10 px-4 py-1.5 text-sm font-semibold text-primary">
           Total {data.length}
         </div>
       </div>

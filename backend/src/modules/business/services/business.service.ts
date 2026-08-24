@@ -55,6 +55,40 @@ class BusinessService {
   }
 
   /* -------------------------------------------------------------------------- */
+  /*                           Get Current Business                             */
+  /* -------------------------------------------------------------------------- */
+
+  async getCurrentBusiness(userId: string) {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new Error("Invalid user.");
+    }
+
+    const user = await UserService.getUserById(userId);
+
+    if (!user) {
+      throw new Error("User not found.");
+    }
+
+    if (!user.currentBusiness) {
+      return null;
+    }
+
+    const business = await BusinessRepository.findById(
+      user.currentBusiness.toString(),
+    );
+
+    if (!business) {
+      throw new Error("Current business not found.");
+    }
+
+    if (!business.isActive) {
+      throw new Error("Current business is inactive.");
+    }
+
+    return business;
+  }
+
+  /* -------------------------------------------------------------------------- */
   /*                              Search Business                               */
   /* -------------------------------------------------------------------------- */
 

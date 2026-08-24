@@ -14,7 +14,6 @@ export type SalesPaymentStatus = "PAID" | "PARTIAL" | "DUE";
 export interface ISaleItem {
   product: Types.ObjectId;
 
-  // Product Snapshot
   productCode: string;
 
   productName: string;
@@ -31,7 +30,6 @@ export interface ISaleItem {
 
   unit: string;
 
-  // Pricing Snapshot
   purchasePrice: number;
 
   sellingPrice: number;
@@ -40,12 +38,13 @@ export interface ISaleItem {
 
   discount: number;
 
-  // Tax Snapshot
   productTax: number;
 
   tax: number;
 
   total: number;
+
+  profit: number;
 }
 
 export interface ISalePayment {
@@ -66,6 +65,8 @@ export interface ISale extends Document {
   saleNo: string;
 
   invoiceNo: string;
+
+  businessId: Types.ObjectId;
 
   customer?: Types.ObjectId | ICustomer;
 

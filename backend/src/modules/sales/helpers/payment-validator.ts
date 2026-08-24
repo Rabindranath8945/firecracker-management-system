@@ -1,8 +1,45 @@
-import { CreateSaleInput } from "../validators/sales.validator.js";
+/* -------------------------------------------------------------------------- */
+/* PAYMENT TYPES                                                              */
+/* -------------------------------------------------------------------------- */
 
-type Payment = CreateSaleInput["payment"];
+export type PaymentMethod =
+  | "CASH"
+  | "BANK"
+  | "UPI"
+  | "CARD"
+  | "CREDIT"
+  | "MIXED";
 
-export function validatePayment(payment: Payment, paidAmount: number) {
+export interface PaymentBreakdown {
+  method: PaymentMethod;
+
+  cash: number;
+
+  upi: number;
+
+  card: number;
+
+  bank: number;
+
+  credit: number;
+}
+
+/* -------------------------------------------------------------------------- */
+/* PAYMENT VALIDATION                                                         */
+/* -------------------------------------------------------------------------- */
+
+export function validatePayment(
+  payment: PaymentBreakdown,
+  paidAmount: number,
+): true {
+  if (!Number.isFinite(paidAmount)) {
+    throw new Error("Paid amount must be a valid number.");
+  }
+
+  if (paidAmount < 0) {
+    throw new Error("Paid amount cannot be negative.");
+  }
+
   const paymentTotal =
     payment.cash + payment.upi + payment.card + payment.bank + payment.credit;
 
@@ -71,7 +108,7 @@ export function validatePayment(payment: Payment, paidAmount: number) {
       }
       break;
 
-    case "MIXED":
+    case "MIXED": {
       const activeMethods = [
         payment.cash,
         payment.upi,
@@ -83,7 +120,9 @@ export function validatePayment(payment: Payment, paidAmount: number) {
       if (activeMethods.length < 2) {
         throw new Error("Mixed payment requires at least two payment methods.");
       }
+
       break;
+    }
 
     default:
       throw new Error("Invalid payment method.");

@@ -6,46 +6,82 @@ import Supplier from "../../supplier/models/supplier.model.js";
 import Expense from "../../expense/models/expense.model.js";
 
 class ReportRepository {
+  /* ------------------------------------------------------------------------ */
+  /* SALES                                                                    */
+  /* ------------------------------------------------------------------------ */
+
   async getSalesReport(from: Date, to: Date) {
     return Sale.find({
-      createdAt: {
+      saleDate: {
         $gte: from,
         $lte: to,
       },
+      isActive: true,
     })
       .populate("customer", "name")
-      .sort({ createdAt: -1 });
+      .sort({
+        saleDate: -1,
+        createdAt: -1,
+      });
   }
+
+  /* ------------------------------------------------------------------------ */
+  /* PURCHASE                                                                 */
+  /* ------------------------------------------------------------------------ */
 
   async getPurchaseReport(from: Date, to: Date) {
     return Purchase.find({
-      createdAt: {
+      purchaseDate: {
         $gte: from,
         $lte: to,
       },
+      isActive: true,
     })
       .populate("supplier", "name")
-      .sort({ createdAt: -1 });
+      .sort({
+        purchaseDate: -1,
+        createdAt: -1,
+      });
   }
 
+  /* ------------------------------------------------------------------------ */
+  /* STOCK                                                                    */
+  /* ------------------------------------------------------------------------ */
+
   async getStockReport() {
-    return Product.find({
+    const products = await Product.find({
       isActive: true,
-    }).sort({
-      name: 1,
-    });
+    })
+      .populate("category", "name")
+      .populate("subCategory", "name")
+      .sort({ name: 1 })
+      .lean();
+
+    return products;
   }
+
+  /* ------------------------------------------------------------------------ */
+  /* LOW STOCK                                                                */
+  /* ------------------------------------------------------------------------ */
 
   async getLowStockReport() {
     return Product.find({
+      isActive: true,
+
       $expr: {
         $lte: ["$stock", "$minimumStock"],
       },
-      isActive: true,
-    }).sort({
-      stock: 1,
-    });
+    })
+      .populate("category", "name")
+      .sort({
+        stock: 1,
+        name: 1,
+      });
   }
+
+  /* ------------------------------------------------------------------------ */
+  /* CUSTOMER                                                                 */
+  /* ------------------------------------------------------------------------ */
 
   async getCustomerReport(from: Date, to: Date) {
     return Customer.aggregate([
@@ -54,14 +90,42 @@ class ReportRepository {
           isActive: true,
         },
       },
+
       {
         $lookup: {
           from: "sales",
-          localField: "_id",
-          foreignField: "customer",
+
+          let: {
+            customerId: "$_id",
+          },
+
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$customer", "$$customerId"],
+                    },
+                    {
+                      $gte: ["$saleDate", from],
+                    },
+                    {
+                      $lte: ["$saleDate", to],
+                    },
+                    {
+                      $eq: ["$isActive", true],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+
           as: "sales",
         },
       },
+
       {
         $project: {
           name: 1,
@@ -80,13 +144,19 @@ class ReportRepository {
           },
         },
       },
+
       {
         $sort: {
           totalSales: -1,
+          name: 1,
         },
       },
     ]);
   }
+
+  /* ------------------------------------------------------------------------ */
+  /* SUPPLIER                                                                 */
+  /* ------------------------------------------------------------------------ */
 
   async getSupplierReport(from: Date, to: Date) {
     return Supplier.aggregate([
@@ -95,14 +165,42 @@ class ReportRepository {
           isActive: true,
         },
       },
+
       {
         $lookup: {
           from: "purchases",
-          localField: "_id",
-          foreignField: "supplier",
+
+          let: {
+            supplierId: "$_id",
+          },
+
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $eq: ["$supplier", "$$supplierId"],
+                    },
+                    {
+                      $gte: ["$purchaseDate", from],
+                    },
+                    {
+                      $lte: ["$purchaseDate", to],
+                    },
+                    {
+                      $eq: ["$isActive", true],
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+
           as: "purchases",
         },
       },
+
       {
         $project: {
           name: 1,
@@ -117,139 +215,256 @@ class ReportRepository {
           },
         },
       },
+
       {
         $sort: {
           purchaseAmount: -1,
+          name: 1,
         },
       },
     ]);
   }
+
+  /* ------------------------------------------------------------------------ */
+  /* EXPENSE                                                                  */
+  /* ------------------------------------------------------------------------ */
 
   async getExpenses(from: Date, to: Date) {
     return Expense.find({
-      createdAt: {
+      expenseDate: {
         $gte: from,
         $lte: to,
       },
+
+      isActive: true,
     }).sort({
+      expenseDate: -1,
       createdAt: -1,
     });
   }
+
+  /* ------------------------------------------------------------------------ */
+  /* PROFIT & LOSS                                                            */
+  /* ------------------------------------------------------------------------ */
+
   async getProfitLossReport(from: Date, to: Date) {
-    const [sales, purchases, expenses] = await Promise.all([
-      Sale.aggregate([
-        {
-          $match: {
-            createdAt: {
-              $gte: from,
-              $lte: to,
-            },
-            isActive: true,
-          },
-        },
+    /* ------------------------------------------------------------------------ */
+    /* SALES                                                                    */
+    /* ------------------------------------------------------------------------ */
 
-        {
-          $unwind: "$items",
-        },
-
-        {
-          $group: {
-            _id: null,
-
-            sales: {
-              $sum: "$grandTotal",
-            },
-
-            purchaseCost: {
-              $sum: {
-                $multiply: ["$items.purchasePrice", "$items.quantity"],
-              },
-            },
-
-            sellingAmount: {
-              $sum: {
-                $multiply: ["$items.sellingPrice", "$items.quantity"],
-              },
-            },
-          },
-        },
-      ]),
-
-      Purchase.aggregate([
-        {
-          $match: {
-            createdAt: {
-              $gte: from,
-              $lte: to,
-            },
-            isActive: true,
-          },
-        },
-        {
-          $group: {
-            _id: null,
-
-            purchase: {
-              $sum: "$grandTotal",
-            },
-          },
-        },
-      ]),
-
-      Expense.aggregate([
-        {
-          $match: {
-            createdAt: {
-              $gte: from,
-              $lte: to,
-            },
-            isActive: true,
-          },
-        },
-        {
-          $group: {
-            _id: null,
-
-            expense: {
-              $sum: "$amount",
-            },
-          },
-        },
-      ]),
-    ]);
-
-    const sale = sales[0];
-
-    const grossProfit = (sale?.sellingAmount ?? 0) - (sale?.purchaseCost ?? 0);
-
-    return {
-      sales: sale?.sales ?? 0,
-
-      purchase: purchases[0]?.purchase ?? 0,
-
-      expense: expenses[0]?.expense ?? 0,
-
-      purchaseCost: sale?.purchaseCost ?? 0,
-
-      grossProfit,
-
-      netProfit: grossProfit - (expenses[0]?.expense ?? 0),
-    };
-  }
-  async getGSTReport(from: Date, to: Date) {
-    return Sale.aggregate([
+    const sales = await Sale.aggregate([
       {
         $match: {
-          createdAt: {
+          saleDate: {
             $gte: from,
             $lte: to,
           },
           isActive: true,
         },
       },
+
+      {
+        $project: {
+          month: {
+            $dateToString: {
+              format: "%Y-%m",
+              date: "$saleDate",
+            },
+          },
+
+          grandTotal: {
+            $ifNull: ["$grandTotal", 0],
+          },
+
+          profit: {
+            $sum: {
+              $map: {
+                input: {
+                  $ifNull: ["$items", []],
+                },
+
+                as: "item",
+
+                in: {
+                  $ifNull: ["$$item.profit", 0],
+                },
+              },
+            },
+          },
+        },
+      },
+
+      {
+        $group: {
+          _id: "$month",
+
+          sales: {
+            $sum: "$grandTotal",
+          },
+
+          profit: {
+            $sum: "$profit",
+          },
+        },
+      },
+
+      {
+        $sort: {
+          _id: 1,
+        },
+      },
+    ]);
+
+    /* ------------------------------------------------------------------------ */
+    /* PURCHASES                                                                */
+    /* ------------------------------------------------------------------------ */
+
+    const purchases = await Purchase.aggregate([
+      {
+        $match: {
+          purchaseDate: {
+            $gte: from,
+            $lte: to,
+          },
+
+          isActive: true,
+        },
+      },
+
+      {
+        $project: {
+          month: {
+            $dateToString: {
+              format: "%Y-%m",
+              date: "$purchaseDate",
+            },
+          },
+
+          purchase: {
+            $ifNull: ["$grandTotal", 0],
+          },
+        },
+      },
+
+      {
+        $group: {
+          _id: "$month",
+
+          purchases: {
+            $sum: "$purchase",
+          },
+        },
+      },
+
+      {
+        $sort: {
+          _id: 1,
+        },
+      },
+    ]);
+
+    /* ------------------------------------------------------------------------ */
+    /* MERGE MONTHS                                                             */
+    /* ------------------------------------------------------------------------ */
+
+    const months = new Map<
+      string,
+      {
+        sales: number;
+        purchases: number;
+        expenses: number;
+        profit: number;
+      }
+    >();
+
+    /* ------------------------------------------------------------------------ */
+    /* SALES                                                                     */
+    /* ------------------------------------------------------------------------ */
+
+    for (const row of sales) {
+      months.set(row._id, {
+        sales: Number(row.sales ?? 0),
+        purchases: 0,
+        expenses: 0,
+        profit: Number(row.profit ?? 0),
+      });
+    }
+
+    /* ------------------------------------------------------------------------ */
+    /* PURCHASES                                                                 */
+    /* ------------------------------------------------------------------------ */
+
+    for (const row of purchases) {
+      const existing = months.get(row._id);
+
+      if (existing) {
+        existing.purchases = Number(row.purchases ?? 0);
+      } else {
+        months.set(row._id, {
+          sales: 0,
+          purchases: Number(row.purchases ?? 0),
+          expenses: 0,
+          profit: 0,
+        });
+      }
+    }
+
+    /* ------------------------------------------------------------------------ */
+    /* RESULT                                                                    */
+    /* ------------------------------------------------------------------------ */
+
+    return Array.from(months.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([month, values]) => {
+        const date = new Date(`${month}-01T00:00:00`);
+
+        return {
+          id: month,
+
+          month: date.toLocaleDateString("en-IN", {
+            month: "long",
+            year: "numeric",
+          }),
+
+          sales: Number(values.sales.toFixed(2)),
+
+          purchases: Number(values.purchases.toFixed(2)),
+
+          /*
+           * Expense module is not available yet.
+           */
+          expenses: 0,
+
+          /*
+           * Profit comes from the actual profit stored
+           * inside Sale.items.
+           */
+          profit: Number(values.profit.toFixed(2)),
+        };
+      });
+  }
+
+  /* ------------------------------------------------------------------------ */
+  /* GST                                                                      */
+  /* ------------------------------------------------------------------------ */
+
+  async getGSTReport(from: Date, to: Date) {
+    return Sale.aggregate([
+      {
+        $match: {
+          saleDate: {
+            $gte: from,
+            $lte: to,
+          },
+
+          isActive: true,
+        },
+      },
+
       {
         $unwind: "$items",
       },
+
       {
         $group: {
           _id: "$items.tax",
@@ -266,6 +481,7 @@ class ReportRepository {
                 {
                   $multiply: ["$items.quantity", "$items.sellingPrice"],
                 },
+
                 {
                   $divide: ["$items.tax", 100],
                 },
@@ -274,6 +490,7 @@ class ReportRepository {
           },
         },
       },
+
       {
         $sort: {
           _id: 1,
@@ -282,28 +499,38 @@ class ReportRepository {
     ]);
   }
 
+  /* ------------------------------------------------------------------------ */
+  /* SUMMARY                                                                  */
+  /* ------------------------------------------------------------------------ */
+
   async getSummary(from: Date, to: Date) {
     const [sales, purchases, expenses, customers, suppliers, products] =
       await Promise.all([
         Sale.countDocuments({
-          createdAt: {
+          saleDate: {
             $gte: from,
             $lte: to,
           },
+
+          isActive: true,
         }),
 
         Purchase.countDocuments({
-          createdAt: {
+          purchaseDate: {
             $gte: from,
             $lte: to,
           },
+
+          isActive: true,
         }),
 
         Expense.countDocuments({
-          createdAt: {
+          expenseDate: {
             $gte: from,
             $lte: to,
           },
+
+          isActive: true,
         }),
 
         Customer.countDocuments({
@@ -321,15 +548,10 @@ class ReportRepository {
 
     return {
       sales,
-
       purchases,
-
       expenses,
-
       customers,
-
       suppliers,
-
       products,
     };
   }

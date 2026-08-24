@@ -36,6 +36,15 @@ class CustomerRepository {
     });
   }
 
+  async findCodes() {
+    return Customer.find({
+      customerCode: {
+        $exists: true,
+        $ne: "",
+      },
+    }).select("customerCode");
+  }
+
   async findByMobile(mobile: string) {
     return Customer.findOne({
       mobile,

@@ -4,13 +4,12 @@ import SalesRepository from "../repositories/sales.repository.js";
 import InventoryService from "../../inventory/index.js";
 import NotificationEngine from "../../notification/engines/notification.engine.js";
 import CustomerRepository from "../../customer/repositories/customer.repository.js";
+import SettingsRepository from "../../settings/repositories/settings.repository.js";
+import UserService from "../../user/services/user.service.js";
 
 import { buildSale } from "../builders/sale.builder.js";
 
-import {
-  generateInvoiceNumber,
-  generateSaleNumber,
-} from "../helpers/invoice-generator.js";
+import { generateSequenceCode } from "../../../common/utils/generate-code.js";
 
 import { validatePayment } from "../helpers/payment-validator.js";
 
@@ -20,34 +19,53 @@ export async function createSaleWorkflow(
   data: CreateSaleInput,
   userId: string,
 ) {
+  if (!Types.ObjectId.isValid(userId)) {
+    throw new Error("Invalid user.");
+  }
+  const businessId = await UserService.getCurrentBusiness(userId);
+
+  if (!businessId) {
+    throw new Error("No current business selected.");
+  }
+
   const session = await mongoose.startSession();
 
   try {
     const transactionResult = await session.withTransaction(async () => {
       /* ------------------------------------------------------------------ */
-      /* Generate Sale & Invoice Numbers                                    */
+      /* Generate Sale Number                                               */
       /* ------------------------------------------------------------------ */
+
+      const salePrefix = await SettingsRepository.getNumberingPrefix(
+        userId,
+        "sale",
+      );
 
       const saleCodes = await SalesRepository.getSaleCodes(session);
 
-      const sequence =
-        saleCodes.length === 0
-          ? 1
-          : Math.max(
-              ...saleCodes.map(
-                (sale) => Number(sale.saleNo.replace("SAL-", "")) || 0,
-              ),
-            ) + 1;
+      const saleNo = generateSequenceCode(
+        saleCodes
+          .map((sale) => sale.saleNo)
+          .filter((code): code is string => Boolean(code)),
+        salePrefix,
+      );
 
-      const saleNo = generateSaleNumber(sequence);
+      /* ------------------------------------------------------------------ */
+      /* Generate Invoice Number From Settings                              */
+      /* ------------------------------------------------------------------ */
 
-      const invoiceNo = generateInvoiceNumber(sequence);
+      const invoiceNo =
+        await SettingsRepository.generateNextInvoiceNumber(userId);
 
       /* ------------------------------------------------------------------ */
       /* Build Sale Items & Totals                                          */
       /* ------------------------------------------------------------------ */
 
-      const { saleItems, totals } = await buildSale(data.items, data.discount);
+      const { saleItems, totals } = await buildSale(
+        data.items,
+        data.discount,
+        userId,
+      );
 
       /* ------------------------------------------------------------------ */
       /* Paid Amount                                                        */
@@ -91,12 +109,6 @@ export async function createSaleWorkflow(
 
         bank: data.paymentMethod === "BANK" ? paidAmount : 0,
 
-        /*
-         * For CREDIT sale, paidAmount should normally be 0.
-         *
-         * The actual outstanding amount is stored
-         * in sale.dueAmount.
-         */
         credit: data.paymentMethod === "CREDIT" ? paidAmount : 0,
       };
 
@@ -112,6 +124,8 @@ export async function createSaleWorkflow(
 
       const createdSale = await SalesRepository.create(
         {
+          businessId: new Types.ObjectId(businessId),
+
           saleNo,
 
           invoiceNo,
@@ -173,28 +187,6 @@ export async function createSaleWorkflow(
       /* ------------------------------------------------------------------ */
       /* Update Customer Due                                                */
       /* ------------------------------------------------------------------ */
-      /*
-       * IMPORTANT:
-       *
-       * Only the NEW SALE'S due is added here.
-       *
-       * Example:
-       *
-       * Existing customer balance = ₹900
-       * New sale                  = ₹295
-       * Paid                      = ₹0
-       *
-       * New customer balance      = ₹1,195
-       *
-       * If CASH sale is fully paid:
-       *
-       * Existing balance = ₹900
-       * New sale due      = ₹0
-       * Customer balance  = ₹900
-       *
-       * Previous due collection is handled separately
-       * by CustomerPaymentService.
-       */
 
       if (data.customer && dueAmount > 0) {
         await CustomerRepository.increaseBalance(

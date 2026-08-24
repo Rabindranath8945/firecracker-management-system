@@ -24,6 +24,7 @@ import { useCreateSubCategoryMutation } from "@/features/categories/sub-category
 
 import ProductService from "@/features/products/services/product.service";
 import type { Product } from "@/features/products/types/product.types";
+import type { Category } from "@/features/categories/category/types/category";
 
 /* -------------------------------------------------------------------------- */
 /* TYPES                                                                      */
@@ -33,11 +34,6 @@ interface QuickProductSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated: (product: Product) => void;
-}
-
-interface Category {
-  _id: string;
-  name: string;
 }
 
 interface SubCategory {
@@ -115,7 +111,7 @@ export default function QuickProductSheet({
 
   const categoryOptions: CategoryOption[] = categories.map(
     (category: Category) => ({
-      id: category._id,
+      id: category.id,
       title: category.name,
     }),
   );
@@ -220,8 +216,8 @@ export default function QuickProductSheet({
 
       setCategoryDialogOpen(false);
 
-      if (category?._id) {
-        handleCategoryChange(category._id);
+      if (category?.id) {
+        handleCategoryChange(category.id);
       }
     } catch (error) {
       console.error("Failed to create category:", error);
@@ -462,7 +458,7 @@ export default function QuickProductSheet({
                 label="Category *"
                 value={
                   categories.find(
-                    (item: Category) => item._id === form.category,
+                    (item: Category) => item.id === form.category,
                   )?.name
                 }
                 placeholder="Select Category"

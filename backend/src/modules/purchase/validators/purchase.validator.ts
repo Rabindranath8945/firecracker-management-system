@@ -12,8 +12,6 @@ const PurchaseItemFields = {
   sellingPrice: z.number().min(0, "Selling price cannot be negative"),
 
   discount: z.number().min(0, "Discount cannot be negative"),
-
-  gstRate: z.number().min(0, "GST rate cannot be negative"),
 };
 
 /* -------------------------------------------------------------------------- */
@@ -54,6 +52,16 @@ export type PurchaseForm = z.infer<typeof PurchaseSchema>;
 /* BACKEND PURCHASE ITEM                                                      */
 /* -------------------------------------------------------------------------- */
 
+/*
+ * GST is intentionally NOT accepted from the client.
+ *
+ * Backend gets GST from:
+ *
+ * Product.tax
+ *        ↓
+ * Tax Settings fallback
+ */
+
 const BackendPurchaseItemSchema = z.object({
   product: z.string().trim().min(1, "Product required"),
 
@@ -63,21 +71,6 @@ const BackendPurchaseItemSchema = z.object({
 /* -------------------------------------------------------------------------- */
 /* BACKEND CREATE PURCHASE                                                    */
 /* -------------------------------------------------------------------------- */
-
-/*
- * These fields are intentionally NOT accepted from the client:
- *
- * purchaseNo
- * invoiceNo
- * subtotal
- * discount
- * taxAmount
- * grandTotal
- * dueAmount
- * paymentStatus
- *
- * PurchaseService generates/calculates them.
- */
 
 export const createPurchaseSchema = z.object({
   supplier: z.string().trim().min(1, "Supplier required"),

@@ -315,7 +315,7 @@ export default function PurchaseDetails({ purchaseId }: PurchaseDetailsProps) {
               <span className="text-muted-foreground">Subtotal</span>
 
               <span className="font-medium">
-                {formatMoney(purchase.subTotal)}
+                {formatMoney(purchase.subtotal)}
               </span>
             </div>
 
@@ -323,7 +323,7 @@ export default function PurchaseDetails({ purchaseId }: PurchaseDetailsProps) {
               <span className="text-muted-foreground">Discount</span>
 
               <span className="font-medium">
-                - {formatMoney(purchase.discountAmount ?? 0)}
+                - {formatMoney(purchase.discount)}
               </span>
             </div>
 
@@ -331,7 +331,7 @@ export default function PurchaseDetails({ purchaseId }: PurchaseDetailsProps) {
               <span className="text-muted-foreground">GST / Tax</span>
 
               <span className="font-medium">
-                {formatMoney(purchase.taxAmount ?? 0)}
+                {formatMoney(purchase.gstTotal)}
               </span>
             </div>
 

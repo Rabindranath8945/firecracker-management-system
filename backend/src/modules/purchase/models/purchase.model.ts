@@ -88,6 +88,13 @@ const purchaseItemSchema = new Schema(
 
 const purchaseSchema = new Schema<IPurchase>(
   {
+    businessId: {
+      type: Schema.Types.ObjectId,
+      ref: "Business",
+      required: true,
+      index: true,
+    },
+
     purchaseNo: {
       type: String,
       required: true,
@@ -256,6 +263,11 @@ purchaseSchema.index({
 
 purchaseSchema.index({
   paymentStatus: 1,
+});
+
+purchaseSchema.index({
+  businessId: 1,
+  purchaseDate: -1,
 });
 
 export default model<IPurchase>("Purchase", purchaseSchema);

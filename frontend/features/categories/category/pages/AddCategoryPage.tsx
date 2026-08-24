@@ -6,23 +6,32 @@ import { useRouter } from "next/navigation";
 import CategoryForm from "@/features/categories/shared/components/CategoryForm";
 import { CATEGORY_CONFIG } from "@/features/categories/shared/constants/category.config";
 
+import CategoryService from "@/features/categories/category/services/category.service";
+
 import SuccessDialog from "@/features/shared/ui/dialogs/SuccessDialog";
+
+import type { CreateCategoryDto } from "@/features/categories/category/services/category.service";
 
 export default function AddCategoryPage() {
   const router = useRouter();
 
   const [successOpen, setSuccessOpen] = useState(false);
 
-  async function handleSubmit(values: unknown) {
-    try {
-      console.log(values);
+  const [createdCategory, setCreatedCategory] = useState<{
+    name: string;
+  } | null>(null);
 
-      // TODO:
-      // await categoryService.create(values);
+  async function handleSubmit(values: CreateCategoryDto) {
+    try {
+      const category = await CategoryService.create(values);
+
+      setCreatedCategory({
+        name: category.name,
+      });
 
       setSuccessOpen(true);
     } catch (error) {
-      console.error(error);
+      console.error("Failed to create category:", error);
     }
   }
 
@@ -33,13 +42,20 @@ export default function AddCategoryPage() {
       <SuccessDialog
         open={successOpen}
         title="Category Created"
-        description="The category has been created successfully."
+        description={
+          createdCategory
+            ? `${createdCategory.name} has been created successfully.`
+            : "The category has been created successfully."
+        }
         primaryLabel="Back to Categories"
         secondaryLabel="Add Another"
-        onPrimary={() => router.push("/categories")}
+        onPrimary={() => {
+          setSuccessOpen(false);
+          router.push("/categories");
+        }}
         onSecondary={() => {
           setSuccessOpen(false);
-          router.refresh();
+          setCreatedCategory(null);
         }}
       />
     </>

@@ -277,6 +277,38 @@ class PurchaseRepository {
       .exec();
   }
 
+  async findAllForBusinessExport(businessId: string) {
+    return Purchase.find({
+      businessId,
+      isActive: true,
+    })
+      .populate("supplier", SUPPLIER_FIELDS)
+      .populate("items.product", PRODUCT_FIELDS)
+      .sort({
+        purchaseDate: -1,
+      })
+      .lean()
+      .exec();
+  }
+
+  async findByPurchaseNoForBusiness(purchaseNo: string, businessId: string) {
+    return Purchase.findOne({
+      purchaseNo,
+      businessId,
+    })
+      .lean()
+      .exec();
+  }
+
+  async findByInvoiceNoForBusiness(invoiceNo: string, businessId: string) {
+    return Purchase.findOne({
+      invoiceNo,
+      businessId,
+    })
+      .lean()
+      .exec();
+  }
+
   /* -------------------------------------------------------------------------- */
   /*                               Bulk Create                                  */
   /* -------------------------------------------------------------------------- */

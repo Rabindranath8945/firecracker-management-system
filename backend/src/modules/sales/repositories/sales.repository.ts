@@ -255,6 +255,36 @@ class SalesRepository {
       });
   }
 
+  async findAllForBusinessExport(businessId: string) {
+    return Sale.find({
+      businessId,
+      isActive: true,
+    })
+      .populate("customer", "customerCode name mobile email address gstNo")
+      .sort({
+        saleDate: -1,
+      })
+      .lean();
+  }
+
+  async findBySaleNoForBusiness(saleNo: string, businessId: string) {
+    return Sale.findOne({
+      saleNo,
+      businessId,
+    })
+      .lean()
+      .exec();
+  }
+
+  async findByInvoiceNoForBusiness(invoiceNo: string, businessId: string) {
+    return Sale.findOne({
+      invoiceNo,
+      businessId,
+    })
+      .lean()
+      .exec();
+  }
+
   async bulkCreate(sales: Partial<ISale>[]) {
     return Sale.insertMany(sales, {
       ordered: false,
@@ -271,6 +301,9 @@ class SalesRepository {
 
   async findInvoiceById(id: string): Promise<ISaleInvoice | null> {
     return Sale.findById(id)
+      .select(
+        "businessId saleNo invoiceNo saleDate customer items subtotal discount taxAmount grandTotal paidAmount dueAmount payment paymentStatus notes",
+      )
       .populate("customer", "customerCode name mobile email address gstNo")
       .lean<ISaleInvoice>();
   }

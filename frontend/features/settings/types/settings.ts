@@ -15,6 +15,8 @@ export type SettingCategory =
   | "notifications"
   | "about";
 
+export type SettingAvailability = "available" | "coming-soon" | "unavailable";
+
 export type SettingCardColor =
   | "blue"
   | "emerald"
@@ -41,6 +43,8 @@ export interface SettingCard {
   icon: LucideIcon;
 
   color: SettingCardColor;
+
+  availability?: SettingAvailability;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -52,15 +56,25 @@ export interface BusinessProfile {
 
   ownerName: string;
 
+  gstNo: string;
+
+  panNo: string;
+
   mobile: string;
 
   email: string;
 
-  gstNumber: string;
-
   address: string;
 
-  logo?: string;
+  city: string;
+
+  state: string;
+
+  pinCode: string;
+
+  country: string;
+
+  logo: string;
 }
 
 /* -------------------------------------------------------------------------- */

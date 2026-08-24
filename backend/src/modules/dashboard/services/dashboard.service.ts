@@ -1,26 +1,63 @@
 import DashboardRepository from "../repositories/dashboard.repository.js";
+import UserService from "../../user/services/user.service.js";
 
 class DashboardService {
-  async getDashboard(ownerId: string) {
-    const data = await DashboardRepository.getDashboard(ownerId);
+  async getDashboard(userId: string) {
+    /* ---------------------------------------------------------------------- */
+    /* Current User                                                           */
+    /* ---------------------------------------------------------------------- */
+
+    const user = await UserService.getCurrentUser(userId);
+
+    /*
+     * DashboardRepository currently works with the business owner ID.
+     *
+     * OWNER:
+     *   user._id is the owner.
+     *
+     * EMPLOYEE:
+     *   user.owner points to the business owner.
+     */
+    const businessOwnerId =
+      user.role === "OWNER" ? user._id.toString() : user.owner?.toString();
+
+    if (!businessOwnerId) {
+      throw new Error("Business owner not found.");
+    }
+
+    const data = await DashboardRepository.getDashboard(businessOwnerId);
+
+    /* ---------------------------------------------------------------------- */
+    /* User Name                                                              */
+    /* ---------------------------------------------------------------------- */
+
+    const userName =
+      `${user.firstName} ${user.lastName}`.trim() ||
+      user.email.split("@")[0] ||
+      "User";
 
     return {
-      /* ---------------------------------------------------------------------- */
-      /* Business                                                               */
-      /* ---------------------------------------------------------------------- */
+      /* -------------------------------------------------------------------- */
+      /* Business                                                             */
+      /* -------------------------------------------------------------------- */
 
       business: {
         name: data.business?.name ?? "My Business",
         businessId: data.business?.businessId ?? "-",
       },
 
+      /* -------------------------------------------------------------------- */
+      /* Current User                                                         */
+      /* -------------------------------------------------------------------- */
+
       owner: {
-        name: "Owner",
+        name: userName,
+        role: user.role,
       },
 
-      /* ---------------------------------------------------------------------- */
-      /* KPI                                                                    */
-      /* ---------------------------------------------------------------------- */
+      /* -------------------------------------------------------------------- */
+      /* KPI                                                                  */
+      /* -------------------------------------------------------------------- */
 
       todaySales: Number(data.todaySales ?? 0),
 
@@ -30,7 +67,11 @@ class DashboardService {
 
       outstandingPayments: Number(data.outstandingPayments ?? 0),
 
+      totalProducts: Number(data.totalProducts ?? 0),
+
       totalCustomers: Number(data.totalCustomers ?? 0),
+
+      totalSuppliers: Number(data.totalSuppliers ?? 0),
 
       lowStock: Number(data.lowStock ?? 0),
 
@@ -38,18 +79,18 @@ class DashboardService {
 
       salesGrowth: Number(data.salesGrowth ?? 0),
 
-      /* ---------------------------------------------------------------------- */
-      /* Sales Chart                                                            */
-      /* ---------------------------------------------------------------------- */
+      /* -------------------------------------------------------------------- */
+      /* Sales Chart                                                          */
+      /* -------------------------------------------------------------------- */
 
       salesChart: data.salesChart.map((item) => ({
         day: item.day,
         sales: Number(item.sales ?? 0),
       })),
 
-      /* ---------------------------------------------------------------------- */
-      /* Low Stock                                                             */
-      /* ---------------------------------------------------------------------- */
+      /* -------------------------------------------------------------------- */
+      /* Low Stock                                                            */
+      /* -------------------------------------------------------------------- */
 
       lowStockProducts: data.lowStockProducts.map((product) => ({
         id: product.id,
@@ -58,9 +99,9 @@ class DashboardService {
         minStock: Number(product.minStock ?? 0),
       })),
 
-      /* ---------------------------------------------------------------------- */
-      /* Recent Activities                                                      */
-      /* ---------------------------------------------------------------------- */
+      /* -------------------------------------------------------------------- */
+      /* Recent Activities                                                    */
+      /* -------------------------------------------------------------------- */
 
       recentActivities: data.recentActivities.map((activity) => ({
         id: activity.id,
@@ -71,9 +112,9 @@ class DashboardService {
         type: activity.type,
       })),
 
-      /* ---------------------------------------------------------------------- */
-      /* Business Insights                                                      */
-      /* ---------------------------------------------------------------------- */
+      /* -------------------------------------------------------------------- */
+      /* Business Insights                                                    */
+      /* -------------------------------------------------------------------- */
 
       insights: data.insights.map((insight) => ({
         id: insight.id,

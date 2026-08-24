@@ -7,7 +7,7 @@ const objectIdSchema = z
 
 export const createProductSchema = z
   .object({
-    productCode: z.string().trim().min(1, "Product code is required.").max(30),
+    productCode: z.string().trim().max(30).optional(),
 
     name: z.string().trim().min(2, "Product name is required.").max(150),
 

@@ -1,9 +1,33 @@
 import PDFDocument from "pdfkit";
 
-/**
- * PDFKit document instance type.
- */
+export type PdfOrientation = "portrait" | "landscape";
 export type PdfDocument = InstanceType<typeof PDFDocument>;
+
+/* -------------------------------------------------------------------------- */
+/* BUSINESS CONTEXT                                                           */
+/* -------------------------------------------------------------------------- */
+
+export interface PdfBusinessContext {
+  name: string;
+
+  businessId: string;
+
+  logo?: string;
+
+  address: string;
+
+  phone?: string;
+
+  email?: string;
+
+  website?: string;
+
+  gstNo?: string;
+}
+
+/* -------------------------------------------------------------------------- */
+/* HEADER                                                                     */
+/* -------------------------------------------------------------------------- */
 
 export interface PdfHeaderOptions {
   businessName: string;
@@ -25,21 +49,15 @@ export interface PdfReportOptions {
   dateRange?: string;
 }
 
-export interface PdfCompany {
-  name: string;
+/* -------------------------------------------------------------------------- */
+/* COMPANY                                                                    */
+/* -------------------------------------------------------------------------- */
 
-  logo?: string;
+export interface PdfCompany extends PdfBusinessContext {}
 
-  address: string;
-
-  phone: string;
-
-  email?: string;
-
-  website?: string;
-
-  gstNo?: string;
-}
+/* -------------------------------------------------------------------------- */
+/* CUSTOMER                                                                   */
+/* -------------------------------------------------------------------------- */
 
 export interface PdfCustomer {
   name: string;
@@ -53,9 +71,10 @@ export interface PdfCustomer {
   gstNo?: string;
 }
 
-/**
- * Universal table column
- */
+/* -------------------------------------------------------------------------- */
+/* TABLE                                                                      */
+/* -------------------------------------------------------------------------- */
+
 export interface PdfTableColumn {
   title: string;
 
@@ -66,22 +85,26 @@ export interface PdfTableColumn {
   align?: "left" | "center" | "right";
 }
 
-/**
- * Universal summary item
- */
+/* -------------------------------------------------------------------------- */
+/* SUMMARY                                                                    */
+/* -------------------------------------------------------------------------- */
+
 export interface PdfSummaryItem {
   label: string;
 
   value: string | number;
+
+  highlight?: boolean;
 }
 
-/**
- * Generic PDF options
- */
+/* -------------------------------------------------------------------------- */
+/* GENERIC PDF OPTIONS                                                        */
+/* -------------------------------------------------------------------------- */
+
 export interface PdfOptions {
   title: string;
 
-  company: PdfCompany;
+  company: PdfBusinessContext;
 
   customer?: PdfCustomer;
 
@@ -90,6 +113,12 @@ export interface PdfOptions {
   rows: Record<string, unknown>[];
 
   summary: PdfSummaryItem[];
+
+  orientation?: PdfOrientation;
+
+  generatedBy?: string;
+
+  dateRange?: string;
 
   notes?: string;
 }

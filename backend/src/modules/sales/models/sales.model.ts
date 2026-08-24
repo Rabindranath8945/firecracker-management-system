@@ -154,6 +154,12 @@ const paymentSchema = new Schema(
 
 const salesSchema = new Schema<ISale>(
   {
+    businessId: {
+      type: Schema.Types.ObjectId,
+      ref: "Business",
+      required: true,
+      index: true,
+    },
     saleNo: {
       type: String,
       required: true,
@@ -269,5 +275,10 @@ salesSchema.index({ paymentStatus: 1 });
 salesSchema.index({ createdAt: -1 });
 
 salesSchema.index({ isActive: 1 });
+
+salesSchema.index({
+  businessId: 1,
+  saleDate: -1,
+});
 
 export default model<ISale>("Sale", salesSchema);

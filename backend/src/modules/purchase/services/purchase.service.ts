@@ -7,6 +7,9 @@ import NotificationEngine from "../../notification/engines/notification.engine.j
 import SupplierRepository from "../../supplier/repositories/supplier.repository.js";
 import SupplierPaymentRepository from "../../supplier/repositories/supplier-payment.repository.js";
 
+import ProductRepository from "../../product/repositories/product.repository.js";
+import SettingsRepository from "../../settings/repositories/settings.repository.js";
+
 import {
   createPurchaseSchema,
   updatePurchaseSchema,
@@ -27,14 +30,35 @@ class PurchaseService {
     const validated = createPurchaseSchema.parse(data);
 
     /* ------------------------------------------------------------------ */
+    /* Load Tax Settings                                                  */
+    /* ------------------------------------------------------------------ */
+
+    const settings = await SettingsRepository.findByUserId(userId);
+
+    if (!settings) {
+      throw new Error("Settings not found for the authenticated user.");
+    }
+
+    const gstEnabled = settings.tax?.enabled ?? false;
+
+    const defaultGST = Number(settings.tax?.defaultGST ?? 0);
+
+    /* ------------------------------------------------------------------ */
     /* Generate Purchase Number                                           */
     /* ------------------------------------------------------------------ */
+
+    const purchasePrefix = await SettingsRepository.getNumberingPrefix(
+      userId,
+      "purchase",
+    );
 
     const purchases = await PurchaseRepository.getPurchaseCodes();
 
     const purchaseNo = generateSequenceCode(
-      purchases.map((purchase) => purchase.purchaseNo),
-      "PUR",
+      purchases
+        .map((purchase) => purchase.purchaseNo)
+        .filter((code): code is string => Boolean(code)),
+      purchasePrefix,
     );
 
     /* ------------------------------------------------------------------ */
@@ -51,21 +75,44 @@ class PurchaseService {
     );
 
     /* ------------------------------------------------------------------ */
-    /* Calculate Purchase Totals                                           */
+    /* Calculate Purchase Totals                                          */
     /* ------------------------------------------------------------------ */
 
     let subtotal = 0;
     let discount = 0;
     let taxAmount = 0;
 
-    const items = validated.items.map((item) => {
+    const items = [];
+
+    for (const item of validated.items) {
+      const product = await ProductRepository.findById(item.product);
+
+      if (!product) {
+        throw new Error(`Product not found: ${item.product}`);
+      }
+
+      /*
+       * Product GST has priority.
+       *
+       * If GST is disabled globally, use 0.
+       *
+       * If product has a configured GST rate, use it.
+       *
+       * Otherwise use the global default GST.
+       */
+      const gstRate = gstEnabled
+        ? product.tax > 0
+          ? product.tax
+          : defaultGST
+        : 0;
+
       const itemSubtotal = item.quantity * item.purchasePrice;
 
       const discountAmount = itemSubtotal * (item.discount / 100);
 
       const taxableAmount = itemSubtotal - discountAmount;
 
-      const itemTax = taxableAmount * (item.gstRate / 100);
+      const itemTax = taxableAmount * (gstRate / 100);
 
       const itemTotal = taxableAmount + itemTax;
 
@@ -73,18 +120,32 @@ class PurchaseService {
       discount += discountAmount;
       taxAmount += itemTax;
 
-      return {
+      items.push({
         product: new Types.ObjectId(item.product),
+
         quantity: item.quantity,
+
         purchasePrice: item.purchasePrice,
+
         sellingPrice: item.sellingPrice,
+
         discount: item.discount,
-        gstRate: item.gstRate,
+
+        /*
+         * Snapshot GST rate.
+         */
+        gstRate,
+
+        /*
+         * Snapshot calculated GST amount.
+         */
         tax: itemTax,
+
         subtotal: itemSubtotal,
+
         total: itemTotal,
-      };
-    });
+      });
+    }
 
     /* ------------------------------------------------------------------ */
     /* Grand Total                                                        */
@@ -109,36 +170,16 @@ class PurchaseService {
 
     const enteredPayment = Math.max(0, Number(validated.paidAmount ?? 0));
 
-    /*
-     * Total amount that can legitimately be paid now:
-     *
-     * Current Purchase
-     * +
-     * Previous Supplier Due
-     */
-
     const totalPayable = grandTotal + previousDue;
 
     const acceptedPayment = Math.min(enteredPayment, totalPayable);
 
-    /*
-     * First allocate payment to the current purchase.
-     */
-
     const paidAmount = Math.min(acceptedPayment, grandTotal);
-
-    /*
-     * Remaining payment goes toward previous supplier due.
-     */
 
     const previousDuePayment = Math.min(
       Math.max(0, acceptedPayment - grandTotal),
       previousDue,
     );
-
-    /*
-     * Due for the CURRENT purchase.
-     */
 
     const dueAmount = Math.max(0, grandTotal - paidAmount);
 
@@ -203,7 +244,7 @@ class PurchaseService {
     const purchase = await PurchaseRepository.create(purchaseData);
 
     /* ------------------------------------------------------------------ */
-    /* Record Previous Due Payment                                        */
+    /* Previous Due Payment                                               */
     /* ------------------------------------------------------------------ */
 
     if (previousDuePayment > 0) {
@@ -255,7 +296,7 @@ class PurchaseService {
     }
 
     /* ------------------------------------------------------------------ */
-    /* Purchase Notification                                               */
+    /* Notification                                                       */
     /* ------------------------------------------------------------------ */
 
     const supplierName =
@@ -274,10 +315,6 @@ class PurchaseService {
 
       total: createdPurchase.grandTotal,
     });
-
-    /* ------------------------------------------------------------------ */
-    /* Return                                                             */
-    /* ------------------------------------------------------------------ */
 
     return createdPurchase;
   }
@@ -363,22 +400,46 @@ class PurchaseService {
     }
 
     /* ------------------------------------------------------------------ */
-    /* Recalculate Items                                                   */
+    /* Recalculate Items                                                  */
     /* ------------------------------------------------------------------ */
 
     if (validated.items) {
+      const settings = await SettingsRepository.findByUserId(userId);
+
+      if (!settings) {
+        throw new Error("Settings not found for the authenticated user.");
+      }
+
+      const gstEnabled = settings.tax?.enabled ?? false;
+
+      const defaultGST = Number(settings.tax?.defaultGST ?? 0);
+
       let subtotal = 0;
       let discount = 0;
       let taxAmount = 0;
 
-      const items = validated.items.map((item) => {
+      const items = [];
+
+      for (const item of validated.items) {
+        const product = await ProductRepository.findById(item.product);
+
+        if (!product) {
+          throw new Error(`Product not found: ${item.product}`);
+        }
+
+        const gstRate = gstEnabled
+          ? product.tax > 0
+            ? product.tax
+            : defaultGST
+          : 0;
+
         const itemSubtotal = item.quantity * item.purchasePrice;
 
         const discountAmount = itemSubtotal * (item.discount / 100);
 
         const taxableAmount = itemSubtotal - discountAmount;
 
-        const itemTax = taxableAmount * (item.gstRate / 100);
+        const itemTax = taxableAmount * (gstRate / 100);
 
         const itemTotal = taxableAmount + itemTax;
 
@@ -386,7 +447,7 @@ class PurchaseService {
         discount += discountAmount;
         taxAmount += itemTax;
 
-        return {
+        items.push({
           product: new Types.ObjectId(item.product),
 
           quantity: item.quantity,
@@ -397,15 +458,15 @@ class PurchaseService {
 
           discount: item.discount,
 
-          gstRate: item.gstRate,
+          gstRate,
 
           tax: itemTax,
 
           subtotal: itemSubtotal,
 
           total: itemTotal,
-        };
-      });
+        });
+      }
 
       updateData.items = items;
 

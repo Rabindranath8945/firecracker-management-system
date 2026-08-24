@@ -56,6 +56,15 @@ class SupplierRepository {
     });
   }
 
+  async findCodes() {
+    return Supplier.find({
+      supplierCode: {
+        $exists: true,
+        $ne: "",
+      },
+    }).select("supplierCode");
+  }
+
   async findByMobile(mobile: string) {
     return Supplier.findOne({
       mobile,

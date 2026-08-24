@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const createSupplierSchema = z.object({
-  supplierCode: z.string().trim().min(1, "Supplier code is required.").max(30),
+  supplierCode: z.string().trim().max(30).optional(),
 
   name: z.string().trim().min(2, "Supplier name is required.").max(100),
 

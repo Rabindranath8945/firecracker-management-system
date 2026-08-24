@@ -1,37 +1,71 @@
-import { IUser, User, UserRole } from "../models/user.model.js";
+import { User } from "../models/user.model.js";
+
+import type { IUser } from "../models/user.model.js";
+import type { UserRole } from "../constants/user.constants.js";
 
 class UserRepository {
-  create(userData: Partial<IUser>): Promise<IUser> {
+  /* -------------------------------------------------------------------------- */
+  /*                                   Create                                   */
+  /* -------------------------------------------------------------------------- */
+
+  async create(userData: Partial<IUser>): Promise<IUser> {
     return User.create(userData);
   }
 
-  findById(id: string): Promise<IUser | null> {
+  /* -------------------------------------------------------------------------- */
+  /*                                    Find                                    */
+  /* -------------------------------------------------------------------------- */
+
+  async findById(id: string): Promise<IUser | null> {
     return User.findById(id).exec();
   }
 
-  findByGoogleId(googleId: string): Promise<IUser | null> {
-    return User.findOne({ googleId }).exec();
-  }
-
-  findByEmail(email: string): Promise<IUser | null> {
-    return User.findOne({ email }).exec();
-  }
-
-  findByDeviceId(deviceId: string): Promise<IUser | null> {
-    return User.findOne({ deviceId }).exec();
-  }
-
-  findOwner(): Promise<IUser | null> {
+  async findByGoogleId(googleId: string): Promise<IUser | null> {
     return User.findOne({
-      role: UserRole.OWNER,
+      googleId,
     }).exec();
   }
 
-  updateLastLogin(userId: string): Promise<IUser | null> {
+  async findByEmail(email: string): Promise<IUser | null> {
+    return User.findOne({
+      email,
+    }).exec();
+  }
+
+  async findByDeviceId(deviceId: string): Promise<IUser | null> {
+    return User.findOne({
+      deviceId,
+    }).exec();
+  }
+
+  async findByMobile(mobile: string): Promise<IUser | null> {
+    return User.findOne({
+      mobile,
+    }).exec();
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*                                  Owner                                     */
+  /* -------------------------------------------------------------------------- */
+
+  async findOwner(): Promise<IUser | null> {
+    return User.findOne({
+      role: "OWNER",
+      isOwner: true,
+      isActive: true,
+    }).exec();
+  }
+
+  async ensureOwnerPermissions(
+    userId: string,
+    permissions: IUser["permissions"],
+  ): Promise<IUser | null> {
     return User.findByIdAndUpdate(
       userId,
       {
-        lastLogin: new Date(),
+        $set: {
+          permissions,
+        },
       },
       {
         new: true,
@@ -39,7 +73,114 @@ class UserRepository {
     ).exec();
   }
 
-  updateAppLock(userId: string, enabled: boolean): Promise<IUser | null> {
+  /* -------------------------------------------------------------------------- */
+  /*                                Employees                                   */
+  /* -------------------------------------------------------------------------- */
+
+  async findAllEmployees(ownerId: string): Promise<IUser[]> {
+    return User.find({
+      owner: ownerId,
+      isOwner: false,
+    })
+      .sort({
+        createdAt: -1,
+      })
+      .exec();
+  }
+
+  async findEmployeeById(id: string): Promise<IUser | null> {
+    return User.findOne({
+      _id: id,
+      isOwner: false,
+    }).exec();
+  }
+
+  async findByOwner(ownerId: string): Promise<IUser[]> {
+    return User.find({
+      owner: ownerId,
+      isOwner: false,
+    })
+      .sort({
+        createdAt: -1,
+      })
+      .exec();
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*                                  Update                                    */
+  /* -------------------------------------------------------------------------- */
+
+  async update(id: string, data: Partial<IUser>): Promise<IUser | null> {
+    return User.findByIdAndUpdate(id, data, {
+      new: true,
+      runValidators: true,
+    }).exec();
+  }
+
+  async updateMe(userId: string, data: Partial<IUser>): Promise<IUser | null> {
+    return User.findByIdAndUpdate(
+      userId,
+      {
+        $set: data,
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
+    ).exec();
+  }
+
+  async updateEmployee(
+    id: string,
+    data: Partial<IUser>,
+  ): Promise<IUser | null> {
+    return User.findOneAndUpdate(
+      {
+        _id: id,
+        isOwner: false,
+      },
+      data,
+      {
+        new: true,
+        runValidators: true,
+      },
+    ).exec();
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*                              Authentication                                */
+  /* -------------------------------------------------------------------------- */
+
+  async updateLastLogin(userId: string): Promise<IUser | null> {
+    return User.findByIdAndUpdate(
+      userId,
+      {
+        lastLogin: new Date(),
+        lastSeen: new Date(),
+      },
+      {
+        new: true,
+      },
+    ).exec();
+  }
+
+  async updateLastSeen(userId: string): Promise<IUser | null> {
+    return User.findByIdAndUpdate(
+      userId,
+      {
+        lastSeen: new Date(),
+      },
+      {
+        new: true,
+      },
+    ).exec();
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*                                App Lock                                    */
+  /* -------------------------------------------------------------------------- */
+
+  async updateAppLock(userId: string, enabled: boolean): Promise<IUser | null> {
     return User.findByIdAndUpdate(
       userId,
       {
@@ -47,54 +188,14 @@ class UserRepository {
       },
       {
         new: true,
+        runValidators: true,
       },
     ).exec();
   }
 
-  async findAllEmployees(ownerId: string): Promise<IUser[]> {
-    return User.find({
-      owner: ownerId,
-    }).sort({
-      createdAt: -1,
-    });
-  }
-
-  async findEmployeeById(id: string): Promise<IUser | null> {
-    return User.findById(id);
-  }
-
-  async findByMobile(mobile: string): Promise<IUser | null> {
-    return User.findOne({
-      mobile,
-    });
-  }
-
-  async findByOwner(ownerId: string): Promise<IUser[]> {
-    return User.find({
-      owner: ownerId,
-    });
-  }
-
-  async updateEmployee(
-    id: string,
-    data: Partial<IUser>,
-  ): Promise<IUser | null> {
-    return User.findByIdAndUpdate(id, data, {
-      new: true,
-    });
-  }
-
-  async deleteEmployee(id: string): Promise<IUser | null> {
-    return User.findByIdAndUpdate(
-      id,
-      {
-        isActive: false,
-      },
-      {
-        new: true,
-      },
-    );
-  }
+  /* -------------------------------------------------------------------------- */
+  /*                             Business                                       */
+  /* -------------------------------------------------------------------------- */
 
   async setCurrentBusiness(
     userId: string,
@@ -107,24 +208,30 @@ class UserRepository {
       },
       {
         new: true,
+        runValidators: true,
       },
-    );
+    ).exec();
   }
 
-  async toggleEmployeeStatus(id: string): Promise<IUser | null> {
-    const user = await User.findById(id);
+  /* -------------------------------------------------------------------------- */
+  /*                            Employee Status                                  */
+  /* -------------------------------------------------------------------------- */
 
-    if (!user) return null;
+  async toggleEmployeeStatus(id: string): Promise<IUser | null> {
+    const user = await User.findOne({
+      _id: id,
+      isOwner: false,
+    }).exec();
+
+    if (!user) {
+      return null;
+    }
 
     user.isActive = !user.isActive;
 
-    return user.save();
-  }
+    user.status = user.isActive ? "ACTIVE" : "INACTIVE";
 
-  update(id: string, data: Partial<IUser>) {
-    return User.findByIdAndUpdate(id, data, {
-      new: true,
-    });
+    return user.save();
   }
 
   async activateEmployee(
@@ -132,15 +239,41 @@ class UserRepository {
     businessId: string,
     role: UserRole,
   ): Promise<IUser | null> {
-    return User.findByIdAndUpdate(
-      userId,
+    return User.findOneAndUpdate(
       {
-        business: businessId,
+        _id: userId,
+        isOwner: false,
+      },
+      {
+        currentBusiness: businessId,
         role,
+        status: "ACTIVE",
         isActive: true,
       },
       {
         new: true,
+        runValidators: true,
+      },
+    ).exec();
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*                                  Delete                                    */
+  /* -------------------------------------------------------------------------- */
+
+  async deleteEmployee(id: string): Promise<IUser | null> {
+    return User.findOneAndUpdate(
+      {
+        _id: id,
+        isOwner: false,
+      },
+      {
+        isActive: false,
+        status: "INACTIVE",
+      },
+      {
+        new: true,
+        runValidators: true,
       },
     ).exec();
   }

@@ -15,16 +15,18 @@ import {
 } from "@/components/common/master-picker";
 
 import ProductImagePicker from "@/components/common/shared/image/ProductImagePicker";
+
 import { useCreateSubCategoryMutation } from "@/features/categories/sub-category/hooks/useCreateSubCategoryMutation";
+
 import CategoryService from "@/features/categories/category/services/category.service";
+
 import SubCategoryService from "@/features/categories/sub-category/services/sub-category.service";
+
 import { AddSubCategoryDialog } from "@/components/common/searchable-select";
+
 import type { ProductFormData } from "../../schemas/product.schema";
 
-interface Category {
-  _id: string;
-  name: string;
-}
+import type { Category } from "@/features/categories/category/types/category";
 
 interface SubCategory {
   _id: string;
@@ -59,51 +61,54 @@ export default function ProductInformationCard({
   });
 
   /* -------------------------------------------------------------------------- */
-  /*                                   State                                    */
+  /* State                                                                      */
   /* -------------------------------------------------------------------------- */
 
   const [categoryOpen, setCategoryOpen] = useState(false);
 
   const [subCategoryOpen, setSubCategoryOpen] = useState(false);
 
-  const createSubCategoryMutation = useCreateSubCategoryMutation();
-
   const [subCategoryDialogOpen, setSubCategoryDialogOpen] = useState(false);
 
+  const createSubCategoryMutation = useCreateSubCategoryMutation();
+
   const queryClient = useQueryClient();
+
   /* -------------------------------------------------------------------------- */
-  /*                                 Categories                                 */
+  /* Categories                                                                 */
   /* -------------------------------------------------------------------------- */
 
-  const { data: categories = [], isLoading: categoryLoading } = useQuery({
+  const { data: categories = [], isLoading: categoryLoading } = useQuery<
+    Category[]
+  >({
     queryKey: ["categories"],
     queryFn: CategoryService.getCategories,
   });
 
-  const categoryOptions: CategoryOption[] = categories.map(
-    (category: Category) => ({
-      id: category._id,
-      title: category.name,
-    }),
-  );
+  const categoryOptions: CategoryOption[] = categories.map((category) => ({
+    id: category.id,
+    title: category.name,
+  }));
 
   /* -------------------------------------------------------------------------- */
-  /*                              Sub Categories                                */
+  /* Sub Categories                                                             */
   /* -------------------------------------------------------------------------- */
 
-  const { data: subCategories = [], isLoading: subCategoryLoading } = useQuery({
+  const { data: subCategories = [], isLoading: subCategoryLoading } = useQuery<
+    SubCategory[]
+  >({
     queryKey: ["sub-categories", selectedCategory],
-    queryFn: () => SubCategoryService.getByCategory(selectedCategory),
-    enabled: !!selectedCategory,
+    queryFn: () => SubCategoryService.getByCategory(selectedCategory as string),
+    enabled: Boolean(selectedCategory),
   });
 
-  const subCategoryOptions = subCategories.map((item: SubCategory) => ({
+  const subCategoryOptions = subCategories.map((item) => ({
     id: item._id,
     title: item.name,
   }));
 
   /* -------------------------------------------------------------------------- */
-  /*                     Clear Sub Category On Change                            */
+  /* Clear Sub Category When Category Changes                                   */
   /* -------------------------------------------------------------------------- */
 
   useEffect(() => {
@@ -176,9 +181,7 @@ export default function ProductInformationCard({
                 <MasterPickerField
                   label="Category"
                   value={
-                    categories.find(
-                      (item: Category) => item._id === field.value,
-                    )?.name
+                    categories.find((item) => item.id === field.value)?.name
                   }
                   placeholder="Select Category"
                   error={errors.category?.message}
@@ -204,6 +207,7 @@ export default function ProductInformationCard({
             )}
           />
         </div>
+
         {/* Sub Category */}
 
         <div className="space-y-2">
@@ -215,9 +219,7 @@ export default function ProductInformationCard({
                 <MasterPickerField
                   label="Sub Category"
                   value={
-                    subCategories.find(
-                      (item: SubCategory) => item._id === field.value,
-                    )?.name
+                    subCategories.find((item) => item._id === field.value)?.name
                   }
                   placeholder={
                     selectedCategory
@@ -248,6 +250,9 @@ export default function ProductInformationCard({
             )}
           />
         </div>
+
+        {/* Add Sub Category */}
+
         <AddSubCategoryDialog
           open={subCategoryDialogOpen}
           loading={createSubCategoryMutation.isPending}

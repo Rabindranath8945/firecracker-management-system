@@ -5,6 +5,8 @@ import type { DashboardSummary } from "../types/dashboard.type";
 
 export const dashboardApi = {
   getDashboard() {
-    return api.get<ApiResponse<DashboardSummary>>("/dashboard");
+    return api.get<ApiResponse<DashboardSummary>>("/dashboard", {
+      timeout: 8000,
+    });
   },
 };

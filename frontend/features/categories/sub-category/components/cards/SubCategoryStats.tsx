@@ -20,7 +20,7 @@ export default function SubCategoryStats({ subCategories }: Props) {
   const inactiveSubCategories = totalSubCategories - activeSubCategories;
 
   const totalProducts = subCategories.reduce(
-    (sum, subCategory) => sum + subCategory.productCount,
+    (sum, subCategory) => sum + (subCategory.productCount ?? 0),
     0,
   );
 

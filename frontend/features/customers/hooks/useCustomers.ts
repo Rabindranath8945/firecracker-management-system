@@ -6,7 +6,7 @@ import CustomerService from "../services/customer.service";
 
 interface UseCustomersParams {
   search?: string;
-  status?: string;
+  status?: "ACTIVE" | "ALL" | "INACTIVE";
   sort?: string;
   page?: number;
   limit?: number;

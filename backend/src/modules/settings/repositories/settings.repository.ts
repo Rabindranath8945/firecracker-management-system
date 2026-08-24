@@ -30,11 +30,16 @@ class SettingsRepository {
     });
   }
 
-  async updateBusiness(id: string, business: ISettings["business"]) {
-    return Settings.findByIdAndUpdate(
-      id,
+  async updateBusiness(userId: string, business: ISettings["business"]) {
+    return Settings.findOneAndUpdate(
       {
-        business,
+        createdBy: userId,
+        isActive: true,
+      },
+      {
+        $set: {
+          business,
+        },
       },
       {
         new: true,
@@ -69,11 +74,16 @@ class SettingsRepository {
     );
   }
 
-  async updateInvoice(id: string, invoice: ISettings["invoice"]) {
-    return Settings.findByIdAndUpdate(
-      id,
+  async updateInvoice(userId: string, invoice: ISettings["invoice"]) {
+    return Settings.findOneAndUpdate(
       {
-        invoice,
+        createdBy: userId,
+        isActive: true,
+      },
+      {
+        $set: {
+          invoice,
+        },
       },
       {
         new: true,
@@ -82,11 +92,71 @@ class SettingsRepository {
     );
   }
 
-  async updateTax(id: string, tax: ISettings["tax"]) {
-    return Settings.findByIdAndUpdate(
-      id,
+  async generateNextInvoiceNumber(userId: string) {
+    const settings = await Settings.findOneAndUpdate(
       {
-        tax,
+        createdBy: userId,
+        isActive: true,
+      },
+      {
+        $inc: {
+          "invoice.nextNumber": 1,
+        },
+      },
+      {
+        new: false,
+        runValidators: true,
+      },
+    );
+
+    if (!settings) {
+      throw new Error("Settings not found for the authenticated user.");
+    }
+
+    const prefix = settings.invoice?.prefix?.trim().toUpperCase() || "INV";
+
+    const nextNumber = Math.max(1, Number(settings.invoice?.nextNumber ?? 1));
+
+    return `${prefix}-${nextNumber}`;
+  }
+
+  async getNextInvoiceNumber(userId: string) {
+    const settings = await Settings.findOneAndUpdate(
+      {
+        createdBy: userId,
+        isActive: true,
+      },
+      {
+        $inc: {
+          "invoice.nextNumber": 1,
+        },
+      },
+      {
+        new: false,
+      },
+    );
+
+    if (!settings) {
+      throw new Error("Settings not found for the authenticated user.");
+    }
+
+    const prefix = settings.invoice?.prefix?.trim().toUpperCase() || "INV";
+
+    const number = Math.max(1, Number(settings.invoice?.nextNumber ?? 1));
+
+    return `${prefix}-${number}`;
+  }
+
+  async updateTax(userId: string, tax: ISettings["tax"]) {
+    return Settings.findOneAndUpdate(
+      {
+        createdBy: userId,
+        isActive: true,
+      },
+      {
+        $set: {
+          tax,
+        },
       },
       {
         new: true,
@@ -95,17 +165,50 @@ class SettingsRepository {
     );
   }
 
-  async updateNumbering(id: string, numbering: ISettings["numbering"]) {
-    return Settings.findByIdAndUpdate(
-      id,
+  async findByUserId(userId: string) {
+    return Settings.findOne({
+      createdBy: userId,
+      isActive: true,
+    });
+  }
+
+  async updateNumbering(userId: string, numbering: ISettings["numbering"]) {
+    return Settings.findOneAndUpdate(
       {
-        numbering,
+        createdBy: userId,
+        isActive: true,
+      },
+      {
+        $set: {
+          numbering,
+        },
       },
       {
         new: true,
         runValidators: true,
       },
     );
+  }
+
+  async getNumberingPrefix(userId: string, type: keyof ISettings["numbering"]) {
+    const settings = await Settings.findOne({
+      createdBy: userId,
+      isActive: true,
+    }).select("numbering");
+
+    if (!settings) {
+      throw new Error("Settings not found for the authenticated user.");
+    }
+
+    const prefix = settings.numbering?.[type];
+
+    if (!prefix || !prefix.trim()) {
+      throw new Error(
+        `Number series prefix is not configured for ${String(type)}.`,
+      );
+    }
+
+    return prefix.trim().toUpperCase();
   }
 
   async updateDataManagement(

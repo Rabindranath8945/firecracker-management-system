@@ -957,7 +957,13 @@ export default function PurchaseForm() {
 
         <SuccessSheet
           open={successOpen}
-          onOpenChange={setSuccessOpen}
+          onOpenChange={(open) => {
+            setSuccessOpen(open);
+
+            if (!open) {
+              router.replace("/purchases");
+            }
+          }}
           title="Purchase Created"
           description="Your purchase has been successfully recorded."
           summary={[

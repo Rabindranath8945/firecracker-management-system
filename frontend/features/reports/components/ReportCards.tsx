@@ -14,34 +14,39 @@ export default function ReportCards() {
         const Icon = report.icon;
 
         return (
-          <Link key={report.id} href={report.href} className="group">
-            <Card className="h-full border-border/60 transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg">
+          <Link
+            key={report.id}
+            href={report.href}
+            className="group block outline-none"
+          >
+            <Card className="h-full overflow-hidden border-border/60 bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-xl focus-visible:ring-2 focus-visible:ring-primary">
               <CardContent className="flex h-full flex-col p-5">
-                {/* Header */}
-                <div className="mb-5 flex items-start justify-between">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary transition-colors duration-300 group-hover:bg-primary group-hover:text-primary-foreground">
-                    <Icon />
+                <div className="flex items-start justify-between">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-all duration-300 group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-lg">
+                    <Icon className="h-5 w-5" />
                   </div>
 
-                  <ArrowRight className="h-5 w-5 text-muted-foreground transition-transform duration-300 group-hover:translate-x-1 group-hover:text-primary" />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted/60 transition-all group-hover:bg-primary/10">
+                    <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+                  </div>
                 </div>
 
-                {/* Content */}
-                <div className="flex-1 space-y-2">
-                  <h3 className="text-base font-semibold">{report.title}</h3>
+                <div className="mt-5 flex-1">
+                  <h3 className="font-semibold tracking-tight">
+                    {report.title}
+                  </h3>
 
-                  <p className="text-sm leading-6 text-muted-foreground">
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">
                     {report.description}
                   </p>
                 </div>
 
-                {/* Footer */}
-                <div className="mt-6 flex items-center justify-between border-t pt-4">
-                  <span className="text-sm font-medium text-primary">
+                <div className="mt-5 flex items-center justify-between border-t pt-4">
+                  <span className="text-sm font-semibold text-primary">
                     Open Report
                   </span>
 
-                  <ArrowRight className="h-4 w-4 text-primary transition-transform duration-300 group-hover:translate-x-1" />
+                  <ArrowRight className="h-4 w-4 text-primary transition-transform group-hover:translate-x-1" />
                 </div>
               </CardContent>
             </Card>

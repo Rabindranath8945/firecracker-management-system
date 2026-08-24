@@ -44,6 +44,8 @@ export interface IPurchaseItem {
 /* -------------------------------------------------------------------------- */
 
 export interface IPurchase extends Document {
+  businessId: Types.ObjectId;
+
   purchaseNo: string;
 
   supplier: Types.ObjectId | ISupplier;

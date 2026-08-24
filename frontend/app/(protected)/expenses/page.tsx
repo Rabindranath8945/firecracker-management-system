@@ -45,7 +45,7 @@ export default function Page() {
         </div>
 
         <p className="mt-6 text-[10px] font-bold uppercase tracking-[0.25em] text-orange-500">
-          Premium ERP
+          OneHub ERP System
         </p>
 
         <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 dark:text-foreground">

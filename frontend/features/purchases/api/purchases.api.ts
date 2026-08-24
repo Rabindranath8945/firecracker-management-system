@@ -6,7 +6,7 @@ import type {
   PurchaseQueryParams,
 } from "../types/purchase.types";
 
-interface PurchaseItemPayload {
+export interface PurchaseItemPayload {
   product: string;
   quantity: number;
   purchasePrice: number;
@@ -18,7 +18,7 @@ interface PurchaseItemPayload {
   total: number;
 }
 
-interface PurchasePayload {
+export interface PurchasePayload {
   supplier: string;
   invoiceNo?: string;
   purchaseDate: string;
@@ -61,7 +61,9 @@ function calculateItem(item: CreatePurchaseRequest["items"][number]) {
   };
 }
 
-function buildPurchasePayload(data: CreatePurchaseRequest): PurchasePayload {
+export function buildPurchasePayload(
+  data: CreatePurchaseRequest,
+): PurchasePayload {
   let subtotal = 0;
   let discount = 0;
   let taxAmount = 0;
@@ -88,7 +90,16 @@ function buildPurchasePayload(data: CreatePurchaseRequest): PurchasePayload {
 
   const grandTotal = subtotal - discount + taxAmount + data.transportCharge;
 
-  const dueAmount = Math.max(0, grandTotal - data.paidAmount);
+  const paidAmount = Math.max(0, data.paidAmount);
+
+  if (paidAmount > grandTotal) {
+    throw new Error("Paid amount cannot be greater than grand total.");
+  }
+
+  const dueAmount = Math.max(0, grandTotal - paidAmount);
+
+  const paymentStatus: "PAID" | "PARTIAL" | "DUE" =
+    paidAmount >= grandTotal ? "PAID" : paidAmount > 0 ? "PARTIAL" : "DUE";
 
   const payload: PurchasePayload = {
     supplier: data.supplierId,
@@ -99,15 +110,11 @@ function buildPurchasePayload(data: CreatePurchaseRequest): PurchasePayload {
     discount,
     transportCharge: data.transportCharge,
     grandTotal,
-    paidAmount: data.paidAmount,
+    paidAmount,
     dueAmount,
     paymentMethod: data.paymentMethod,
-    paymentStatus: data.paymentStatus,
+    paymentStatus,
   };
-
-  if (data.invoiceNo?.trim()) {
-    payload.invoiceNo = data.invoiceNo.trim();
-  }
 
   if (data.dueDate) {
     payload.dueDate = data.dueDate;

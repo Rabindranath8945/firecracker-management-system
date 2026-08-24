@@ -37,16 +37,23 @@ class SettingsController {
   /* Business                                                               */
   /* ---------------------------------------------------------------------- */
 
-  updateBusiness = async (req: Request, res: Response) => {
+  updateBusiness = async (req: Request, res: Response): Promise<Response> => {
     try {
+      if (!req.user?.userId) {
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized",
+        });
+      }
+
       const settings = await SettingsService.updateBusiness(
-        this.getId(req),
+        req.user.userId,
         req.body,
       );
 
       return res.json({
         success: true,
-        message: "Business settings updated.",
+        message: "Business settings updated successfully.",
         data: settings,
       });
     } catch (error) {
@@ -104,16 +111,22 @@ class SettingsController {
   /* Invoice                                                                */
   /* ---------------------------------------------------------------------- */
 
-  updateInvoice = async (req: Request, res: Response) => {
+  updateInvoice = async (req: Request, res: Response): Promise<Response> => {
     try {
-      const settings = await SettingsService.updateInvoice(
-        this.getId(req),
-        req.body,
-      );
+      const userId = req.user?.userId;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: "Authenticated user not found.",
+        });
+      }
+
+      const settings = await SettingsService.updateInvoice(userId, req.body);
 
       return res.json({
         success: true,
-        message: "Invoice settings updated.",
+        message: "Invoice settings updated successfully.",
         data: settings,
       });
     } catch (error) {
@@ -125,17 +138,23 @@ class SettingsController {
   /* Tax                                                                    */
   /* ---------------------------------------------------------------------- */
 
-  updateTax = async (req: Request, res: Response) => {
+  updateTax = async (req: Request, res: Response): Promise<Response> => {
     try {
-      const settings = await SettingsService.updateTax(
-        this.getId(req),
-        req.body,
-      );
+      const userId = req.user?.userId;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized",
+        });
+      }
+
+      const settings = await SettingsService.updateTax(userId, req.body);
 
       return res.json({
         success: true,
-        message: "Tax settings updated.",
-        data: settings,
+        message: "Tax settings updated successfully.",
+        data: settings.tax,
       });
     } catch (error) {
       return this.handleError(res, error, "Failed to update tax settings.");
@@ -146,17 +165,23 @@ class SettingsController {
   /* Numbering                                                              */
   /* ---------------------------------------------------------------------- */
 
-  updateNumbering = async (req: Request, res: Response) => {
+  updateNumbering = async (req: Request, res: Response): Promise<Response> => {
     try {
-      const settings = await SettingsService.updateNumbering(
-        this.getId(req),
-        req.body,
-      );
+      const userId = req.user?.userId;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized",
+        });
+      }
+
+      const settings = await SettingsService.updateNumbering(userId, req.body);
 
       return res.json({
         success: true,
-        message: "Number series updated.",
-        data: settings,
+        message: "Number series updated successfully.",
+        data: settings.numbering,
       });
     } catch (error) {
       return this.handleError(res, error, "Failed to update number series.");

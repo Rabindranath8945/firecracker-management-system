@@ -6,23 +6,56 @@ import { useRouter } from "next/navigation";
 import CategoryForm from "@/features/categories/shared/components/CategoryForm";
 import { CATEGORY_CONFIG } from "@/features/categories/shared/constants/category.config";
 
+import SubCategoryService from "@/features/categories/sub-category/services/sub-category.service";
+
+import type { CreateSubCategoryDto } from "@/features/categories/sub-category/services/sub-category.service";
+
 import SuccessDialog from "@/features/shared/ui/dialogs/SuccessDialog";
+
+interface SubCategoryFormValues {
+  name: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  categoryId?: string;
+  isActive?: boolean;
+}
 
 export default function AddSubCategoryPage() {
   const router = useRouter();
 
   const [successOpen, setSuccessOpen] = useState(false);
 
-  async function handleSubmit(values: unknown) {
+  const [createdSubCategory, setCreatedSubCategory] =
+    useState<CreateSubCategoryDto | null>(null);
+
+  async function handleSubmit(values: SubCategoryFormValues) {
     try {
-      console.log(values);
+      const categoryId = values.categoryId?.trim();
 
-      // TODO:
-      // await subCategoryService.create(values);
+      if (!categoryId) {
+        throw new Error("Please select a parent category.");
+      }
 
+      const name = values.name.trim();
+
+      if (!name) {
+        throw new Error("Please enter a sub category name.");
+      }
+
+      const payload: CreateSubCategoryDto = {
+        name,
+        category: categoryId,
+      };
+
+      const created = await SubCategoryService.create(payload);
+
+      console.log("Sub category created:", created);
+
+      setCreatedSubCategory(payload);
       setSuccessOpen(true);
     } catch (error) {
-      console.error(error);
+      console.error("Failed to create sub category:", error);
     }
   }
 
@@ -36,10 +69,17 @@ export default function AddSubCategoryPage() {
       <SuccessDialog
         open={successOpen}
         title="Sub Category Created"
-        description="The sub category has been created successfully."
+        description={
+          createdSubCategory
+            ? `"${createdSubCategory.name}" has been created successfully.`
+            : "The sub category has been created successfully."
+        }
         primaryLabel="Back to Categories"
         secondaryLabel="Add Another"
-        onPrimary={() => router.push("/categories")}
+        onPrimary={() => {
+          setSuccessOpen(false);
+          router.push("/categories");
+        }}
         onSecondary={() => {
           setSuccessOpen(false);
           router.refresh();

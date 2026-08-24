@@ -44,6 +44,10 @@ const COLOR_VARIANTS = {
 } as const;
 
 export default function ReportStats({ items }: ReportStatsProps) {
+  if (items.length === 0) {
+    return null;
+  }
+
   return (
     <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
       {items.map((item) => {
@@ -56,13 +60,13 @@ export default function ReportStats({ items }: ReportStatsProps) {
             className="group overflow-hidden border-border/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
           >
             <CardContent className="p-5">
-              <div className="flex items-start justify-between">
-                <div className="space-y-2">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 space-y-2">
                   <p className="text-sm font-medium text-muted-foreground">
                     {item.label}
                   </p>
 
-                  <h3 className="text-2xl font-bold tracking-tight">
+                  <h3 className="truncate text-xl font-bold tracking-tight sm:text-2xl">
                     {item.formattedValue}
                   </h3>
 
@@ -82,11 +86,11 @@ export default function ReportStats({ items }: ReportStatsProps) {
                 {Icon && (
                   <div
                     className={cn(
-                      "flex h-12 w-12 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110",
+                      "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-110",
                       color.icon,
                     )}
                   >
-                    <Icon className="h-6 w-6" />
+                    <Icon className="h-5 w-5" />
                   </div>
                 )}
               </div>

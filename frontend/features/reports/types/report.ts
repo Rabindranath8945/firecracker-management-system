@@ -140,11 +140,24 @@ export interface ExpenseReportItem extends ReportRow {
 /*                                Stock Report                                */
 /* -------------------------------------------------------------------------- */
 
+/* -------------------------------------------------------------------------- */
+/*                                Stock Report                                */
+/* -------------------------------------------------------------------------- */
+
 export interface StockReportItem extends ReportRow {
+  productCode: string;
   productName: string;
+
   category: string;
+  subCategory: string;
+
   stock: number;
-  unit: string;
+  minimumStock: number;
+
+  purchasePrice: number;
+  sellingPrice: number;
+
+  profit: number;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -153,8 +166,17 @@ export interface StockReportItem extends ReportRow {
 
 export interface CustomerReportItem extends ReportRow {
   customerNo: string;
+
   name: string;
+
   mobile: string;
+
+  totalInvoices: number;
+
+  totalSales: number;
+
+  totalDue: number;
+
   balance: number;
 }
 
@@ -166,6 +188,8 @@ export interface SupplierReportItem extends ReportRow {
   supplierNo: string;
   name: string;
   mobile: string;
+  totalPurchases: number;
+  purchaseAmount: number;
   balance: number;
 }
 

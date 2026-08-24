@@ -3,6 +3,7 @@ import { Types } from "mongoose";
 import ProductRepository from "../repositories/product.repository.js";
 import CategoryRepository from "../../category/repositories/category.repository.js";
 import SubCategoryRepository from "../../sub-category/repositories/sub-category.repository.js";
+import SettingsRepository from "../../settings/repositories/settings.repository.js";
 
 import { IProduct } from "../interfaces/product.interface.js";
 import { ProductExcelRow } from "../../../common/excel/types/excel-row.types.js";
@@ -41,6 +42,10 @@ interface ProductQuery {
 }
 
 class ProductService {
+  /* ---------------------------------------------------------------------- */
+  /* DTO Mapping                                                            */
+  /* ---------------------------------------------------------------------- */
+
   private mapDto(data: CreateProductDto | UpdateProductDto) {
     return {
       ...data,
@@ -52,6 +57,24 @@ class ProductService {
         : undefined,
     };
   }
+
+  /* ---------------------------------------------------------------------- */
+  /* GST                                                                     */
+  /* ---------------------------------------------------------------------- */
+
+  private async getDefaultGST(userId: string): Promise<number> {
+    const settings = await SettingsRepository.findByUserId(userId);
+
+    if (!settings?.tax?.enabled) {
+      return 0;
+    }
+
+    return Math.max(0, Math.min(100, Number(settings.tax.defaultGST ?? 0)));
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /* Category Validation                                                     */
+  /* ---------------------------------------------------------------------- */
 
   private async validateCategoryAndSubCategory(
     data: CreateProductDto | UpdateProductDto,
@@ -92,16 +115,28 @@ class ProductService {
     }
   }
 
+  /* ---------------------------------------------------------------------- */
+  /* Create Product                                                         */
+  /* ---------------------------------------------------------------------- */
+
   async create(data: CreateProductDto, userId: string) {
     if (!Types.ObjectId.isValid(userId)) {
       throw new Error("Invalid user.");
     }
 
-    const exists = await ProductRepository.findByCode(data.productCode);
+    const prefix = await SettingsRepository.getNumberingPrefix(
+      userId,
+      "product",
+    );
 
-    if (exists) {
-      throw new Error("Product code already exists.");
-    }
+    const products = await ProductRepository.findCodes();
+
+    const productCode = generateSequenceCode(
+      products
+        .map((product) => product.productCode)
+        .filter((code): code is string => Boolean(code)),
+      prefix,
+    );
 
     if (data.barcode) {
       const barcodeExists = await ProductRepository.findByBarcode(data.barcode);
@@ -113,11 +148,23 @@ class ProductService {
 
     await this.validateCategoryAndSubCategory(data);
 
+    const tax =
+      data.tax !== undefined ? data.tax : await this.getDefaultGST(userId);
+
     return ProductRepository.create({
-      ...this.mapDto(data),
+      ...this.mapDto({
+        ...data,
+        productCode,
+        tax,
+      }),
+
       createdBy: new Types.ObjectId(userId),
     });
   }
+
+  /* ---------------------------------------------------------------------- */
+  /* Get All                                                                */
+  /* ---------------------------------------------------------------------- */
 
   async getAll(query: ProductQuery) {
     return ProductRepository.findAll({
@@ -132,15 +179,19 @@ class ProductService {
 
       subCategory: query.subCategory,
 
-      // Don't force active products
       isActive: query.isActive,
 
       stock: query.stock,
 
       minPrice: query.minPrice,
+
       maxPrice: query.maxPrice,
     });
   }
+
+  /* ---------------------------------------------------------------------- */
+  /* Get By ID                                                              */
+  /* ---------------------------------------------------------------------- */
 
   async getById(id: string) {
     if (!Types.ObjectId.isValid(id)) {
@@ -155,14 +206,33 @@ class ProductService {
 
     return product;
   }
-  async getNextCode() {
+
+  /* ---------------------------------------------------------------------- */
+  /* Next Product Code                                                      */
+  /* ---------------------------------------------------------------------- */
+  async getNextCode(userId: string) {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new Error("Invalid user.");
+    }
+
+    const prefix = await SettingsRepository.getNumberingPrefix(
+      userId,
+      "product",
+    );
+
     const products = await ProductRepository.findCodes();
 
     return generateSequenceCode(
-      products.map((item) => item.productCode),
-      "PRD",
+      products
+        .map((product) => product.productCode)
+        .filter((code): code is string => Boolean(code)),
+      prefix,
     );
   }
+
+  /* ---------------------------------------------------------------------- */
+  /* Update Product                                                         */
+  /* ---------------------------------------------------------------------- */
 
   async update(id: string, data: UpdateProductDto, userId: string) {
     if (!Types.ObjectId.isValid(id)) {
@@ -181,11 +251,35 @@ class ProductService {
 
     await this.validateCategoryAndSubCategory(data);
 
+    /*
+     * IMPORTANT:
+     *
+     * Existing product GST is NOT automatically changed when
+     * Tax Settings changes.
+     *
+     * If the user explicitly edits tax, use that value.
+     * Otherwise keep the existing product tax.
+     */
+
+    const updateData: UpdateProductDto & {
+      updatedBy: Types.ObjectId;
+    } = {
+      ...data,
+
+      tax: data.tax !== undefined ? data.tax : product.tax,
+
+      updatedBy: new Types.ObjectId(userId),
+    };
+
     return ProductRepository.update(id, {
-      ...this.mapDto(data),
+      ...this.mapDto(updateData),
       updatedBy: new Types.ObjectId(userId),
     });
   }
+
+  /* ---------------------------------------------------------------------- */
+  /* Delete Product                                                         */
+  /* ---------------------------------------------------------------------- */
 
   async delete(id: string, userId: string) {
     if (!Types.ObjectId.isValid(id)) {
@@ -205,19 +299,29 @@ class ProductService {
     return ProductRepository.delete(id);
   }
 
-  // Part 2 starts here
+  /* ---------------------------------------------------------------------- */
+  /* Bulk Import                                                            */
+  /* ---------------------------------------------------------------------- */
+
   async bulkImport(rows: ProductExcelRow[], userId: string) {
     if (!Types.ObjectId.isValid(userId)) {
       throw new Error("Invalid user.");
     }
 
-    // Load master data
-    const [categories, subCategories] = await Promise.all([
+    /* -------------------------------------------------------------------- */
+    /* Load Settings + Master Data                                          */
+    /* -------------------------------------------------------------------- */
+
+    const [categories, subCategories, defaultGST] = await Promise.all([
       CategoryRepository.findAllForImport(),
       SubCategoryRepository.findAllForImport(),
+      this.getDefaultGST(userId),
     ]);
 
-    // Category lookup
+    /* -------------------------------------------------------------------- */
+    /* Category Lookup                                                       */
+    /* -------------------------------------------------------------------- */
+
     const categoryMap = new Map<string, Types.ObjectId>();
 
     categories.forEach((category) => {
@@ -227,7 +331,10 @@ class ProductService {
       );
     });
 
-    // Sub Category lookup
+    /* -------------------------------------------------------------------- */
+    /* Sub Category Lookup                                                   */
+    /* -------------------------------------------------------------------- */
+
     const subCategoryMap = new Map<
       string,
       {
@@ -243,7 +350,10 @@ class ProductService {
       });
     });
 
-    // Existing database values
+    /* -------------------------------------------------------------------- */
+    /* Existing Products                                                     */
+    /* -------------------------------------------------------------------- */
+
     const productCodes = rows
       .map((row) => row.productCode)
       .filter((code): code is string => Boolean(code));
@@ -265,6 +375,10 @@ class ProductService {
       existingBarcodeProducts.map((product) => product.barcode).filter(Boolean),
     );
 
+    /* -------------------------------------------------------------------- */
+    /* Import Containers                                                     */
+    /* -------------------------------------------------------------------- */
+
     const products: Partial<IProduct>[] = [];
 
     const errors: {
@@ -273,12 +387,19 @@ class ProductService {
       message: string;
     }[] = [];
 
-    // Process every Excel row
+    /* -------------------------------------------------------------------- */
+    /* Process Rows                                                          */
+    /* -------------------------------------------------------------------- */
+
     for (let index = 0; index < rows.length; index++) {
       const row = rows[index];
+
       const rowNumber = index + 2;
 
-      // Resolve Category
+      /* ------------------------------------------------------------------ */
+      /* Category                                                            */
+      /* ------------------------------------------------------------------ */
+
       let categoryId: Types.ObjectId | undefined;
 
       if (row.category) {
@@ -295,7 +416,10 @@ class ProductService {
         }
       }
 
-      // Resolve Sub Category
+      /* ------------------------------------------------------------------ */
+      /* Sub Category                                                        */
+      /* ------------------------------------------------------------------ */
+
       let subCategoryId: Types.ObjectId | undefined;
 
       if (row.subCategory) {
@@ -326,7 +450,10 @@ class ProductService {
         subCategoryId = subCategory.id;
       }
 
-      // Duplicate Product Code
+      /* ------------------------------------------------------------------ */
+      /* Duplicate Product Code                                              */
+      /* ------------------------------------------------------------------ */
+
       if (existingCodes.has(row.productCode)) {
         errors.push({
           row: rowNumber,
@@ -337,7 +464,10 @@ class ProductService {
         continue;
       }
 
-      // Duplicate Barcode
+      /* ------------------------------------------------------------------ */
+      /* Duplicate Barcode                                                   */
+      /* ------------------------------------------------------------------ */
+
       if (row.barcode && existingBarcodes.has(row.barcode)) {
         errors.push({
           row: rowNumber,
@@ -348,18 +478,36 @@ class ProductService {
         continue;
       }
 
-      // Prevent duplicate values inside same Excel
+      /* ------------------------------------------------------------------ */
+      /* Prevent Duplicate Values Inside Excel                               */
+      /* ------------------------------------------------------------------ */
+
       existingCodes.add(row.productCode);
 
       if (row.barcode) {
         existingBarcodes.add(row.barcode);
       }
 
+      /* ------------------------------------------------------------------ */
+      /* GST                                                                 */
+      /* ------------------------------------------------------------------ */
+
+      const tax =
+        row.tax !== undefined && row.tax !== null && !Number.isNaN(row.tax)
+          ? row.tax
+          : defaultGST;
+
+      /* ------------------------------------------------------------------ */
+      /* Product                                                             */
+      /* ------------------------------------------------------------------ */
+
       products.push({
         productCode: row.productCode,
+
         name: row.name,
 
         category: categoryId,
+
         subCategory: subCategoryId,
 
         barcode: row.barcode,
@@ -367,12 +515,14 @@ class ProductService {
         unit: row.unit,
 
         purchasePrice: row.purchasePrice,
+
         sellingPrice: row.sellingPrice,
 
         stock: row.stock,
+
         minimumStock: row.minimumStock,
 
-        tax: row.tax,
+        tax,
 
         description: row.description ?? "",
 
@@ -382,17 +532,26 @@ class ProductService {
       });
     }
 
-    // Insert products
+    /* -------------------------------------------------------------------- */
+    /* Insert Products                                                       */
+    /* -------------------------------------------------------------------- */
+
     if (products.length > 0) {
       await ProductRepository.bulkCreate(products);
     }
+
+    /* -------------------------------------------------------------------- */
+    /* Response                                                              */
+    /* -------------------------------------------------------------------- */
 
     return {
       success: true,
 
       summary: {
         total: rows.length,
+
         imported: products.length,
+
         skipped: errors.length,
       },
 

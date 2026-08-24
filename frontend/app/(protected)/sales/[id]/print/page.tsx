@@ -11,6 +11,11 @@ import {
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 
+import {
+  getOfflineSettings,
+  saveOfflineSettings,
+} from "@/libs/offline/store/offline.settings";
+
 import { Button } from "@/components/ui/button";
 import api from "@/lib/api";
 
@@ -515,11 +520,42 @@ export default function SalePrintPage() {
 /* ========================================================================== */
 
 async function fetchSettings() {
-  const response = await api.get("/settings");
+  /*
+   * ONLINE
+   */
 
-  if (!response.data?.success || !response.data?.data) {
-    throw new Error("Business settings are unavailable.");
+  if (typeof navigator === "undefined" || navigator.onLine) {
+    const response = await api.get("/settings");
+
+    if (!response.data?.success || !response.data?.data) {
+      throw new Error("Business settings are unavailable.");
+    }
+
+    const settings = response.data.data;
+
+    /*
+     * Keep the latest settings
+     * available for offline printing.
+     */
+
+    try {
+      await saveOfflineSettings(settings);
+    } catch (error) {
+      console.warn("Unable to cache settings offline:", error);
+    }
+
+    return settings;
   }
 
-  return response.data.data;
+  /*
+   * OFFLINE
+   */
+
+  const settings = await getOfflineSettings();
+
+  if (!settings) {
+    throw new Error("Business settings are not available offline.");
+  }
+
+  return settings;
 }

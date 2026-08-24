@@ -20,12 +20,14 @@ import DeleteDialog from "@/features/shared/ui/dialogs/DeleteDialog";
 import ProgressDialog from "@/features/shared/ui/dialogs/ProgressDialog";
 import FloatingActionButton from "@/components/common/shared/button/FloatingActionButton";
 
+type CustomerStatus = "ACTIVE" | "ALL" | "INACTIVE";
+
 export default function CustomersPage() {
   const router = useRouter();
 
   const [search, setSearch] = useState("");
 
-  const [status, setStatus] = useState("ACTIVE");
+  const [status, setStatus] = useState<CustomerStatus>("ACTIVE");
 
   const [sort, setSort] = useState("NAME_ASC");
 

@@ -1,6 +1,12 @@
 export function generateSequenceCode(codes: string[], prefix: string): string {
+  const normalizedPrefix = prefix.trim().toUpperCase();
+
+  if (!normalizedPrefix) {
+    throw new Error("Number series prefix is required.");
+  }
+
   if (codes.length === 0) {
-    return `${prefix}001`;
+    return `${normalizedPrefix}-0001`;
   }
 
   const lastNumber = Math.max(
@@ -11,5 +17,5 @@ export function generateSequenceCode(codes: string[], prefix: string): string {
     }),
   );
 
-  return `${prefix}${String(lastNumber + 1).padStart(3, "0")}`;
+  return `${normalizedPrefix}-${String(lastNumber + 1).padStart(4, "0")}`;
 }

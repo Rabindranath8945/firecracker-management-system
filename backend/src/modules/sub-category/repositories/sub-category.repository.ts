@@ -1,137 +1,181 @@
 import SubCategory from "../models/sub-category.model.js";
-import { ISubCategory } from "../interfaces/sub-category.interface.js";
 
-interface SubCategoryQueryOptions {
-  page?: number;
-  limit?: number;
+interface FindAllOptions {
+  page: number;
+  limit: number;
   search?: string;
   sort?: string;
   order?: "asc" | "desc";
-
   category?: string;
-
   isActive?: boolean;
 }
 
 class SubCategoryRepository {
-  async create(data: Partial<ISubCategory>) {
-    return SubCategory.create(data);
-  }
+  /* ------------------------------------------------------------------------ */
+  /* GET ALL                                                                  */
+  /* ------------------------------------------------------------------------ */
 
-  async findCodes() {
-    return SubCategory.find().select("subCategoryCode");
-  }
+  async findAll(options: FindAllOptions) {
+    const { page, limit, search, sort, order, category, isActive } = options;
 
-  async bulkCreate(data: Partial<ISubCategory>[]) {
-    return SubCategory.insertMany(data, {
-      ordered: false,
-    });
-  }
+    const filter: Record<string, unknown> = {};
 
-  async clearBusinessData(businessId: string) {
-    return SubCategory.deleteMany({
-      businessId,
-    });
-  }
+    /* ---------------------------------------------------------------------- */
+    /* SEARCH                                                                 */
+    /* ---------------------------------------------------------------------- */
 
-  async findById(id: string) {
-    return SubCategory.findById(id).populate("category", "categoryCode name");
-  }
+    if (search?.trim()) {
+      const keyword = search.trim();
 
-  async findByCode(subCategoryCode: string) {
-    return SubCategory.findOne({
-      subCategoryCode,
-    });
-  }
-
-  async findAllForImport() {
-    return SubCategory.find({
-      isActive: true,
-    }).select("_id name category");
-  }
-
-  async generateNextCode() {
-    const last = await SubCategory.findOne()
-      .sort({ createdAt: -1 })
-      .select("subCategoryCode");
-
-    if (!last?.subCategoryCode) {
-      return "SUBCAT-000001";
-    }
-
-    const match = last.subCategoryCode.match(/\d+$/);
-
-    const lastNumber = match ? parseInt(match[0], 10) : 0;
-
-    return `SUBCAT-${String(lastNumber + 1).padStart(6, "0")}`;
-  }
-
-  async findAll(options: SubCategoryQueryOptions = {}) {
-    const {
-      page = 1,
-      limit = 20,
-      search,
-      sort = "createdAt",
-      order = "desc",
-      category,
-      isActive = true,
-    } = options;
-
-    const query: Record<string, unknown> = {
-      isActive,
-    };
-
-    if (category) {
-      query.category = category;
-    }
-
-    if (search) {
-      query.$or = [
+      filter.$or = [
         {
-          name: new RegExp(search, "i"),
+          name: {
+            $regex: keyword,
+            $options: "i",
+          },
         },
         {
-          subCategoryCode: new RegExp(search, "i"),
+          subCategoryCode: {
+            $regex: keyword,
+            $options: "i",
+          },
         },
       ];
     }
 
-    const skip = (page - 1) * limit;
+    /* ---------------------------------------------------------------------- */
+    /* CATEGORY                                                               */
+    /* ---------------------------------------------------------------------- */
+
+    if (category) {
+      filter.category = category;
+    }
+
+    /* ---------------------------------------------------------------------- */
+    /* STATUS                                                                 */
+    /* ---------------------------------------------------------------------- */
+
+    if (typeof isActive === "boolean") {
+      filter.isActive = isActive;
+    }
+
+    /* ---------------------------------------------------------------------- */
+    /* PAGINATION                                                             */
+    /* ---------------------------------------------------------------------- */
+
+    const safePage = Math.max(1, page);
+
+    const safeLimit = Math.min(Math.max(1, limit), 100);
+
+    const skip = (safePage - 1) * safeLimit;
+
+    /* ---------------------------------------------------------------------- */
+    /* SORT                                                                   */
+    /* ---------------------------------------------------------------------- */
+
+    const sortField = sort || "name";
+
+    const sortOrder = order === "desc" ? -1 : 1;
+
+    /* ---------------------------------------------------------------------- */
+    /* QUERY                                                                  */
+    /* ---------------------------------------------------------------------- */
 
     const [items, total] = await Promise.all([
-      SubCategory.find(query)
-        .populate("category", "categoryCode name")
-        .sort({
-          [sort]: order === "asc" ? 1 : -1,
+      SubCategory.find(filter)
+        .populate({
+          path: "category",
+          select: "name categoryNo",
         })
-        .skip(skip)
-        .limit(limit),
 
-      SubCategory.countDocuments(query),
+        // IMPORTANT:
+        // This uses the productCount virtual defined
+        // in sub-category.model.ts.
+        .populate("productCount")
+
+        .sort({
+          [sortField]: sortOrder,
+        })
+
+        .skip(skip)
+        .limit(safeLimit)
+
+        .lean({
+          virtuals: true,
+        }),
+
+      SubCategory.countDocuments(filter),
     ]);
 
     return {
       items,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-        hasNextPage: page < Math.ceil(total / limit),
-        hasPreviousPage: page > 1,
-      },
+      total,
+      page: safePage,
+      limit: safeLimit,
+      totalPages: total === 0 ? 0 : Math.ceil(total / safeLimit),
     };
   }
 
-  async update(id: string, data: Partial<ISubCategory>) {
+  async findAllForImport() {
+    return SubCategory.find({}).select("_id name category").lean();
+  }
+
+  /* ------------------------------------------------------------------------ */
+  /* GET BY ID                                                                */
+  /* ------------------------------------------------------------------------ */
+
+  async findById(id: string) {
+    return SubCategory.findById(id)
+      .populate({
+        path: "category",
+        select: "name categoryNo",
+      })
+      .populate("productCount");
+  }
+
+  /* ------------------------------------------------------------------------ */
+  /* CREATE                                                                   */
+  /* ------------------------------------------------------------------------ */
+
+  async create(data: Record<string, unknown>) {
+    return SubCategory.create(data);
+  }
+
+  /* ------------------------------------------------------------------------ */
+  /* UPDATE                                                                   */
+  /* ------------------------------------------------------------------------ */
+
+  async update(id: string, data: Record<string, unknown>) {
     return SubCategory.findByIdAndUpdate(id, data, {
       new: true,
       runValidators: true,
-    }).populate("category", "categoryCode name");
+    })
+      .populate({
+        path: "category",
+        select: "name categoryNo",
+      })
+      .populate("productCount");
   }
+
+  /* ------------------------------------------------------------------------ */
+  /* DELETE                                                                   */
+  /* ------------------------------------------------------------------------ */
 
   async delete(id: string) {
     return SubCategory.findByIdAndDelete(id);
+  }
+
+  /* ------------------------------------------------------------------------ */
+  /* FIND CODES                                                               */
+  /* ------------------------------------------------------------------------ */
+
+  async findCodes() {
+    return SubCategory.find(
+      {},
+      {
+        subCategoryCode: 1,
+      },
+    ).lean();
   }
 }
 

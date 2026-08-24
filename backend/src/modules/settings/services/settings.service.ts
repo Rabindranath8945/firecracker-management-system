@@ -33,8 +33,8 @@ class SettingsService {
     return this.ensureSettingsExists(settings);
   }
 
-  async updateBusiness(id: string, business: ISettings["business"]) {
-    const settings = await SettingsRepository.updateBusiness(id, business);
+  async updateBusiness(userId: string, business: ISettings["business"]) {
+    const settings = await SettingsRepository.updateBusiness(userId, business);
 
     return this.ensureSettingsExists(settings);
   }
@@ -51,22 +51,53 @@ class SettingsService {
     return this.ensureSettingsExists(settings);
   }
 
-  async updateInvoice(id: string, invoice: ISettings["invoice"]) {
-    const settings = await SettingsRepository.updateInvoice(id, invoice);
+  async updateInvoice(userId: string, invoice: ISettings["invoice"]) {
+    const settings = await SettingsRepository.updateInvoice(userId, invoice);
 
-    return this.ensureSettingsExists(settings);
+    if (!settings) {
+      throw new Error("Settings not found for the authenticated user.");
+    }
+
+    return settings;
   }
 
-  async updateTax(id: string, tax: ISettings["tax"]) {
-    const settings = await SettingsRepository.updateTax(id, tax);
+  async generateNextInvoiceNumber(userId: string) {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new Error("Invalid user.");
+    }
 
-    return this.ensureSettingsExists(settings);
+    return SettingsRepository.generateNextInvoiceNumber(userId);
   }
 
-  async updateNumbering(id: string, numbering: ISettings["numbering"]) {
-    const settings = await SettingsRepository.updateNumbering(id, numbering);
+  async updateTax(userId: string, tax: ISettings["tax"]) {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new Error("Invalid user.");
+    }
 
-    return this.ensureSettingsExists(settings);
+    const settings = await SettingsRepository.updateTax(userId, tax);
+
+    if (!settings) {
+      throw new Error("Settings not found for the authenticated user.");
+    }
+
+    return settings;
+  }
+
+  async updateNumbering(userId: string, numbering: ISettings["numbering"]) {
+    if (!Types.ObjectId.isValid(userId)) {
+      throw new Error("Invalid user.");
+    }
+
+    const settings = await SettingsRepository.updateNumbering(
+      userId,
+      numbering,
+    );
+
+    if (!settings) {
+      throw new Error("Settings not found for the authenticated user.");
+    }
+
+    return settings;
   }
 
   async updateDataManagement(

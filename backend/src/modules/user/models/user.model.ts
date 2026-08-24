@@ -1,25 +1,56 @@
 import mongoose, { Document, Schema, Types } from "mongoose";
 
-export enum UserRole {
-  OWNER = "OWNER",
-
-  MANAGER = "MANAGER",
-
-  CASHIER = "CASHIER",
-
-  INVENTORY = "INVENTORY",
-}
+import {
+  USER_PERMISSIONS,
+  USER_ROLES,
+  USER_STATUS,
+  type UserPermission,
+  type UserRole,
+  type UserStatus,
+} from "../constants/user.constants.js";
 
 export interface IUser extends Document {
+  /* ------------------------------------------------------------------------ */
+  /* Identity                                                                 */
+  /* ------------------------------------------------------------------------ */
+
   googleId: string;
 
-  currentBusiness?: Types.ObjectId;
+  firstName: string;
+
+  lastName: string;
 
   email: string;
 
-  profilePicture?: string;
+  mobile: string;
+
+  profilePicture: string;
+
+  /* ------------------------------------------------------------------------ */
+  /* Business                                                                 */
+  /* ------------------------------------------------------------------------ */
+
+  owner?: Types.ObjectId | null;
+
+  currentBusiness?: Types.ObjectId | null;
+
+  /* ------------------------------------------------------------------------ */
+  /* Access                                                                    */
+  /* ------------------------------------------------------------------------ */
 
   role: UserRole;
+
+  permissions: UserPermission[];
+
+  status: UserStatus;
+
+  isOwner: boolean;
+
+  isActive: boolean;
+
+  /* ------------------------------------------------------------------------ */
+  /* Device / Security                                                        */
+  /* ------------------------------------------------------------------------ */
 
   deviceId: string;
 
@@ -29,9 +60,21 @@ export interface IUser extends Document {
 
   onboardingCompleted: boolean;
 
-  isActive: boolean;
+  /* ------------------------------------------------------------------------ */
+  /* Activity                                                                  */
+  /* ------------------------------------------------------------------------ */
 
-  lastLogin?: Date;
+  lastLogin?: Date | null;
+
+  lastSeen?: Date | null;
+
+  /* ------------------------------------------------------------------------ */
+  /* Audit                                                                     */
+  /* ------------------------------------------------------------------------ */
+
+  createdBy?: Types.ObjectId;
+
+  updatedBy?: Types.ObjectId;
 
   createdAt: Date;
 
@@ -40,6 +83,10 @@ export interface IUser extends Document {
 
 const UserSchema = new Schema<IUser>(
   {
+    /* ---------------------------------------------------------------------- */
+    /* Identity                                                               */
+    /* ---------------------------------------------------------------------- */
+
     googleId: {
       type: String,
       required: true,
@@ -48,9 +95,16 @@ const UserSchema = new Schema<IUser>(
       trim: true,
     },
 
-    currentBusiness: {
-      type: Schema.Types.ObjectId,
-      ref: "Business",
+    firstName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    lastName: {
+      type: String,
+      default: "",
+      trim: true,
     },
 
     email: {
@@ -61,16 +115,77 @@ const UserSchema = new Schema<IUser>(
       trim: true,
     },
 
+    mobile: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
     profilePicture: {
       type: String,
       default: "",
+      trim: true,
     },
+
+    /* ---------------------------------------------------------------------- */
+    /* Business                                                               */
+    /* ---------------------------------------------------------------------- */
+
+    owner: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+      index: true,
+    },
+
+    currentBusiness: {
+      type: Schema.Types.ObjectId,
+      ref: "Business",
+      default: null,
+      index: true,
+    },
+
+    /* ---------------------------------------------------------------------- */
+    /* Access                                                                  */
+    /* ---------------------------------------------------------------------- */
 
     role: {
       type: String,
-      enum: Object.values(UserRole),
-      default: UserRole.OWNER,
+      enum: USER_ROLES,
+      default: "OWNER",
+      required: true,
     },
+
+    permissions: {
+      type: [
+        {
+          type: String,
+          enum: USER_PERMISSIONS,
+        },
+      ],
+      default: [],
+    },
+
+    status: {
+      type: String,
+      enum: USER_STATUS,
+      default: "ACTIVE",
+      required: true,
+    },
+
+    isOwner: {
+      type: Boolean,
+      default: false,
+    },
+
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+
+    /* ---------------------------------------------------------------------- */
+    /* Security                                                                */
+    /* ---------------------------------------------------------------------- */
 
     deviceId: {
       type: String,
@@ -92,13 +207,33 @@ const UserSchema = new Schema<IUser>(
       default: false,
     },
 
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
+    /* ---------------------------------------------------------------------- */
+    /* Activity                                                                */
+    /* ---------------------------------------------------------------------- */
 
     lastLogin: {
       type: Date,
+      default: null,
+    },
+
+    lastSeen: {
+      type: Date,
+      default: null,
+    },
+
+    /* ---------------------------------------------------------------------- */
+    /* Audit                                                                   */
+    /* ---------------------------------------------------------------------- */
+
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
+    updatedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
       default: null,
     },
   },
@@ -107,5 +242,19 @@ const UserSchema = new Schema<IUser>(
     versionKey: false,
   },
 );
+
+/* -------------------------------------------------------------------------- */
+/* Indexes                                                                    */
+/* -------------------------------------------------------------------------- */
+
+UserSchema.index({
+  owner: 1,
+  role: 1,
+});
+
+UserSchema.index({
+  owner: 1,
+  status: 1,
+});
 
 export const User = mongoose.model<IUser>("User", UserSchema);
