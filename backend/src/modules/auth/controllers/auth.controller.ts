@@ -1,60 +1,106 @@
-import { NextFunction, Request, Response } from "express";
+import { Request, Response } from "express";
 
-import { sendSuccess } from "../../../common/shared/response.js";
 import { authService } from "../services/auth.service.js";
 
 class AuthController {
-  googleLogin = async (req: Request, res: Response, next: NextFunction) => {
+  /* -------------------------------------------------------------------------- */
+  /*                              Google Login                                  */
+  /* -------------------------------------------------------------------------- */
+
+  googleLogin = async (req: Request, res: Response) => {
     try {
-      const { credential, deviceId } = req.body;
+      const { credential, deviceId } = req.body ?? {};
 
-      const result = await authService.googleLogin(credential, deviceId);
-
-      return sendSuccess(res, result, "Authentication successful");
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  refresh = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { refreshToken } = req.body;
-
-      const result = await authService.refresh(refreshToken);
-
-      return sendSuccess(res, result, "Token refreshed successfully");
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  logout = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { refreshToken } = req.body;
-
-      await authService.logout(refreshToken);
-
-      return sendSuccess(res, null, "Logged out successfully");
-    } catch (error) {
-      next(error);
-    }
-  };
-
-  me = async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({
+      if (!credential) {
+        return res.status(400).json({
           success: false,
-          message: "Unauthorized",
+          message: "Google credential is required.",
         });
       }
 
-      const user = await authService.me(req.user.userId);
+      if (!deviceId) {
+        return res.status(400).json({
+          success: false,
+          message: "Device ID is required.",
+        });
+      }
 
-      return sendSuccess(res, user, "User retrieved successfully");
+      const result = await authService.googleLogin(credential, deviceId);
+
+      return res.status(200).json({
+        success: true,
+        message: "Login successful.",
+        data: result,
+      });
     } catch (error) {
-      next(error);
+      console.error(error);
+
+      return res.status(500).json({
+        success: false,
+        message: "Internal Server Error",
+      });
     }
+  };
+
+  /* -------------------------------------------------------------------------- */
+  /*                         Complete Onboarding                                */
+  /* -------------------------------------------------------------------------- */
+
+  completeOnboarding = async (req: Request, res: Response) => {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized.",
+      });
+    }
+
+    await authService.completeOnboarding(userId);
+
+    return res.json({
+      success: true,
+      message: "Onboarding completed.",
+    });
+  };
+
+  me = async (req: Request, res: Response) => {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    const user = await authService.me(userId);
+
+    return res.json({
+      success: true,
+      data: user,
+    });
+  };
+
+  refresh = async (req: Request, res: Response) => {
+    const { refreshToken } = req.body;
+
+    const data = await authService.refresh(refreshToken);
+
+    return res.json({
+      success: true,
+      data,
+    });
+  };
+
+  logout = async (req: Request, res: Response) => {
+    const { refreshToken } = req.body;
+
+    await authService.logout(refreshToken);
+
+    return res.json({
+      success: true,
+    });
   };
 }
 

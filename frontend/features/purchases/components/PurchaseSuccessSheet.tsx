@@ -36,7 +36,7 @@ interface Props {
 
   balanceAmount: number;
 
-  paymentStatus: "PAID" | "PARTIAL" | "UNPAID";
+  paymentStatus: "PAID" | "PARTIAL" | "DUE";
 
   onOpenChange: (open: boolean) => void;
 
@@ -90,7 +90,7 @@ export default function PurchaseSuccessSheet({
           color: "border-amber-100 bg-amber-50 text-amber-700",
         };
 
-      case "UNPAID":
+      case "DUE":
         return {
           title: "Pay Supplier",
           subtitle: `Outstanding ₹${balanceAmount.toFixed(2)}`,
@@ -162,7 +162,7 @@ export default function PurchaseSuccessSheet({
               valueClassName="text-xl font-bold text-primary"
             />
 
-            {paymentStatus !== "UNPAID" && (
+            {paymentStatus !== "DUE" && (
               <Row label="Paid" value={`₹${paidAmount.toFixed(2)}`} />
             )}
 
@@ -194,7 +194,7 @@ export default function PurchaseSuccessSheet({
             />
           )}
 
-          {paymentStatus === "UNPAID" && (
+          {paymentStatus === "DUE" && (
             <Status
               color="red"
               text={`Outstanding ₹${balanceAmount.toFixed(2)}`}

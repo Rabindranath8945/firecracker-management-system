@@ -1,5 +1,10 @@
+"use client";
+
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { purchaseApi, CreatePurchaseRequest } from "../api/purchases.api";
+
+import { purchaseApi } from "../api/purchases.api";
+
+import type { CreatePurchaseRequest } from "../types/purchase.types";
 
 interface UpdatePurchasePayload {
   id: string;
@@ -14,11 +19,11 @@ export function useUpdatePurchase() {
       purchaseApi.update(id, data),
 
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["purchases"],
       });
 
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["purchase", variables.id],
       });
     },

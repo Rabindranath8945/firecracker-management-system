@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Building2, Phone, User, ArrowRight } from "lucide-react";
+import { ArrowRight, Building2, Phone, User } from "lucide-react";
 
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ import {
   type QuickSupplierForm,
 } from "../schemas/quickSupplier.schema";
 
-interface Props {
+interface QuickSupplierSheetProps {
   open: boolean;
 
   onOpenChange: (open: boolean) => void;
@@ -33,16 +33,15 @@ export default function QuickSupplierSheet({
   onSave,
   onMoreDetails,
   loading = false,
-}: Props) {
+}: QuickSupplierSheetProps) {
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isValid },
+    formState: { errors },
   } = useForm<QuickSupplierForm>({
     resolver: zodResolver(quickSupplierSchema),
     mode: "onChange",
-
     defaultValues: {
       businessName: "",
       contactPerson: "",
@@ -50,57 +49,125 @@ export default function QuickSupplierSheet({
     },
   });
 
+  /* ---------------------------------------------------------------------- */
+  /* RESET                                                                  */
+  /* ---------------------------------------------------------------------- */
+
   useEffect(() => {
     if (!open) {
-      reset();
+      reset({
+        businessName: "",
+        contactPerson: "",
+        mobile: "",
+      });
     }
   }, [open, reset]);
 
+  /* ---------------------------------------------------------------------- */
+  /* SAVE                                                                   */
+  /* ---------------------------------------------------------------------- */
+
   function submit(data: QuickSupplierForm) {
     onSave(data);
-
-    reset();
   }
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="rounded-t-[32px] px-6 pb-8 pt-5">
-        {/* Handle */}
+      <SheetContent
+        side="bottom"
+        className="
+          max-h-[90vh]
+          overflow-y-auto
+          rounded-t-[30px]
+          border-t
+          px-5
+          pb-6
+          pt-4
+          sm:px-6
+        "
+      >
+        {/* ---------------------------------------------------------------- */}
+        {/* HANDLE                                                            */}
+        {/* ---------------------------------------------------------------- */}
 
-        <div className="mx-auto mb-5 h-1.5 w-16 rounded-full bg-muted" />
+        <div className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-muted" />
 
-        {/* Header */}
+        {/* ---------------------------------------------------------------- */}
+        {/* HEADER                                                            */}
+        {/* ---------------------------------------------------------------- */}
 
-        <div className="mb-8 text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <Building2 className="size-8 text-primary" />
+        <div className="mb-6 flex items-center gap-3">
+          <div
+            className="
+              flex
+              h-12
+              w-12
+              shrink-0
+              items-center
+              justify-center
+              rounded-2xl
+              bg-emerald-100
+              dark:bg-emerald-500/10
+            "
+          >
+            <Building2 className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
           </div>
 
-          <h2 className="mt-4 text-2xl font-bold">Add Supplier</h2>
+          <div className="min-w-0">
+            <h2 className="text-lg font-bold">Add Supplier</h2>
 
-          <p className="mt-1 text-sm text-muted-foreground">
-            Create a supplier without leaving this purchase.
-          </p>
+            <p className="text-xs text-muted-foreground">
+              Quickly add a supplier to this purchase
+            </p>
+          </div>
         </div>
 
-        <div onSubmit={handleSubmit(submit)} className="space-y-5">
+        {/* ---------------------------------------------------------------- */}
+        {/* FORM                                                              */}
+        {/* ---------------------------------------------------------------- */}
+
+        <form onSubmit={handleSubmit(submit)} className="space-y-4">
           {/* Business Name */}
 
-          <div className="space-y-2">
-            <Label>Business Name *</Label>
+          <div className="space-y-1.5">
+            <Label
+              htmlFor="supplier-business-name"
+              className="text-xs font-semibold"
+            >
+              Business Name *
+            </Label>
 
             <div className="relative">
-              <Building2 className="absolute left-3 top-3.5 size-4 text-muted-foreground" />
+              <Building2
+                className="
+                  absolute
+                  left-3
+                  top-1/2
+                  h-4
+                  w-4
+                  -translate-y-1/2
+                  text-muted-foreground
+                "
+              />
 
               <Input
+                id="supplier-business-name"
                 placeholder="ABC Fireworks"
-                className="pl-10"
+                autoComplete="organization"
+                disabled={loading}
+                className="
+                  h-11
+                  rounded-xl
+                  pl-10
+                  focus-visible:border-emerald-500
+                  focus-visible:ring-emerald-500/20
+                "
                 {...register("businessName")}
               />
             </div>
 
             {errors.businessName && (
-              <p className="text-sm text-red-500">
+              <p className="text-xs text-red-500">
                 {errors.businessName.message}
               </p>
             )}
@@ -108,15 +175,39 @@ export default function QuickSupplierSheet({
 
           {/* Contact Person */}
 
-          <div className="space-y-2">
-            <Label>Contact Person</Label>
+          <div className="space-y-1.5">
+            <Label
+              htmlFor="supplier-contact-person"
+              className="text-xs font-semibold"
+            >
+              Contact Person
+            </Label>
 
             <div className="relative">
-              <User className="absolute left-3 top-3.5 size-4 text-muted-foreground" />
+              <User
+                className="
+                  absolute
+                  left-3
+                  top-1/2
+                  h-4
+                  w-4
+                  -translate-y-1/2
+                  text-muted-foreground
+                "
+              />
 
               <Input
+                id="supplier-contact-person"
                 placeholder="Mr. Sharma"
-                className="pl-10"
+                autoComplete="name"
+                disabled={loading}
+                className="
+                  h-11
+                  rounded-xl
+                  pl-10
+                  focus-visible:border-emerald-500
+                  focus-visible:ring-emerald-500/20
+                "
                 {...register("contactPerson")}
               />
             </div>
@@ -124,22 +215,43 @@ export default function QuickSupplierSheet({
 
           {/* Mobile */}
 
-          <div className="space-y-2">
-            <Label>Mobile Number *</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="supplier-mobile" className="text-xs font-semibold">
+              Mobile Number *
+            </Label>
 
             <div className="relative">
-              <Phone className="absolute left-3 top-3.5 size-4 text-muted-foreground" />
+              <Phone
+                className="
+                  absolute
+                  left-3
+                  top-1/2
+                  h-4
+                  w-4
+                  -translate-y-1/2
+                  text-muted-foreground
+                "
+              />
 
               <Input
+                id="supplier-mobile"
                 placeholder="9876543210"
                 inputMode="numeric"
-                className="pl-10"
+                autoComplete="tel"
+                disabled={loading}
+                className="
+                  h-11
+                  rounded-xl
+                  pl-10
+                  focus-visible:border-emerald-500
+                  focus-visible:ring-emerald-500/20
+                "
                 {...register("mobile")}
               />
             </div>
 
             {errors.mobile && (
-              <p className="text-sm text-red-500">{errors.mobile.message}</p>
+              <p className="text-xs text-red-500">{errors.mobile.message}</p>
             )}
           </div>
 
@@ -147,42 +259,88 @@ export default function QuickSupplierSheet({
 
           <button
             type="button"
+            disabled={loading}
             onClick={onMoreDetails}
             className="
               flex
               w-full
               items-center
               justify-between
+              gap-3
               rounded-2xl
               border
-              p-4
+              p-3.5
+              text-left
               transition
-              hover:bg-muted/50
+              hover:border-emerald-300
+              hover:bg-emerald-50/50
+              disabled:pointer-events-none
+              disabled:opacity-50
+              dark:hover:bg-emerald-500/5
             "
           >
-            <div className="text-left">
-              <h3 className="font-semibold">Add More Details</h3>
+            <div className="flex min-w-0 items-center gap-3">
+              <div
+                className="
+                  flex
+                  h-9
+                  w-9
+                  shrink-0
+                  items-center
+                  justify-center
+                  rounded-xl
+                  bg-emerald-100
+                  dark:bg-emerald-500/10
+                "
+              >
+                <PlusIcon />
+              </div>
 
-              <p className="text-sm text-muted-foreground">
-                GST, address, email and more
-              </p>
+              <div className="min-w-0">
+                <h3 className="text-sm font-semibold">Add More Details</h3>
+
+                <p className="truncate text-[10px] text-muted-foreground">
+                  GST, address, email and more
+                </p>
+              </div>
             </div>
 
-            <ArrowRight className="size-5" />
+            <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
           </button>
 
           {/* Save */}
 
           <Button
-            type="button"
-            onClick={handleSubmit(submit)}
+            type="submit"
             disabled={loading}
-            className="h-12 w-full rounded-2xl"
+            className="
+              h-12
+              w-full
+              rounded-2xl
+              bg-emerald-600
+              font-semibold
+              hover:bg-emerald-700
+              active:scale-[0.98]
+              dark:bg-emerald-600
+              dark:hover:bg-emerald-700
+            "
           >
             {loading ? "Creating Supplier..." : "Save Supplier"}
           </Button>
-        </div>
+        </form>
       </SheetContent>
     </Sheet>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                  ICON                                      */
+/* -------------------------------------------------------------------------- */
+
+function PlusIcon() {
+  return (
+    <span className="text-lg font-semibold leading-none text-emerald-600 dark:text-emerald-400">
+      +
+    </span>
   );
 }

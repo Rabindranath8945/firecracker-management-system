@@ -56,16 +56,16 @@ export default function PurchaseProductEditor({
           <h3 className="text-lg font-semibold">{product.name}</h3>
 
           <p className="text-sm text-muted-foreground">
-            {product.sku} • Stock {product.stock} {product.unit}
+            {product.productCode} • Stock {product.stock} {product.unit}
           </p>
 
           <div className="mt-2 flex flex-wrap gap-2">
             <span className="rounded-full bg-primary/10 px-2 py-1 text-xs">
-              GST {product.gst}%
+              GST {product.tax}%
             </span>
 
             <span className="rounded-full bg-muted px-2 py-1 text-xs">
-              {product.category}
+              {product.category?.name ?? "No Category"}
             </span>
           </div>
         </div>

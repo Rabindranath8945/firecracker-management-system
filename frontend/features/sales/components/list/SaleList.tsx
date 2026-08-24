@@ -3,72 +3,118 @@
 import { useRouter } from "next/navigation";
 
 import { SaleCard } from "./SaleCard";
-import { EmptyState } from "../shared/EmptyState";
+import { useSales } from "../../hooks/useSales";
 
-const SALES = [
-  {
-    id: "1",
-    invoiceNo: "SAL-00001",
-    customer: "Rahul Shaw",
-    total: 2450,
-    payment: "CASH",
-    status: "PAID",
-    createdAt: "Today • 11:42 AM",
-    items: 12,
-  },
-  {
-    id: "2",
-    invoiceNo: "SAL-00002",
-    customer: "Walk-in Customer",
-    total: 540,
-    payment: "UPI",
-    status: "PAID",
-    createdAt: "Today • 12:15 PM",
-    items: 4,
-  },
-  {
-    id: "3",
-    invoiceNo: "SAL-00003",
-    customer: "Amit Das",
-    total: 1820,
-    payment: "MIXED",
-    status: "PARTIAL",
-    createdAt: "Today • 2:05 PM",
-    items: 8,
-  },
-] as const;
+import type { Sale, SalesQueryParams } from "../../types/Sales.types";
 
-export function SaleList() {
+import EmptySales from "../shared/EmptySales";
+
+interface SaleListProps {
+  search?: string;
+  paymentStatus?: string;
+  paymentMethod?: string;
+  fromDate?: string;
+  toDate?: string;
+}
+
+export function SaleList({
+  search,
+  paymentStatus,
+  paymentMethod,
+  fromDate,
+  toDate,
+}: SaleListProps) {
   const router = useRouter();
 
-  // if (SALES.length === 0) {
-  //   return (
-  //     <EmptyState
-  //       title="No Sales Found"
-  //       description="Start by creating your first sale."
-  //     />
-  //   );
-  // }
+  /*
+   * Build query params safely.
+   *
+   * This avoids passing `undefined` values to SalesQueryParams,
+   * which is required because exactOptionalPropertyTypes is enabled.
+   */
+  const params: SalesQueryParams = {};
+
+  const trimmedSearch = search?.trim();
+
+  if (trimmedSearch) {
+    params.search = trimmedSearch;
+  }
+
+  if (paymentStatus) {
+    params.paymentStatus = paymentStatus;
+  }
+
+  if (paymentMethod) {
+    params.paymentMethod = paymentMethod;
+  }
+
+  if (fromDate) {
+    params.fromDate = fromDate;
+  }
+
+  if (toDate) {
+    params.toDate = toDate;
+  }
+
+  const { data: sales = [], isLoading } = useSales(params);
+
+  /* ---------------------------------------------------------------------- */
+  /* Loading                                                                */
+  /* ---------------------------------------------------------------------- */
+
+  if (isLoading) {
+    return (
+      <section className="space-y-4">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <div
+            key={index}
+            className="h-36 animate-pulse rounded-3xl bg-muted"
+          />
+        ))}
+      </section>
+    );
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /* Empty                                                                  */
+  /* ---------------------------------------------------------------------- */
+
+  if (sales.length === 0) {
+    return <EmptySales />;
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /* Sales List                                                             */
+  /* ---------------------------------------------------------------------- */
 
   return (
     <section className="space-y-4">
-      {SALES.map((sale) => (
-        <div
-          key={sale.id}
-          className="cursor-pointer"
-          onClick={() => router.push(`/sales/${sale.id}`)}
-        >
-          <SaleCard
-            invoiceNo={sale.invoiceNo}
-            customer={sale.customer}
-            total={sale.total}
-            payment={sale.payment}
-            status={sale.status}
-            createdAt={sale.createdAt}
-            items={sale.items}
-          />
-        </div>
-      ))}
+      {sales.map((sale: Sale) => {
+        const itemCount = sale.items.reduce(
+          (total, item) => total + item.quantity,
+          0,
+        );
+
+        return (
+          <div
+            key={sale._id}
+            className="cursor-pointer"
+            onClick={() => {
+              router.push(`/sales/${sale._id}`);
+            }}
+          >
+            <SaleCard
+              invoiceNo={sale.saleNo}
+              customer={sale.customer?.name ?? "Walk-in Customer"}
+              total={sale.grandTotal}
+              payment={sale.payment.method}
+              status={sale.paymentStatus}
+              createdAt={new Date(sale.saleDate).toLocaleString("en-IN")}
+              items={itemCount}
+            />
+          </div>
+        );
+      })}
     </section>
   );
 }

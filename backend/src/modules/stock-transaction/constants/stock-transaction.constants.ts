@@ -1,0 +1,8 @@
+export const STOCK_TRANSACTION_TYPES = [
+  "PURCHASE",
+  "SALE",
+  "PURCHASE_RETURN",
+  "SALE_RETURN",
+  "ADJUSTMENT",
+  "OPENING",
+] as const;

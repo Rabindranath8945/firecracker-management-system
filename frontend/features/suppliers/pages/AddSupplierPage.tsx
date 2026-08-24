@@ -7,48 +7,90 @@ import PartyForm from "@/features/shared/master-data/party/components/PartyForm"
 import { PARTY_CONFIG } from "@/features/shared/master-data/party/constants";
 import type { PartyFormValues } from "@/features/shared/master-data/party/lib/party-schema";
 
-import SuccessDialog from "@/features/shared/ui/dialogs/SuccessDialog";
+import { createSupplier } from "../services/supplier.service";
+import type { Supplier } from "../types/supplier.type";
+
+import ProgressDialog from "@/features/shared/ui/dialogs/ProgressDialog";
+import SuccessSheet from "@/components/common/shared/sheets/SuccessSheet";
 
 export default function AddSupplierPage() {
   const router = useRouter();
 
+  const [saving, setSaving] = useState(false);
+
   const [successOpen, setSuccessOpen] = useState(false);
 
-  const handleSubmit = async (values: PartyFormValues) => {
-    try {
-      console.log(values);
+  const [createdSupplier, setCreatedSupplier] = useState<Supplier | null>(null);
 
-      // TODO:
-      // const supplier = await supplierService.create(values);
+  async function handleSubmit(values: PartyFormValues) {
+    try {
+      setSaving(true);
+
+      const supplier = await createSupplier(values);
+
+      setCreatedSupplier(supplier);
 
       setSuccessOpen(true);
     } catch (error) {
-      console.error(error);
+      console.error("Create Supplier Error:", error);
+    } finally {
+      setSaving(false);
     }
-  };
+  }
 
   return (
     <>
-      <PartyForm config={PARTY_CONFIG.supplier} onSubmit={handleSubmit} />
-
-      <SuccessDialog
-        open={successOpen}
-        title="Supplier Created"
-        description="The supplier has been created successfully."
-        primaryLabel="Back to Suppliers"
-        secondaryLabel="Add Another"
-        onPrimary={() => {
-          router.push("/suppliers");
-        }}
-        onSecondary={() => {
-          setSuccessOpen(false);
-
-          // Later you can reset the form here if needed
-          // or simply refresh the page.
-
-          router.refresh();
-        }}
+      <PartyForm
+        config={PARTY_CONFIG.supplier}
+        loading={saving}
+        onSubmit={handleSubmit}
       />
+
+      <ProgressDialog
+        open={saving}
+        title="Creating Supplier"
+        description="Please wait while we create the supplier..."
+      />
+
+      {createdSupplier && (
+        <SuccessSheet
+          open={successOpen}
+          onOpenChange={setSuccessOpen}
+          title="Supplier Created Successfully"
+          description="The supplier has been added to your business."
+          summary={[
+            {
+              label: "Supplier",
+              value: createdSupplier.name,
+            },
+            {
+              label: "Supplier Code",
+              value: createdSupplier.supplierCode,
+            },
+            {
+              label: "Mobile",
+              value: createdSupplier.mobile,
+            },
+          ]}
+          primaryAction={{
+            label: "View Supplier",
+            onClick: () => router.push(`/suppliers/${createdSupplier._id}`),
+          }}
+          secondaryActions={[
+            {
+              label: "Add Another",
+              onClick: () => {
+                setSuccessOpen(false);
+                router.refresh();
+              },
+            },
+            {
+              label: "Back to Suppliers",
+              onClick: () => router.push("/suppliers"),
+            },
+          ]}
+        />
+      )}
     </>
   );
 }

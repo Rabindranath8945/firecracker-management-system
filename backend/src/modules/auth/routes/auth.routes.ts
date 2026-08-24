@@ -1,28 +1,32 @@
 import { Router } from "express";
 
-import { authenticate } from "../../../common/middleware/authenticate.js";
 import { authController } from "../controllers/auth.controller.js";
+
+import { authenticate } from "../middleware/auth.middleware.js";
+import { asyncHandler } from "../../../common/utils/async-handler.js";
 
 const router = Router();
 
-/**
- * Google Authentication
- */
-router.post("/google", authController.googleLogin);
+/* -------------------------------------------------------------------------- */
+/*                                Authentication                              */
+/* -------------------------------------------------------------------------- */
 
-/**
- * Refresh Access Token
- */
-router.post("/refresh", authController.refresh);
+router.post("/google", asyncHandler(authController.googleLogin));
 
-/**
- * Logout
- */
-router.post("/logout", authController.logout);
+router.post("/refresh", asyncHandler(authController.refresh));
 
-/**
- * Current Logged-in User
- */
-router.get("/me", authenticate, authController.me);
+router.post("/logout", asyncHandler(authController.logout));
+
+router.get("/me", authenticate, asyncHandler(authController.me));
+
+/* -------------------------------------------------------------------------- */
+/*                           Complete Onboarding                              */
+/* -------------------------------------------------------------------------- */
+
+router.patch(
+  "/onboarding",
+  authenticate,
+  asyncHandler(authController.completeOnboarding),
+);
 
 export default router;

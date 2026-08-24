@@ -8,9 +8,7 @@ import CategoryListCard from "./CategoryListCard";
 
 interface CategoryListProps {
   categories: Category[];
-
   onDelete: (category: Category) => void;
-
   onAdd?: () => void;
 }
 
@@ -19,6 +17,10 @@ export default function CategoryList({
   onDelete,
   onAdd,
 }: CategoryListProps) {
+  /* ---------------------------------------------------------------------- */
+  /* Empty State                                                            */
+  /* ---------------------------------------------------------------------- */
+
   if (categories.length === 0) {
     return (
       <EmptyState
@@ -30,8 +32,21 @@ export default function CategoryList({
     );
   }
 
+  /* ---------------------------------------------------------------------- */
+  /* Category Grid                                                           */
+  /* ---------------------------------------------------------------------- */
+
   return (
-    <div className="space-y-6">
+    <section
+      className="
+        grid
+        grid-cols-1
+        gap-4
+        sm:grid-cols-2
+        lg:grid-cols-3
+        xl:grid-cols-4
+      "
+    >
       {categories.map((category) => (
         <CategoryListCard
           key={category.id}
@@ -39,6 +54,6 @@ export default function CategoryList({
           onDelete={onDelete}
         />
       ))}
-    </div>
+    </section>
   );
 }

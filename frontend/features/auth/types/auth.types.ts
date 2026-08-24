@@ -1,9 +1,19 @@
 export interface User {
   id: string;
+
   email: string;
-  profilePicture?: string;
+
   role: string;
+
+  currentBusiness: string | null;
+
+  profilePicture?: string;
+
+  onboardingCompleted: boolean;
+
   appLockEnabled: boolean;
+
+  isActive: boolean;
 }
 
 export interface GoogleLoginRequest {

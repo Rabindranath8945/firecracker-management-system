@@ -1,32 +1,30 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import type { Supplier } from "../types/supplier";
-import { suppliers } from "../services/supplier.service";
+import type { Supplier } from "../types/supplier.type";
+import { deleteSupplier, getSuppliers } from "../services/supplier.service";
 
-import SupplierStats from "../components/cards/SupplierStats";
+import SupplierSummary from "../components/cards/SupplierSummary";
 import SupplierList from "../components/cards/SupplierList";
-import SupplierListFilter from "../components/cards/SupplierListFilter";
+import SupplierSearch from "../components/cards/SupplierSearch";
+import SupplierFilterSheet from "../components/cards/SupplierFilterSheet";
 
 import PageContainer from "@/features/shared/ui/layout/PageContainer";
-import PageHeader from "@/features/shared/ui/layout/PageHeader";
-import PageToolbar from "@/features/shared/ui/layout/PageToolbar";
 
-import SearchInput from "@/features/shared/ui/forms/SearchInput";
-import FilterSelect from "@/features/shared/ui/forms/FilterSelect";
+import FloatingActionButton from "@/components/common/shared/button/FloatingActionButton";
 
 import DeleteDialog from "@/features/shared/ui/dialogs/DeleteDialog";
 import ProgressDialog from "@/features/shared/ui/dialogs/ProgressDialog";
 
 import EmptyState from "@/features/shared/ui/cards/EmptyState";
-
-import { Button } from "@/components/ui/button";
+import SupplierManagementHero from "../components/cards/SupplierManagementHero";
 
 export default function SuppliersPage() {
   const router = useRouter();
+
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
 
   const [search, setSearch] = useState("");
 
@@ -34,7 +32,7 @@ export default function SuppliersPage() {
 
   const [sort, setSort] = useState("NAME_ASC");
 
-  const [loading, setLoading] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(
     null,
@@ -42,14 +40,36 @@ export default function SuppliersPage() {
 
   const [deleteOpen, setDeleteOpen] = useState(false);
 
+  const [fetching, setFetching] = useState(true);
+
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    void loadSuppliers();
+  }, []);
+
+  async function loadSuppliers() {
+    try {
+      setFetching(true);
+
+      const response = await getSuppliers();
+
+      setSuppliers(response.items);
+    } catch (error) {
+      console.error("Load Suppliers Error:", error);
+    } finally {
+      setFetching(false);
+    }
+  }
+
   const filteredSuppliers = useMemo(() => {
     const keyword = search.trim().toLowerCase();
 
-    return suppliers.filter((supplier) => {
+    const data = suppliers.filter((supplier) => {
       const matchesSearch =
         supplier.name.toLowerCase().includes(keyword) ||
         supplier.mobile.includes(keyword) ||
-        supplier.supplierNo.toLowerCase().includes(keyword);
+        supplier.supplierCode.toLowerCase().includes(keyword);
 
       const matchesStatus =
         status === "ALL"
@@ -60,125 +80,117 @@ export default function SuppliersPage() {
 
       return matchesSearch && matchesStatus;
     });
-  }, [search, status]);
+
+    switch (sort) {
+      case "NAME_ASC":
+        data.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+
+      case "NAME_DESC":
+        data.sort((a, b) => b.name.localeCompare(a.name));
+        break;
+
+      case "NEWEST":
+        data.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        );
+        break;
+
+      case "OLDEST":
+        data.sort(
+          (a, b) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        );
+        break;
+    }
+
+    return data;
+  }, [suppliers, search, status, sort]);
 
   async function handleDelete() {
     if (!selectedSupplier) return;
 
-    setLoading(true);
+    try {
+      setDeleting(true);
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+      await deleteSupplier(selectedSupplier._id);
 
-    console.log("Delete", selectedSupplier);
+      await loadSuppliers();
 
-    setLoading(false);
+      setDeleteOpen(false);
 
-    setDeleteOpen(false);
+      setSelectedSupplier(null);
+    } catch (error) {
+      console.error("Delete Supplier Error:", error);
+    } finally {
+      setDeleting(false);
+    }
+  }
 
-    setSelectedSupplier(null);
+  if (fetching) {
+    return (
+      <ProgressDialog
+        open
+        title="Loading Suppliers"
+        description="Please wait while we load your suppliers..."
+      />
+    );
   }
 
   return (
-    <PageContainer className="space-y-4 pb-24">
-      <PageHeader
-        title="Suppliers"
-        description="Manage suppliers, balances and purchase history."
-        action={
-          <Button
-            className="
-              h-11
-              rounded-xl
-              bg-gradient-to-r
-              from-slate-900
-              to-slate-700
-              px-5
-              shadow-lg
-              transition-all
-              hover:scale-105
-              hover:shadow-xl
-            "
-            onClick={() => router.push("/suppliers/new")}
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Add Supplier
-          </Button>
-        }
-      />
+    <PageContainer className="space-y-6 pb-24">
+      <SupplierManagementHero />
 
-      <SupplierStats suppliers={filteredSuppliers} />
+      <SupplierSummary suppliers={filteredSuppliers} />
 
-      <PageToolbar
-        left={
-          <>
-            <SearchInput
-              value={search}
-              onChange={setSearch}
-              placeholder="Search suppliers..."
-            />
-
-            <FilterSelect
-              value={status}
-              onChange={setStatus}
-              options={[
-                {
-                  label: "All Suppliers",
-                  value: "ALL",
-                },
-                {
-                  label: "Active",
-                  value: "ACTIVE",
-                },
-                {
-                  label: "Inactive",
-                  value: "INACTIVE",
-                },
-              ]}
-            />
-          </>
-        }
+      <SupplierSearch
+        value={search}
+        onChange={setSearch}
+        onFilterClick={() => setFilterOpen(true)}
       />
 
       {filteredSuppliers.length === 0 ? (
         <EmptyState
           title="No Suppliers Found"
-          description="Create your first supplier to start managing purchases and payments."
+          description="Create your first supplier to start managing purchases and supplier payments."
           actionLabel="Add Supplier"
           onAction={() => router.push("/suppliers/new")}
         />
       ) : (
-        <>
-          <SupplierListFilter
-            total={filteredSuppliers.length}
-            status={status}
-            onStatusChange={setStatus}
-            sort={sort}
-            onSortChange={setSort}
-          />
-
-          <SupplierList
-            suppliers={filteredSuppliers}
-            onAdd={() => router.push("/suppliers/new")}
-            onDelete={(supplier) => {
-              setSelectedSupplier(supplier);
-              setDeleteOpen(true);
-            }}
-          />
-        </>
+        <SupplierList
+          suppliers={filteredSuppliers}
+          onDelete={(supplier) => {
+            setSelectedSupplier(supplier);
+            setDeleteOpen(true);
+          }}
+        />
       )}
+
+      <FloatingActionButton href="/suppliers/new" label="New Supplier" />
+
+      <SupplierFilterSheet
+        open={filterOpen}
+        onOpenChange={setFilterOpen}
+        status={status}
+        sort={sort}
+        onStatusChange={setStatus}
+        onSortChange={setSort}
+      />
 
       <DeleteDialog
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         entityType="Supplier"
         entityName={selectedSupplier?.name ?? ""}
-        loading={loading}
+        loading={deleting}
         onConfirm={handleDelete}
       />
 
       <ProgressDialog
-        open={loading}
+        open={deleting}
         title="Deleting Supplier"
-        description="Please wait while we delete the supplier."
+        description="Please wait while deleting the supplier..."
       />
     </PageContainer>
   );

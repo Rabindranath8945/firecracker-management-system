@@ -1,47 +1,57 @@
-import axios from "axios";
+import api from "@/lib/api";
 
-export interface CreateProductRequest {
+export interface ProductPayload {
+  productCode: string;
+
   name: string;
-  sku: string;
+
+  category?: string;
+
+  subCategory?: string;
+
   barcode?: string;
-  category: string;
 
-  purchasePrice: number;
-  sellingPrice: number;
-  mrp: number;
+  hsnCode?: string;
 
-  openingStock: number;
-  minimumStock: number;
+  brand?: string;
 
   unit: string;
 
-  brand?: string;
-  hsn?: string;
-  gst: number;
+  purchasePrice: number;
+
+  sellingPrice: number;
+
+  stock: number;
+
+  minimumStock: number;
+
+  tax: number;
 
   description?: string;
 
-  active: boolean;
+  image?: string;
+
+  isActive: boolean;
 }
 
 export const productApi = {
-  async create(data: CreateProductRequest) {
-    return axios.post("/products", data);
+  create(data: ProductPayload) {
+    return api.post("/products", data);
   },
 
-  async update(id: string, data: CreateProductRequest) {
-    return axios.put(`/products/${id}`, data);
+  update(id: string, data: ProductPayload) {
+    return api.put(`/products/${id}`, data);
   },
 
-  async getAll() {
-    return axios.get("/products");
+  getAll() {
+    return api.get("/products");
   },
 
-  async getById(id: string) {
-    return axios.get(`/products/${id}`);
+  getById(id: string) {
+    return api.get(`/products/${id}`);
   },
 
-  async remove(id: string) {
-    return axios.delete(`/products/${id}`);
+  remove(id: string) {
+    return api.delete(`/products/${id}`);
   },
 };

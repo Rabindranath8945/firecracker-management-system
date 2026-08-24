@@ -1,87 +1,210 @@
 "use client";
 
-import { ShoppingCart, PackagePlus, Package, User } from "lucide-react";
+import Link from "next/link";
+import {
+  ArrowRight,
+  Package,
+  PackagePlus,
+  ShoppingCart,
+  User,
+} from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+
 import DashboardWidget from "./DashboardWidget";
 
-const activities = [
-  {
-    id: 1,
-    title: "Sale Completed",
-    subtitle: "Invoice #INV-10025",
-    amount: "₹12,450",
-    time: "10:35 AM",
-    icon: ShoppingCart,
-    color: "bg-green-100 text-green-600",
-  },
-  {
-    id: 2,
-    title: "Purchase Added",
-    subtitle: "Supplier: ABC Fireworks",
-    amount: "₹28,500",
-    time: "09:20 AM",
-    icon: PackagePlus,
-    color: "bg-blue-100 text-blue-600",
-  },
-  {
-    id: 3,
-    title: "Stock Updated",
-    subtitle: "Rocket Bomb",
-    amount: "+150 Qty",
-    time: "Yesterday",
-    icon: Package,
-    color: "bg-orange-100 text-orange-600",
-  },
-  {
-    id: 4,
-    title: "User Login",
-    subtitle: "Admin",
-    amount: "",
-    time: "Yesterday",
-    icon: User,
-    color: "bg-violet-100 text-violet-600",
-  },
-];
+import type { DashboardSummary } from "../types/dashboard.type";
 
-export default function RecentActivityWidget() {
+interface RecentActivityWidgetProps {
+  dashboard: DashboardSummary;
+}
+
+const COLORS = {
+  SALE: {
+    bg: "bg-emerald-100 dark:bg-emerald-500/10",
+    text: "text-emerald-600 dark:text-emerald-400",
+  },
+
+  PURCHASE: {
+    bg: "bg-sky-100 dark:bg-sky-500/10",
+    text: "text-sky-600 dark:text-sky-400",
+  },
+
+  STOCK: {
+    bg: "bg-amber-100 dark:bg-amber-500/10",
+    text: "text-amber-600 dark:text-amber-400",
+  },
+
+  LOGIN: {
+    bg: "bg-violet-100 dark:bg-violet-500/10",
+    text: "text-violet-600 dark:text-violet-400",
+  },
+} as const;
+
+const ICONS = {
+  SALE: ShoppingCart,
+  PURCHASE: PackagePlus,
+  STOCK: Package,
+  LOGIN: User,
+} as const;
+
+export default function RecentActivityWidget({
+  dashboard,
+}: RecentActivityWidgetProps) {
+  const recentActivities = dashboard.recentActivities ?? [];
+
   return (
     <DashboardWidget title="Recent Activity" subtitle="Latest business events">
-      <div className="space-y-4">
-        {activities.map((activity) => {
-          const Icon = activity.icon;
+      {recentActivities.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-12 text-center">
+          <div
+            className="
+              flex
+              h-14
+              w-14
+              items-center
+              justify-center
+              rounded-3xl
+              bg-slate-100
+              dark:bg-muted
+            "
+          >
+            <Package className="h-7 w-7 text-slate-400 dark:text-muted-foreground" />
+          </div>
 
-          return (
-            <div key={activity.id} className="flex items-start gap-4">
-              <div
-                className={`flex h-11 w-11 items-center justify-center rounded-full ${activity.color}`}
-              >
-                <Icon size={20} />
-              </div>
+          <h3 className="mt-4 text-lg font-semibold text-slate-900 dark:text-foreground">
+            No recent activity
+          </h3>
 
-              <div className="flex-1 border-b border-slate-100 pb-4 last:border-0">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-slate-900">
-                    {activity.title}
-                  </h3>
+          <p className="mt-2 max-w-xs text-sm leading-6 text-slate-500 dark:text-muted-foreground">
+            Sales, purchases and inventory updates will appear here.
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="space-y-3">
+            {recentActivities.map((activity, index) => {
+              const Icon = ICONS[activity.type];
+              const styles = COLORS[activity.type];
 
-                  <span className="text-xs text-slate-500">
-                    {activity.time}
-                  </span>
+              const isLast = index === recentActivities.length - 1;
+
+              return (
+                <div
+                  key={activity.id}
+                  className="
+                    relative
+                    flex
+                    gap-3
+                    rounded-3xl
+                    border
+                    border-slate-200
+                    bg-white
+                    p-4
+                    transition-all
+                    duration-300
+                    hover:-translate-y-0.5
+                    hover:border-sky-200
+                    hover:shadow-md
+                    dark:border-border
+                    dark:bg-card
+                    dark:hover:border-sky-500/30
+                  "
+                >
+                  {/* Timeline */}
+
+                  {!isLast && (
+                    <div
+                      className="
+                        absolute
+                        bottom-[-12px]
+                        left-[27px]
+                        top-[60px]
+                        w-px
+                        bg-slate-200
+                        dark:bg-border
+                      "
+                    />
+                  )}
+
+                  {/* Activity Icon */}
+
+                  <div
+                    className={`
+                      relative
+                      z-10
+                      flex
+                      h-11
+                      w-11
+                      shrink-0
+                      items-center
+                      justify-center
+                      rounded-2xl
+                      ${styles.bg}
+                    `}
+                  >
+                    <Icon
+                      className={`h-5 w-5 ${styles.text}`}
+                      strokeWidth={2}
+                    />
+                  </div>
+
+                  {/* Content */}
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="truncate text-sm font-semibold text-slate-900 dark:text-foreground">
+                          {activity.title}
+                        </h3>
+
+                        <p className="mt-1 truncate text-xs text-slate-500 dark:text-muted-foreground">
+                          {activity.subtitle}
+                        </p>
+                      </div>
+
+                      <span className="shrink-0 whitespace-nowrap text-[10px] font-medium text-slate-400 dark:text-muted-foreground">
+                        {activity.time}
+                      </span>
+                    </div>
+
+                    {activity.value && (
+                      <div className="mt-3 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700 dark:bg-muted dark:text-foreground">
+                        {activity.value}
+                      </div>
+                    )}
+                  </div>
                 </div>
+              );
+            })}
+          </div>
 
-                <p className="mt-1 text-sm text-slate-500">
-                  {activity.subtitle}
-                </p>
+          {/* View All */}
 
-                {activity.amount && (
-                  <p className="mt-2 font-semibold text-slate-900">
-                    {activity.amount}
-                  </p>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+          <Link href="/reports" className="mt-5 block">
+            <Button
+              type="button"
+              variant="outline"
+              className="
+                h-11
+                w-full
+                rounded-2xl
+                font-semibold
+                transition-all
+                hover:border-sky-300
+                hover:bg-sky-50
+                hover:text-sky-700
+                dark:hover:border-sky-500/30
+                dark:hover:bg-sky-500/10
+                dark:hover:text-sky-400
+              "
+            >
+              View All Activity
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </Link>
+        </>
+      )}
     </DashboardWidget>
   );
 }

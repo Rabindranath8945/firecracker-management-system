@@ -1,59 +1,79 @@
 "use client";
 
-import { IndianRupee, Package, Boxes, TriangleAlert } from "lucide-react";
-
 import KPIStatCard from "./KPIStatCard";
 
+import { KPI_STATS } from "../constants/dashboard.constants";
+
+import type { DashboardSummary } from "../types/dashboard.type";
+
 interface KPIGridProps {
-  todaySales: number;
-  todayProfit: number;
-  totalProducts: number;
-  lowStock: number;
+  dashboard: DashboardSummary;
 }
 
-export default function KPIGrid({
-  todaySales,
-  todayProfit,
-  totalProducts,
-  lowStock,
-}: KPIGridProps) {
+function formatCurrency(value: number) {
+  return `₹${Number(value ?? 0).toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function formatNumber(value: number) {
+  return Number(value ?? 0).toLocaleString("en-IN");
+}
+
+export default function KPIGrid({ dashboard }: KPIGridProps) {
   return (
-    <div className="grid grid-cols-2 gap-4">
-      <KPIStatCard
-        title="Today's Sales"
-        value={`₹${todaySales.toLocaleString()}`}
-        icon={IndianRupee}
-        change="+12%"
-        positive
-        iconBgClass="bg-blue-100"
-        iconTextClass="text-blue-600"
-      />
+    <section
+      className="
+        grid
+        grid-cols-2
+        gap-3
+        sm:gap-4
+        xl:grid-cols-3
+      "
+    >
+      {KPI_STATS.map((item) => {
+        let value = "";
 
-      <KPIStatCard
-        title="Today's Profit"
-        value={`₹${todayProfit.toLocaleString()}`}
-        icon={IndianRupee}
-        change="+8%"
-        positive
-        iconBgClass="bg-emerald-100"
-        iconTextClass="text-emerald-600"
-      />
+        switch (item.key) {
+          case "todaySales":
+            value = formatCurrency(dashboard.todaySales);
+            break;
 
-      <KPIStatCard
-        title="Products"
-        value={totalProducts.toString()}
-        icon={Boxes}
-        iconBgClass="bg-violet-100"
-        iconTextClass="text-violet-600"
-      />
+          case "todayProfit":
+            value = formatCurrency(dashboard.todayProfit);
+            break;
 
-      <KPIStatCard
-        title="Low Stock"
-        value={lowStock.toString()}
-        icon={TriangleAlert}
-        iconBgClass="bg-orange-100"
-        iconTextClass="text-orange-600"
-      />
-    </div>
+          case "monthlyRevenue":
+            value = formatCurrency(dashboard.monthlyRevenue);
+            break;
+
+          case "outstandingPayments":
+            value = formatCurrency(dashboard.outstandingPayments);
+            break;
+
+          case "totalCustomers":
+            value = formatNumber(dashboard.totalCustomers);
+            break;
+
+          case "lowStock":
+            value = formatNumber(dashboard.lowStock);
+            break;
+
+          default:
+            value = "₹0.00";
+        }
+
+        return (
+          <KPIStatCard
+            key={item.key}
+            title={item.title}
+            value={value}
+            icon={item.icon}
+            color={item.color}
+          />
+        );
+      })}
+    </section>
   );
 }

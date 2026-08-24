@@ -1,152 +1,144 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { scanBarcode } from "@/lib/barcode";
+import { useProducts } from "../hooks/useProducts";
+import { useProductFilters } from "../hooks/useProductFilters";
+import { useDeleteProduct } from "../hooks/useDeleteProduct";
 
-import ProductTopBar from "../components/header/ProductTopBar";
+import FloatingActionButton from "@/components/common/shared/button/FloatingActionButton";
+import ProductHeader from "../components/header/ProductHeader";
 import ProductSearchBar from "../components/header/ProductSearchBar";
-import ProductActionBar from "../components/header/ProductActionBar";
-import ProductSummaryBar from "../components/header/ProductSummary";
+import ProductQuickActions from "../components/header/ProductQuickActions";
+import ProductStats from "../components/header/ProductStats";
 import ProductList from "../components/list/ProductList";
+import DeleteConfirmDialog from "@/components/common/shared/dialogs/DeleteConfirmDialog";
 
+import type { Product } from "../types/product.types";
 import FilterSheet from "../components/filter/FilterSheet";
 import CategorySheet from "../components/filter/CategorySheet";
-
-import { MOCK_PRODUCTS } from "../mock/products";
-import Link from "next/link";
-import { Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import PageContainer from "@/features/shared/ui/layout/PageContainer";
 
 export default function ProductsPage() {
-  const [search, setSearch] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  const { mutate: deleteProduct, isPending } = useDeleteProduct();
+
+  const [isScanning, setIsScanning] = useState(false);
+
+  const handleScan = async () => {
+    try {
+      setIsScanning(true);
+
+      const barcode = await scanBarcode();
+
+      if (barcode) {
+        setSearch(barcode);
+      }
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  function handleDelete(product: Product) {
+    setSelectedProduct(product);
+    setDeleteOpen(true);
+  }
+
+  function handleConfirmDelete() {
+    if (!selectedProduct) return;
+
+    deleteProduct(selectedProduct._id, {
+      onSuccess: () => {
+        setDeleteOpen(false);
+        setSelectedProduct(null);
+      },
+    });
+  }
+
+  const {
+    search,
+    setSearch,
+
+    category,
+    setCategory,
+
+    stockFilter,
+    setStockFilter,
+
+    sortBy,
+    setSortBy,
+  } = useProductFilters();
+
+  const { products, stats, isLoading } = useProducts({
+    search,
+    category,
+    stockFilter,
+    sortBy,
+  });
+
   const [filterOpen, setFilterOpen] = useState(false);
+
   const [categoryOpen, setCategoryOpen] = useState(false);
-  const [category, setCategory] = useState("All");
-  const [stockFilter, setStockFilter] = useState("All");
-  const [sortBy, setSortBy] = useState("A-Z");
-  const filteredProducts = useMemo(() => {
-    let data = [...MOCK_PRODUCTS];
-
-    // Category
-
-    if (category !== "All") {
-      data = data.filter((item) => item.category === category);
-    }
-
-    // Search
-
-    if (search.trim()) {
-      const keyword = search.toLowerCase();
-
-      data = data.filter(
-        (item) =>
-          item.name.toLowerCase().includes(keyword) ||
-          item.sku.toLowerCase().includes(keyword) ||
-          (item.barcode ?? "").includes(keyword),
-      );
-    }
-
-    // Stock
-
-    switch (stockFilter) {
-      case "In Stock":
-        data = data.filter((item) => item.stock > item.minimumStock);
-        break;
-
-      case "Low Stock":
-        data = data.filter(
-          (item) => item.stock > 0 && item.stock <= item.minimumStock,
-        );
-        break;
-
-      case "Out of Stock":
-        data = data.filter((item) => item.stock === 0);
-        break;
-    }
-
-    // Sort
-
-    switch (sortBy) {
-      case "A-Z":
-        data.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-
-      case "Z-A":
-        data.sort((a, b) => b.name.localeCompare(a.name));
-        break;
-
-      case "Price ↑":
-        data.sort((a, b) => a.sellingPrice - b.sellingPrice);
-        break;
-
-      case "Price ↓":
-        data.sort((a, b) => b.sellingPrice - a.sellingPrice);
-        break;
-
-      case "Stock ↑":
-        data.sort((a, b) => a.stock - b.stock);
-        break;
-
-      case "Stock ↓":
-        data.sort((a, b) => b.stock - a.stock);
-        break;
-    }
-
-    return data;
-  }, [search, category, stockFilter, sortBy]);
 
   return (
     <>
-      <div className="space-y-5 px-4 pt-4 pb-24">
-        <ProductTopBar />
+      <PageContainer className="space-y-6 px-4 pt-8 pb-28">
+        <ProductHeader totalProducts={stats.total} />
 
-        <ProductSearchBar value={search} onChange={setSearch} />
+        <ProductSearchBar
+          value={search}
+          onChange={setSearch}
+          onScan={handleScan}
+          scanning={isScanning}
+        />
 
-        <ProductActionBar
+        <ProductQuickActions
           onFilterClick={() => setFilterOpen(true)}
           onCategoryClick={() => setCategoryOpen(true)}
         />
 
-        <ProductSummaryBar totalProducts={filteredProducts.length} />
+        <ProductStats stats={stats} />
 
-        <ProductList products={filteredProducts} />
-
-        <FilterSheet
-          open={filterOpen}
-          onOpenChange={setFilterOpen}
-          stockFilter={stockFilter}
-          onStockFilterChange={setStockFilter}
-          sortBy={sortBy}
-          onSortChange={setSortBy}
+        <ProductList
+          loading={isLoading}
+          products={products}
+          onDelete={handleDelete}
         />
+      </PageContainer>
 
-        <CategorySheet
-          open={categoryOpen}
-          onOpenChange={setCategoryOpen}
-          value={category}
-          onSelect={setCategory}
-        />
-      </div>
+      <FilterSheet
+        open={filterOpen}
+        onOpenChange={setFilterOpen}
+        stockFilter={stockFilter}
+        onStockFilterChange={setStockFilter}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+      />
 
-      {/* Floating Add Product Button */}
+      <CategorySheet
+        open={categoryOpen}
+        onOpenChange={setCategoryOpen}
+        value={category}
+        onSelect={setCategory}
+      />
 
-      <Link href="/products/new">
-        <Button
-          size="lg"
-          className="
-fixed
-bottom-24
-right-5
-z-[100]
-h-14
-rounded-full
-px-5
-shadow-xl
-"
-        >
-          <Plus className="mr-2 h-5 w-5" />
-          Add Product
-        </Button>
-      </Link>
+      <FloatingActionButton href="/products/new" label="Add Product" />
+      <DeleteConfirmDialog
+        open={deleteOpen}
+        loading={isPending}
+        title="Delete Product"
+        description={
+          selectedProduct
+            ? `Are you sure you want to delete "${selectedProduct.name}"? This action can be restored only by reactivating the product.`
+            : ""
+        }
+        confirmText="Delete"
+        onConfirm={handleConfirmDelete}
+        onOpenChange={setDeleteOpen}
+      />
     </>
   );
 }

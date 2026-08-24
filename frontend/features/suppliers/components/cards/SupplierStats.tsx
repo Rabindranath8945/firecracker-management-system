@@ -2,7 +2,7 @@
 
 import { Truck, UserCheck, UserX, Wallet } from "lucide-react";
 
-import type { Supplier } from "../../types/supplier";
+import type { Supplier } from "../../types/supplier.type";
 
 import StatCard from "@/features/shared/ui/cards/StatCard";
 
@@ -18,7 +18,7 @@ export default function SupplierStats({ suppliers }: Props) {
   const inactiveSuppliers = totalSuppliers - activeSuppliers;
 
   const payable = suppliers.reduce(
-    (sum, supplier) => sum + supplier.balance,
+    (sum, supplier) => sum + supplier.currentDue,
     0,
   );
 

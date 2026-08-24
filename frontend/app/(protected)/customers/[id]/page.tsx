@@ -1,6 +1,7 @@
-import CustomerDetailsPage from "@/features/customers/pages/CustomerDetailsPage";
-import { customers } from "@/features/customers/services/customer.service";
 import { notFound } from "next/navigation";
+
+import CustomerDetailsPage from "@/features/customers/pages/CustomerDetailsPage";
+import CustomerService from "@/features/customers/services/customer.service";
 
 interface Props {
   params: Promise<{
@@ -11,11 +12,11 @@ interface Props {
 export default async function CustomerDetailsRoute({ params }: Props) {
   const { id } = await params;
 
-  const customer = customers.find((item) => item.id === id);
+  try {
+    const customer = await CustomerService.getCustomer(id);
 
-  if (!customer) {
+    return <CustomerDetailsPage customer={customer} />;
+  } catch {
     notFound();
   }
-
-  return <CustomerDetailsPage customer={customer} />;
 }

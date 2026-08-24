@@ -1,21 +1,22 @@
 export interface SubCategory {
-  id: string;
+  _id: string;
 
-  subCategoryNo: string;
-
-  categoryId: string;
-
-  categoryName: string;
+  subCategoryCode: string;
 
   name: string;
 
   description?: string;
 
-  icon?: string;
+  category:
+    | {
+        _id: string;
+        name: string;
+        categoryNo?: string;
+      }
+    | string
+    | null;
 
-  color?: string;
-
-  productCount: number;
+  productCount?: number;
 
   isActive: boolean;
 

@@ -1,84 +1,79 @@
 "use client";
 
 import {
-  Calendar,
+  BadgeIndianRupee,
   CreditCard,
   FileText,
-  IndianRupee,
-  ShoppingBag,
-  Wallet,
+  ShieldCheck,
 } from "lucide-react";
 
-interface Props {
+interface CustomerBusinessSummaryProps {
   openingBalance: number;
-  outstanding: number;
+  creditLimit: number;
+  notes?: string;
+  isActive: boolean;
 }
 
 export default function CustomerBusinessSummary({
   openingBalance,
-  outstanding,
-}: Props) {
+  creditLimit,
+  notes,
+  isActive,
+}: CustomerBusinessSummaryProps) {
   const cards = [
     {
       title: "Opening Balance",
       value: `₹${openingBalance.toLocaleString("en-IN")}`,
-      icon: Wallet,
-      color: "bg-blue-100 text-blue-700",
-    },
-    {
-      title: "Outstanding",
-      value: `₹${outstanding.toLocaleString("en-IN")}`,
-      icon: IndianRupee,
-      color: "bg-red-100 text-red-700",
-    },
-    {
-      title: "Lifetime Sales",
-      value: "₹24,500",
-      icon: ShoppingBag,
+      icon: BadgeIndianRupee,
       color: "bg-emerald-100 text-emerald-700",
     },
     {
-      title: "Invoices",
-      value: "18",
+      title: "Credit Limit",
+      value: `₹${creditLimit.toLocaleString("en-IN")}`,
+      icon: CreditCard,
+      color: "bg-blue-100 text-blue-700",
+    },
+    {
+      title: "Status",
+      value: isActive ? "Active" : "Inactive",
+      icon: ShieldCheck,
+      color: isActive
+        ? "bg-green-100 text-green-700"
+        : "bg-red-100 text-red-700",
+    },
+    {
+      title: "Notes",
+      value: notes?.trim() ? notes : "No notes available",
       icon: FileText,
       color: "bg-violet-100 text-violet-700",
-    },
-    {
-      title: "Payments",
-      value: "16",
-      icon: CreditCard,
-      color: "bg-orange-100 text-orange-700",
-    },
-    {
-      title: "Last Purchase",
-      value: "12 Jul",
-      icon: Calendar,
-      color: "bg-cyan-100 text-cyan-700",
+      full: true,
     },
   ];
 
   return (
-    <div className="rounded-3xl border bg-white p-6 shadow-sm">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-bold">Business Summary</h2>
+    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="mb-6">
+        <h2 className="text-xl font-bold text-slate-900">
+          Business Information
+        </h2>
 
-          <p className="mt-1 text-sm text-slate-500">
-            Customer financial overview
-          </p>
-        </div>
+        <p className="mt-1 text-sm text-slate-500">
+          Customer account information.
+        </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 xl:grid-cols-3">
+      <div className="grid grid-cols-2 gap-4">
         {cards.map((card) => {
           const Icon = card.icon;
 
           return (
             <div
               key={card.title}
-              className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 transition-all duration-300 hover:-translate-y-1 hover:bg-white hover:shadow-md"
+              className={`rounded-2xl border border-slate-200 bg-slate-50 p-4 transition-all duration-200 hover:bg-white hover:shadow-md ${
+                card.full ? "col-span-2" : ""
+              }`}
             >
-              <div className="mb-5 flex items-center justify-between">
+              <div className="mb-4 flex items-center justify-between">
                 <div
                   className={`flex h-11 w-11 items-center justify-center rounded-xl ${card.color}`}
                 >
@@ -86,13 +81,21 @@ export default function CustomerBusinessSummary({
                 </div>
               </div>
 
-              <h3 className="break-all text-xl font-bold">{card.value}</h3>
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                {card.title}
+              </p>
 
-              <p className="mt-2 text-sm text-slate-500">{card.title}</p>
+              <p
+                className={`mt-2 font-bold text-slate-900 ${
+                  card.full ? "text-sm leading-6" : "text-2xl"
+                }`}
+              >
+                {card.value}
+              </p>
             </div>
           );
         })}
       </div>
-    </div>
+    </section>
   );
 }

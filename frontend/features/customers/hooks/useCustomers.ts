@@ -1,47 +1,50 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
-import { customers as mockCustomers } from "../data/customers";
+import CustomerService from "../services/customer.service";
 
-export function useCustomers() {
-  const [search, setSearch] = useState("");
+interface UseCustomersParams {
+  search?: string;
+  status?: "ACTIVE" | "ALL" | "INACTIVE";
+  sort?: string;
+  page?: number;
+  limit?: number;
+}
 
-  const customers = useMemo(() => {
-    return mockCustomers.filter((customer) => {
-      const keyword = search.toLowerCase();
+export function useCustomers({
+  search = "",
+  status = "ACTIVE",
+  sort = "NAME_ASC",
+  page = 1,
+  limit = 20,
+}: UseCustomersParams = {}) {
+  const query = useQuery({
+    queryKey: ["customers", search, status, sort, page, limit],
 
-      return (
-        customer.name.toLowerCase().includes(keyword) ||
-        customer.mobile.includes(keyword) ||
-        customer.customerNo.toLowerCase().includes(keyword)
-      );
-    });
-  }, [search]);
-
-  const removeCustomer = (id: string) => {
-    console.log("Delete Customer:", id);
-  };
-
-  const refresh = async () => {};
+    queryFn: () =>
+      CustomerService.getCustomers({
+        search,
+        status,
+        sort,
+        page,
+        limit,
+      }),
+  });
 
   return {
-    customers,
-    loading: false,
+    customers: query.data?.items ?? [],
 
-    total: customers.length,
+    loading: query.isLoading,
 
-    page: 1,
-    pages: 1,
+    isFetching: query.isFetching,
 
-    search,
+    total: query.data?.pagination.total ?? 0,
 
-    setSearch,
+    pages: query.data?.pagination.totalPages ?? 1,
 
-    setPage: () => {},
+    error: query.error,
 
-    refresh,
-
-    removeCustomer,
+    refetch: query.refetch,
   };
 }

@@ -1,29 +1,67 @@
 export type ProductStatus = "ACTIVE" | "INACTIVE";
 
+export interface ProductCategory {
+  _id: string;
+
+  name: string;
+}
+
+export interface ProductSubCategory {
+  _id: string;
+
+  name: string;
+}
+
 export interface Product {
   _id: string;
 
-  sku: string;
-  barcode?: string;
+  productCode: string;
 
   name: string;
-  category: string;
+
+  barcode?: string;
+
+  category?: ProductCategory;
+
+  subCategory?: ProductSubCategory;
 
   purchasePrice: number;
+
   sellingPrice: number;
-  mrp: number;
 
   stock: number;
+
   minimumStock: number;
 
   unit: string;
 
-  brand?: string;
-  hsn?: string;
+  brand: string;
 
-  gst: number;
+  hsnCode: string;
 
-  image?: string;
+  tax: number;
 
-  status: ProductStatus;
+  description: string;
+
+  image: string;
+
+  isActive: boolean;
+
+  createdAt: string;
+
+  updatedAt: string;
+}
+
+export interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+export interface ProductListResponse {
+  items: Product[];
+  pagination: Pagination;
 }

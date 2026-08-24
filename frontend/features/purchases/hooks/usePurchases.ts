@@ -1,12 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
+
 import { purchaseApi } from "../api/purchases.api";
 
-export function usePurchases() {
+import type { PurchaseQueryParams } from "../types/purchase.types";
+
+export function usePurchases(params: PurchaseQueryParams = {}) {
   return useQuery({
-    queryKey: ["purchases"],
+    queryKey: ["purchases", params],
+
     queryFn: async () => {
-      const { data } = await purchaseApi.getAll();
-      return data;
+      const response = await purchaseApi.getAll(params);
+
+      return response.data;
     },
   });
 }

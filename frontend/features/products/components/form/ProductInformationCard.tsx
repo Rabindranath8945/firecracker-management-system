@@ -1,26 +1,120 @@
 "use client";
 
-import { Camera } from "lucide-react";
-import ProductImagePicker from "./ProductImagePicker";
+import { useEffect, useState } from "react";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
+
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { useFormContext, Controller } from "react-hook-form";
+  MasterPickerField,
+  MasterPickerSheet,
+} from "@/components/common/master-picker";
+
+import ProductImagePicker from "@/components/common/shared/image/ProductImagePicker";
+
+import { useCreateSubCategoryMutation } from "@/features/categories/sub-category/hooks/useCreateSubCategoryMutation";
+
+import CategoryService from "@/features/categories/category/services/category.service";
+
+import SubCategoryService from "@/features/categories/sub-category/services/sub-category.service";
+
+import { AddSubCategoryDialog } from "@/components/common/searchable-select";
+
 import type { ProductFormData } from "../../schemas/product.schema";
 
-export default function ProductInformationCard() {
+import type { Category } from "@/features/categories/category/types/category";
+
+interface SubCategory {
+  _id: string;
+  name: string;
+}
+
+interface CategoryOption {
+  id: string;
+  title: string;
+}
+
+interface ProductInformationCardProps {
+  onOpenCategoryDialog: () => void;
+  onOpenSubCategoryDialog: () => void;
+}
+
+export default function ProductInformationCard({
+  onOpenCategoryDialog,
+  onOpenSubCategoryDialog,
+}: ProductInformationCardProps) {
   const {
     register,
     control,
+    setValue,
+
     formState: { errors },
   } = useFormContext<ProductFormData>();
+
+  const selectedCategory = useWatch({
+    control,
+    name: "category",
+  });
+
+  /* -------------------------------------------------------------------------- */
+  /* State                                                                      */
+  /* -------------------------------------------------------------------------- */
+
+  const [categoryOpen, setCategoryOpen] = useState(false);
+
+  const [subCategoryOpen, setSubCategoryOpen] = useState(false);
+
+  const [subCategoryDialogOpen, setSubCategoryDialogOpen] = useState(false);
+
+  const createSubCategoryMutation = useCreateSubCategoryMutation();
+
+  const queryClient = useQueryClient();
+
+  /* -------------------------------------------------------------------------- */
+  /* Categories                                                                 */
+  /* -------------------------------------------------------------------------- */
+
+  const { data: categories = [], isLoading: categoryLoading } = useQuery<
+    Category[]
+  >({
+    queryKey: ["categories"],
+    queryFn: CategoryService.getCategories,
+  });
+
+  const categoryOptions: CategoryOption[] = categories.map((category) => ({
+    id: category.id,
+    title: category.name,
+  }));
+
+  /* -------------------------------------------------------------------------- */
+  /* Sub Categories                                                             */
+  /* -------------------------------------------------------------------------- */
+
+  const { data: subCategories = [], isLoading: subCategoryLoading } = useQuery<
+    SubCategory[]
+  >({
+    queryKey: ["sub-categories", selectedCategory],
+    queryFn: () => SubCategoryService.getByCategory(selectedCategory as string),
+    enabled: Boolean(selectedCategory),
+  });
+
+  const subCategoryOptions = subCategories.map((item) => ({
+    id: item._id,
+    title: item.name,
+  }));
+
+  /* -------------------------------------------------------------------------- */
+  /* Clear Sub Category When Category Changes                                   */
+  /* -------------------------------------------------------------------------- */
+
+  useEffect(() => {
+    setValue("subCategory", "");
+  }, [selectedCategory, setValue]);
+
   return (
     <Card className="rounded-2xl shadow-sm">
       <CardContent className="space-y-5 p-5">
@@ -44,20 +138,19 @@ export default function ProductInformationCard() {
           />
 
           {errors.name && (
-            <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>
+            <p className="text-sm text-destructive">{errors.name.message}</p>
           )}
         </div>
 
-        {/* SKU */}
+        {/* Product Code */}
 
         <div className="space-y-2">
-          <Label>SKU</Label>
+          <Label>Product Code</Label>
 
           <Input
-            {...register("sku")}
-            value="auto-generated"
+            {...register("productCode")}
             readOnly
-            className="h-11 rounded-xl bg-slate-100"
+            className="h-11 rounded-xl bg-muted"
           />
         </div>
 
@@ -71,37 +164,122 @@ export default function ProductInformationCard() {
             placeholder="Scan or enter barcode"
             className="h-11 rounded-xl"
           />
+
+          {errors.barcode && (
+            <p className="text-sm text-destructive">{errors.barcode.message}</p>
+          )}
         </div>
 
         {/* Category */}
 
         <div className="space-y-2">
-          <Label>Category</Label>
-
           <Controller
             control={control}
             name="category"
             render={({ field }) => (
-              <Select value={field.value} onValueChange={field.onChange}>
-                {errors.category && (
-                  <p className="text-sm text-red-500 mt-1">
-                    {errors.category.message}
-                  </p>
-                )}
-                <SelectTrigger className="h-11 rounded-xl">
-                  <SelectValue placeholder="Select Category" />
-                </SelectTrigger>
+              <>
+                <MasterPickerField
+                  label="Category"
+                  value={
+                    categories.find((item) => item.id === field.value)?.name
+                  }
+                  placeholder="Select Category"
+                  error={errors.category?.message}
+                  onClick={() => setCategoryOpen(true)}
+                />
 
-                <SelectContent>
-                  <SelectItem value="Rocket">Rocket</SelectItem>
-                  <SelectItem value="Bomb">Bomb</SelectItem>
-                  <SelectItem value="Flower Pot">Flower Pot</SelectItem>
-                  <SelectItem value="Fancy">Fancy</SelectItem>
-                </SelectContent>
-              </Select>
+                <MasterPickerSheet
+                  open={categoryOpen}
+                  title="Select Category"
+                  placeholder="Search Category..."
+                  loading={categoryLoading}
+                  value={field.value}
+                  items={categoryOptions}
+                  onClose={() => setCategoryOpen(false)}
+                  onSelect={(id) => field.onChange(id)}
+                  addButtonLabel="Add Category"
+                  onAddNew={() => {
+                    setCategoryOpen(false);
+                    onOpenCategoryDialog();
+                  }}
+                />
+              </>
             )}
           />
         </div>
+
+        {/* Sub Category */}
+
+        <div className="space-y-2">
+          <Controller
+            control={control}
+            name="subCategory"
+            render={({ field }) => (
+              <>
+                <MasterPickerField
+                  label="Sub Category"
+                  value={
+                    subCategories.find((item) => item._id === field.value)?.name
+                  }
+                  placeholder={
+                    selectedCategory
+                      ? "Select Sub Category"
+                      : "Select Category First"
+                  }
+                  disabled={!selectedCategory}
+                  error={errors.subCategory?.message}
+                  onClick={() => setSubCategoryOpen(true)}
+                />
+
+                <MasterPickerSheet
+                  open={subCategoryOpen}
+                  title="Select Sub Category"
+                  placeholder="Search Sub Category..."
+                  loading={subCategoryLoading}
+                  value={field.value}
+                  items={subCategoryOptions}
+                  onClose={() => setSubCategoryOpen(false)}
+                  onSelect={(id) => field.onChange(id)}
+                  addButtonLabel="Add Sub Category"
+                  onAddNew={() => {
+                    setSubCategoryOpen(false);
+                    setSubCategoryDialogOpen(true);
+                  }}
+                />
+              </>
+            )}
+          />
+        </div>
+
+        {/* Add Sub Category */}
+
+        <AddSubCategoryDialog
+          open={subCategoryDialogOpen}
+          loading={createSubCategoryMutation.isPending}
+          categories={categoryOptions.map((item) => ({
+            value: item.id,
+            label: item.title,
+          }))}
+          onOpenChange={setSubCategoryDialogOpen}
+          onSubmit={async (values) => {
+            const subCategory = await createSubCategoryMutation.mutateAsync({
+              name: values.name,
+              category: values.categoryId,
+            });
+
+            await queryClient.refetchQueries({
+              queryKey: ["sub-categories", values.categoryId],
+            });
+
+            setValue("subCategory", subCategory._id, {
+              shouldValidate: true,
+              shouldDirty: true,
+              shouldTouch: true,
+            });
+
+            setSubCategoryDialogOpen(false);
+          }}
+        />
       </CardContent>
     </Card>
   );

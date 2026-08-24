@@ -31,7 +31,6 @@ export default function PartyForm({
   config,
   mode = "create",
   loading = false,
-
   defaultValues,
   onSubmit,
 }: PartyFormProps) {
@@ -56,17 +55,24 @@ export default function PartyForm({
     },
   });
 
+  async function handleFormSubmit(values: PartyFormValues) {
+    if (loading) return;
+
+    await onSubmit(values);
+  }
+
   return (
     <FormProvider {...methods}>
-      <div className="mx-auto w-full max-w-4xl px-4 py-5 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-4xl px-4 py-5 pb-28 sm:px-6 lg:px-8">
         <form
-          onSubmit={methods.handleSubmit(onSubmit)}
-          className="space-y-5 pb-24"
+          onSubmit={methods.handleSubmit(handleFormSubmit)}
+          className="space-y-6"
         >
           <PartyHeader
             title={mode === "edit" ? config.editTitle : config.title}
             description={config.description}
             backLabel={config.plural}
+            module={config.primaryType === "CUSTOMER" ? "customer" : "supplier"}
           />
 
           <PartyBasicInfo config={config} />

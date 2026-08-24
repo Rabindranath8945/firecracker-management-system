@@ -8,41 +8,49 @@ import {
 } from "lucide-react";
 
 interface Props {
-  outstanding: number;
+  outstanding?: number;
+  totalPurchases?: number;
+  totalPayments?: number;
+  advancePaid?: number;
 }
 
-export default function SupplierFinancialOverview({ outstanding }: Props) {
+export default function SupplierFinancialOverview({
+  outstanding = 0,
+  totalPurchases = 0,
+  totalPayments = 0,
+  advancePaid = 0,
+}: Props) {
   const cards = [
     {
       title: "Outstanding Payable",
-      value: `₹${outstanding.toLocaleString("en-IN")}`,
+      value: outstanding,
       icon: Wallet,
       color: "bg-red-100 text-red-600",
     },
     {
       title: "Total Purchases",
-      value: "₹24,560",
+      value: totalPurchases,
       icon: ArrowUpCircle,
       color: "bg-emerald-100 text-emerald-600",
     },
     {
       title: "Total Payments",
-      value: "₹23,360",
+      value: totalPayments,
       icon: CreditCard,
       color: "bg-blue-100 text-blue-600",
     },
     {
       title: "Advance Paid",
-      value: "₹5,000",
+      value: advancePaid,
       icon: ArrowDownCircle,
       color: "bg-orange-100 text-orange-600",
     },
   ];
 
   return (
-    <div className="rounded-3xl border bg-white p-6 shadow-sm">
+    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="mb-6">
-        <h2 className="text-xl font-bold">Financial Overview</h2>
+        <h2 className="text-xl font-bold text-slate-900">Financial Overview</h2>
 
         <p className="mt-1 text-sm text-slate-500">
           Business relationship summary
@@ -56,7 +64,7 @@ export default function SupplierFinancialOverview({ outstanding }: Props) {
           return (
             <div
               key={card.title}
-              className="rounded-2xl border bg-slate-50 p-5 transition hover:-translate-y-1 hover:bg-white hover:shadow-md"
+              className="rounded-2xl border border-slate-200 bg-slate-50 p-5 transition-all duration-300 hover:-translate-y-1 hover:bg-white hover:shadow-md"
             >
               <div className="flex items-center justify-between">
                 <div
@@ -66,8 +74,8 @@ export default function SupplierFinancialOverview({ outstanding }: Props) {
                 </div>
               </div>
 
-              <h3 className="mt-5 break-all text-2xl font-bold">
-                {card.value}
+              <h3 className="mt-5 break-all text-2xl font-bold text-slate-900">
+                ₹{Number(card.value ?? 0).toLocaleString("en-IN")}
               </h3>
 
               <p className="mt-2 text-sm text-slate-500">{card.title}</p>

@@ -1,117 +1,376 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import PageContainer from "@/features/shared/ui/layout/PageContainer";
+import FloatingActionButton from "@/components/common/shared/button/FloatingActionButton";
 
 import { usePurchases } from "../hooks/usePurchases";
+import { useSuppliers } from "@/features/suppliers/hook/useSuppliers";
 
 import { PurchaseHero } from "../components/PurchaseHero";
-import { PurchaseSummary } from "../components/PurchaseSummary";
 import { PurchaseSearch } from "../components/PurchaseSearch";
-import { PurchaseCard } from "../components/PurchaseCard";
-import { PurchaseSkeleton } from "../components/PurchaseSkeleton";
-import { EmptyPurchase } from "../components/EmptyPurchase";
-import { useRouter } from "next/navigation";
+import { PurchaseQuickActions } from "../components/PurchaseQuickActions";
+import { PurchaseSummary } from "../components/PurchaseSummary";
+import PurchaseList from "../components/PurchaseList";
+import PurchaseFilterSheet from "../components/PurchaseFilterSheet";
+import PurchaseSupplierSheet from "../components/PurchaseSupplierSheet";
+
+import type {
+  PaymentStatus,
+  Purchase,
+  PurchaseQueryParams,
+} from "../types/purchase.types";
 
 export default function PurchasesPage() {
-  const router = useRouter();
+  /* ---------------------------------------------------------------------- */
+  /* Search                                                                 */
+  /* ---------------------------------------------------------------------- */
+
   const [search, setSearch] = useState("");
 
-  const { data, isLoading } = usePurchases();
+  /* ---------------------------------------------------------------------- */
+  /* Filters                                                                */
+  /* ---------------------------------------------------------------------- */
 
-  const purchases = Array.isArray(data)
-    ? data
-    : Array.isArray(data?.data)
-      ? data.data
-      : [];
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | undefined>(
+    undefined,
+  );
 
-  const filteredPurchases = useMemo(() => {
-    if (!search.trim()) return purchases;
+  const [fromDate, setFromDate] = useState("");
 
-    const keyword = search.toLowerCase();
+  const [toDate, setToDate] = useState("");
 
-    return purchases.filter((purchase: any) => {
-      return (
-        purchase.purchaseNo?.toLowerCase().includes(keyword) ||
-        purchase.invoiceNo?.toLowerCase().includes(keyword) ||
-        purchase.supplierName?.toLowerCase().includes(keyword)
-      );
+  const [supplierId, setSupplierId] = useState("");
+
+  /* ---------------------------------------------------------------------- */
+  /* Sheets                                                                 */
+  /* ---------------------------------------------------------------------- */
+
+  const [filterOpen, setFilterOpen] = useState(false);
+
+  const [supplierOpen, setSupplierOpen] = useState(false);
+
+  /* ---------------------------------------------------------------------- */
+  /* Suppliers                                                              */
+  /* ---------------------------------------------------------------------- */
+
+  const { data: suppliers = [] } = useSuppliers();
+
+  const purchaseSuppliers = useMemo(() => {
+    return suppliers.map((supplier) => ({
+      _id: supplier._id,
+      name: supplier.name,
+      mobile: supplier.mobile,
+      supplierCode: supplier.supplierCode,
+      currentDue: Math.max(
+        Number(supplier.openingBalance ?? 0) +
+          Number(supplier.totalPurchases ?? 0) -
+          Number(supplier.totalPaid ?? 0),
+        0,
+      ),
+    }));
+  }, [suppliers]);
+
+  /* ---------------------------------------------------------------------- */
+  /* Backend Query                                                          */
+  /* ---------------------------------------------------------------------- */
+
+  const query = useMemo<PurchaseQueryParams>(() => {
+    const params: PurchaseQueryParams = {
+      page: 1,
+      limit: 20,
+      sort: "purchaseDate",
+      order: "desc",
+    };
+
+    const trimmedSearch = search.trim();
+
+    if (trimmedSearch) {
+      params.search = trimmedSearch;
+    }
+
+    if (paymentStatus) {
+      params.paymentStatus = paymentStatus;
+    }
+
+    if (fromDate) {
+      params.fromDate = fromDate;
+    }
+
+    if (toDate) {
+      params.toDate = toDate;
+    }
+
+    if (supplierId) {
+      params.supplier = supplierId;
+    }
+
+    return params;
+  }, [search, paymentStatus, fromDate, toDate, supplierId]);
+
+  /* ---------------------------------------------------------------------- */
+  /* Load Purchases                                                         */
+  /* ---------------------------------------------------------------------- */
+
+  const { data, isLoading, isError, error } = usePurchases(query);
+
+  /* ---------------------------------------------------------------------- */
+  /* Normalize API Response                                                 */
+  /* ---------------------------------------------------------------------- */
+
+  const purchases: Purchase[] = useMemo(() => {
+    if (Array.isArray(data?.data?.items)) {
+      return data.data.items;
+    }
+
+    if (Array.isArray(data?.items)) {
+      return data.items;
+    }
+
+    if (Array.isArray(data?.data)) {
+      return data.data;
+    }
+
+    if (Array.isArray(data)) {
+      return data;
+    }
+
+    return [];
+  }, [data]);
+
+  /* ---------------------------------------------------------------------- */
+  /* Summary                                                                */
+  /* ---------------------------------------------------------------------- */
+
+  const summary = useMemo(() => {
+    const today = new Date();
+
+    const startOfToday = new Date(today);
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const endOfToday = new Date(today);
+    endOfToday.setHours(23, 59, 59, 999);
+
+    /* ------------------------------------------------------------------ */
+    /* Today's Purchases                                                   */
+    /* ------------------------------------------------------------------ */
+
+    const todayPurchases = purchases.filter((purchase) => {
+      const purchaseDate = new Date(purchase.purchaseDate);
+
+      return purchaseDate >= startOfToday && purchaseDate <= endOfToday;
     });
-  }, [search, purchases]);
 
-  const totalPurchase = purchases.reduce(
-    (sum: number, purchase: any) => sum + purchase.grandTotal,
-    0,
-  );
+    const todayAmount = todayPurchases.reduce(
+      (sum, purchase) => sum + Number(purchase.grandTotal ?? 0),
+      0,
+    );
 
-  const todayPurchase = purchases.reduce(
-    (sum: number, purchase: any) => sum + purchase.grandTotal,
-    0,
-  );
+    /* ------------------------------------------------------------------ */
+    /* Pending Amount                                                      */
+    /* ------------------------------------------------------------------ */
+
+    const pendingAmount = purchases.reduce((sum, purchase) => {
+      return sum + Math.max(Number(purchase.dueAmount ?? 0), 0);
+    }, 0);
+
+    /* ------------------------------------------------------------------ */
+    /* Suppliers                                                           */
+    /* ------------------------------------------------------------------ */
+
+    const supplierSet = new Set<string>();
+
+    purchases.forEach((purchase) => {
+      const supplierId = purchase.supplier?._id;
+
+      if (supplierId) {
+        supplierSet.add(String(supplierId));
+      }
+    });
+
+    /* ------------------------------------------------------------------ */
+    /* Items                                                               */
+    /* ------------------------------------------------------------------ */
+
+    const itemCount = purchases.reduce((sum, purchase) => {
+      if (!Array.isArray(purchase.items)) {
+        return sum;
+      }
+
+      return (
+        sum +
+        purchase.items.reduce(
+          (itemSum, item) => itemSum + Number(item.quantity ?? 0),
+          0,
+        )
+      );
+    }, 0);
+
+    return {
+      today: todayAmount,
+      pending: pendingAmount,
+      suppliers: supplierSet.size,
+      items: itemCount,
+    };
+  }, [purchases]);
+
+  /* ---------------------------------------------------------------------- */
+  /* Reset Filters                                                          */
+  /* ---------------------------------------------------------------------- */
+
+  function resetFilters() {
+    setSearch("");
+    setPaymentStatus(undefined);
+    setFromDate("");
+    setToDate("");
+    setSupplierId("");
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /* Delete                                                                 */
+  /* ---------------------------------------------------------------------- */
+
+  function handleDelete(purchase: Purchase) {
+    console.log("Delete purchase:", purchase._id);
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /* Error                                                                  */
+  /* ---------------------------------------------------------------------- */
+
+  if (isError) {
+    return (
+      <PageContainer className="pb-24">
+        <div className="flex min-h-[50vh] flex-col items-center justify-center px-5 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-red-100 dark:bg-red-500/15">
+            <span className="text-2xl font-black text-red-600">!</span>
+          </div>
+
+          <h2 className="mt-5 text-xl font-black">Unable to load purchases</h2>
+
+          <p className="mt-2 max-w-md text-sm text-muted-foreground">
+            {error instanceof Error
+              ? error.message
+              : "Something went wrong while loading purchases."}
+          </p>
+        </div>
+      </PageContainer>
+    );
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /* Page                                                                   */
+  /* ---------------------------------------------------------------------- */
 
   return (
-    <main className="mx-auto flex max-w-7xl flex-col gap-5 p-4 md:p-6">
-      <PurchaseHero totalPurchase={totalPurchase} monthlyGrowth={18.5} />
+    <>
+      <PageContainer className="space-y-5 pb-24">
+        {/* Hero */}
+        <PurchaseHero />
 
-      <PurchaseSummary
-        today={todayPurchase}
-        pending={0}
-        suppliers={0}
-        items={purchases.length}
-      />
+        {/* Search + Date */}
+        <PurchaseSearch
+          value={search}
+          onChange={setSearch}
+          fromDate={fromDate}
+          toDate={toDate}
+          onFromDateChange={setFromDate}
+          onToDateChange={setToDate}
+          onFilterClick={() => setFilterOpen(true)}
+        />
 
-      <section className="rounded-3xl border bg-card p-5 shadow-sm">
-        <PurchaseSearch value={search} onChange={setSearch} />
-      </section>
+        {/* Quick Actions */}
+        <PurchaseQuickActions
+          onSupplierClick={() => setSupplierOpen(true)}
+          onFilterClick={() => setFilterOpen(true)}
+          supplierActive={Boolean(supplierId)}
+          filtersActive={
+            Boolean(paymentStatus) || Boolean(fromDate) || Boolean(toDate)
+          }
+        />
 
-      <section className="space-y-4 pb-24">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-bold">Recent Purchases</h2>
+        {/* Summary */}
+        <PurchaseSummary
+          today={summary.today}
+          pending={summary.pending}
+          suppliers={summary.suppliers}
+          items={summary.items}
+        />
 
-            <p className="text-sm text-muted-foreground">
-              {filteredPurchases.length} purchase
-              {filteredPurchases.length !== 1 && "s"}
-            </p>
+        {/* Active Filters */}
+        {(paymentStatus || fromDate || toDate || supplierId) && (
+          <div className="flex items-center justify-between rounded-2xl border border-violet-200 bg-violet-50/70 px-4 py-3 dark:border-violet-800 dark:bg-violet-500/10">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-violet-700 dark:text-violet-300">
+                Filters applied
+              </p>
+
+              <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                {[
+                  paymentStatus,
+                  fromDate && `From ${fromDate}`,
+                  toDate && `To ${toDate}`,
+                  supplierId && "Supplier",
+                ]
+                  .filter(Boolean)
+                  .join(" • ")}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="shrink-0 text-xs font-bold text-violet-600 hover:text-violet-700 dark:text-violet-300"
+            >
+              Clear
+            </button>
           </div>
-        </div>
-
-        {isLoading &&
-          Array.from({ length: 3 }).map((_, index) => (
-            <PurchaseSkeleton key={index} />
-          ))}
-
-        {!isLoading && filteredPurchases.length === 0 && (
-          <section className="rounded-3xl border border-dashed p-10">
-            <EmptyPurchase />
-          </section>
         )}
 
-        {!isLoading &&
-          filteredPurchases.map((purchase: any) => (
-            <PurchaseCard key={purchase._id} purchase={purchase} />
-          ))}
-      </section>
-      <Button
-        size="lg"
-        onClick={() => router.push("/purchases/new")}
-        className="
-    fixed
-    bottom-24
-    right-5
-    z-50
-    h-16
-    rounded-full
-    px-7
-    shadow-2xl
-    active:scale-95
-  "
-      >
-        <Plus className="mr-2 h-5 w-5" />
-        New Purchase
-      </Button>
-    </main>
+        {/* Purchase List */}
+        <PurchaseList
+          loading={isLoading}
+          purchases={purchases}
+          onDelete={handleDelete}
+        />
+      </PageContainer>
+
+      {/* New Purchase */}
+      <FloatingActionButton href="/purchases/new" label="New Purchase" />
+
+      {/* Filter Sheet */}
+      <PurchaseFilterSheet
+        open={filterOpen}
+        onOpenChange={setFilterOpen}
+        paymentStatus={paymentStatus}
+        onPaymentStatusChange={setPaymentStatus}
+        fromDate={fromDate}
+        toDate={toDate}
+        onFromDateChange={setFromDate}
+        onToDateChange={setToDate}
+        onReset={() => {
+          setPaymentStatus(undefined);
+          setFromDate("");
+          setToDate("");
+        }}
+      />
+
+      {/* Supplier Sheet */}
+      <PurchaseSupplierSheet
+        open={supplierOpen}
+        suppliers={purchaseSuppliers}
+        selectedSupplierId={supplierId}
+        onClose={() => setSupplierOpen(false)}
+        onSelect={(supplier) => {
+          setSupplierId(supplier._id);
+          setSupplierOpen(false);
+        }}
+        onClear={() => {
+          setSupplierId("");
+          setSupplierOpen(false);
+        }}
+      />
+    </>
   );
 }

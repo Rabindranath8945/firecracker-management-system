@@ -7,7 +7,10 @@ import PartyForm from "@/features/shared/master-data/party/components/PartyForm"
 import { PARTY_CONFIG } from "@/features/shared/master-data/party/constants";
 import type { PartyFormValues } from "@/features/shared/master-data/party/lib/party-schema";
 
-import SuccessDialog from "@/features/shared/ui/dialogs/SuccessDialog";
+import { updateSupplier } from "../services/supplier.service";
+
+import ProgressDialog from "@/features/shared/ui/dialogs/ProgressDialog";
+import SuccessSheet from "@/components/common/shared/sheets/SuccessSheet";
 
 interface EditSupplierPageProps {
   supplierId: string;
@@ -20,18 +23,31 @@ export default function EditSupplierPage({
 }: EditSupplierPageProps) {
   const router = useRouter();
 
+  const [loading, setLoading] = useState(false);
+
   const [successOpen, setSuccessOpen] = useState(false);
+
+  const [updatedSupplier, setUpdatedSupplier] = useState<{
+    name: string;
+    mobile: string;
+  } | null>(null);
 
   async function handleSubmit(values: PartyFormValues) {
     try {
-      console.log("Update Supplier:", values);
+      setLoading(true);
 
-      // TODO:
-      // await supplierService.update(supplierId, values);
+      const supplier = await updateSupplier(supplierId, values);
+
+      setUpdatedSupplier({
+        name: supplier.name,
+        mobile: supplier.mobile,
+      });
 
       setSuccessOpen(true);
     } catch (error) {
-      console.error("Failed to update supplier:", error);
+      console.error("Update Supplier Error:", error);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -39,23 +55,43 @@ export default function EditSupplierPage({
     <>
       <PartyForm
         mode="edit"
+        loading={loading}
         config={PARTY_CONFIG.supplier}
         defaultValues={defaultValues}
         onSubmit={handleSubmit}
       />
 
-      <SuccessDialog
+      <ProgressDialog
+        open={loading}
+        title="Updating Supplier"
+        description="Please wait while we update the supplier..."
+      />
+
+      <SuccessSheet
         open={successOpen}
-        title="Supplier Updated"
-        description="Supplier information has been updated successfully."
-        primaryLabel="View Supplier"
-        secondaryLabel="Back to Suppliers"
-        onPrimary={() => {
-          router.push(`/suppliers/${supplierId}`);
+        onOpenChange={setSuccessOpen}
+        title="Supplier Updated Successfully"
+        description="The supplier information has been updated."
+        summary={[
+          {
+            label: "Supplier",
+            value: updatedSupplier?.name ?? "-",
+          },
+          {
+            label: "Mobile",
+            value: updatedSupplier?.mobile ?? "-",
+          },
+        ]}
+        primaryAction={{
+          label: "View Supplier",
+          onClick: () => router.push(`/suppliers/${supplierId}`),
         }}
-        onSecondary={() => {
-          router.push("/suppliers");
-        }}
+        secondaryActions={[
+          {
+            label: "Back to Suppliers",
+            onClick: () => router.push("/suppliers"),
+          },
+        ]}
       />
     </>
   );

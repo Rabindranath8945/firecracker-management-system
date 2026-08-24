@@ -1,59 +1,93 @@
 "use client";
 
-import { DollarSign, ShoppingCart, TrendingUp, Boxes } from "lucide-react";
+import { Archive, TriangleAlert, TrendingUp, PackageCheck } from "lucide-react";
 
-const cards = [
-  {
-    title: "Purchase",
-    value: "₹220",
-    icon: ShoppingCart,
-    bg: "bg-orange-50",
-    color: "text-orange-600",
-  },
-  {
-    title: "Selling",
-    value: "₹320",
-    icon: DollarSign,
-    bg: "bg-green-50",
-    color: "text-green-600",
-  },
-  {
-    title: "Profit",
-    value: "₹100",
-    icon: TrendingUp,
-    bg: "bg-blue-50",
-    color: "text-blue-600",
-  },
-  {
-    title: "Stock",
-    value: "250",
-    icon: Boxes,
-    bg: "bg-violet-50",
-    color: "text-violet-600",
-  },
-];
+import type { Product } from "../../types/product.types";
 
-export default function ProductSummaryCard() {
+interface ProductSummaryCardProps {
+  product: Product;
+}
+
+export default function ProductSummaryCard({
+  product,
+}: ProductSummaryCardProps) {
+  const profit = product.sellingPrice - product.purchasePrice;
+
+  const lowStock = product.stock <= product.minimumStock;
+
+  const items = [
+    {
+      title: "Available",
+      value: `${product.stock}`,
+      subtitle: product.unit,
+      icon: Archive,
+      color: "text-sky-600",
+      bg: "bg-sky-50",
+    },
+    {
+      title: "Minimum",
+      value: `${product.minimumStock}`,
+      subtitle: product.unit,
+      icon: TriangleAlert,
+      color: lowStock ? "text-red-600" : "text-amber-600",
+      bg: lowStock ? "bg-red-50" : "bg-amber-50",
+    },
+    {
+      title: "Profit / Unit",
+      value: `₹${profit}`,
+      subtitle: "Per Item",
+      icon: TrendingUp,
+      color: "text-emerald-600",
+      bg: "bg-emerald-50",
+    },
+    {
+      title: "Status",
+      value: product.isActive ? "Active" : "Inactive",
+      subtitle: lowStock ? "Low Stock" : "Healthy",
+      icon: PackageCheck,
+      color: product.isActive ? "text-violet-600" : "text-slate-500",
+      bg: "bg-violet-50",
+    },
+  ];
+
   return (
-    <div className="grid grid-cols-2 gap-4">
-      {cards.map((card) => {
-        const Icon = card.icon;
+    <section className="rounded-3xl border border-slate-200 bg-white p-4">
+      <div className="mb-4 flex items-center justify-between">
+        <div>
+          <h2 className="text-base font-semibold text-slate-900">
+            Quick Analytics
+          </h2>
 
-        return (
-          <div
-            key={card.title}
-            className={`${card.bg} rounded-3xl p-5 shadow-sm transition hover:-translate-y-1`}
-          >
-            <Icon className={`mb-4 h-8 w-8 ${card.color}`} />
+          <p className="text-xs text-slate-500">Inventory overview</p>
+        </div>
+      </div>
 
-            <p className="text-sm text-slate-500">{card.title}</p>
+      <div className="grid grid-cols-2 gap-3">
+        {items.map((item) => {
+          const Icon = item.icon;
 
-            <h2 className={`mt-2 text-3xl font-bold ${card.color}`}>
-              {card.value}
-            </h2>
-          </div>
-        );
-      })}
-    </div>
+          return (
+            <div
+              key={item.title}
+              className="rounded-2xl border border-slate-100 bg-slate-50 p-4 transition-all hover:border-sky-100"
+            >
+              <div
+                className={`flex h-10 w-10 items-center justify-center rounded-xl ${item.bg}`}
+              >
+                <Icon className={`h-5 w-5 ${item.color}`} />
+              </div>
+
+              <p className="mt-4 text-xs text-slate-500">{item.title}</p>
+
+              <h3 className="mt-1 text-xl font-bold text-slate-900">
+                {item.value}
+              </h3>
+
+              <p className="mt-1 text-xs text-slate-400">{item.subtitle}</p>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 }

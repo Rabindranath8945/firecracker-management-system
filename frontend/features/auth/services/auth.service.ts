@@ -1,7 +1,8 @@
-import { authApi } from "../api/auth.api";
 import { deviceService } from "@/libs/device";
 
-import type { AuthResponse } from "../types/auth.types";
+import { authApi } from "../api/auth.api";
+
+import type { AuthResponse, User } from "../types/auth.types";
 
 class AuthService {
   async googleLogin(credential: string): Promise<AuthResponse> {
@@ -12,12 +13,41 @@ class AuthService {
       deviceId,
     });
 
+    const auth = response.data.data;
+
+    localStorage.setItem("accessToken", auth.accessToken);
+
+    if (auth.refreshToken) {
+      localStorage.setItem("refreshToken", auth.refreshToken);
+    }
+
+    return auth;
+  }
+
+  async refresh(): Promise<{ accessToken: string }> {
+    const response = await authApi.refresh();
+
+    const auth = response.data.data;
+
+    localStorage.setItem("accessToken", auth.accessToken);
+
+    return auth;
+  }
+
+  async me(): Promise<User> {
+    const response = await authApi.me();
+
     return response.data.data;
   }
 
-  async logout() {
-    await authApi.logout("");
+  async logout(): Promise<void> {
+    try {
+      await authApi.logout();
+    } finally {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+    }
   }
 }
 
-export const authService = new AuthService();
+export default new AuthService();

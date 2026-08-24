@@ -22,7 +22,7 @@ export default function ProductInventoryCard() {
 
   const stock = useWatch({
     control,
-    name: "openingStock",
+    name: "stock",
   });
 
   const purchase = useWatch({
@@ -45,14 +45,12 @@ export default function ProductInventoryCard() {
 
             <Input
               className={
-                errors.openingStock
-                  ? "border-red-500 focus-visible:ring-red-500"
-                  : ""
+                errors.stock ? "border-red-500 focus-visible:ring-red-500" : ""
               }
               type="number"
               inputMode="numeric"
               placeholder="Enter quantity"
-              {...register("openingStock", {
+              {...register("stock", {
                 valueAsNumber: true,
               })}
               onFocus={(e) => {
@@ -62,10 +60,8 @@ export default function ProductInventoryCard() {
               }}
             />
 
-            {errors.openingStock && (
-              <p className="text-sm text-red-500">
-                {errors.openingStock.message}
-              </p>
+            {errors.stock && (
+              <p className="text-sm text-red-500">{errors.stock.message}</p>
             )}
 
             <p className="text-xs text-muted-foreground">

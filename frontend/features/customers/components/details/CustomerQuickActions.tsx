@@ -1,81 +1,107 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Phone,
-  MessageCircle,
-  Receipt,
-  Wallet,
-  FileText,
-  Pencil,
-} from "lucide-react";
+import { MessageCircle, Pencil, Phone, ReceiptText } from "lucide-react";
 
-interface Props {
+interface CustomerQuickActionsProps {
   mobile: string;
   customerId: string;
 }
 
-export default function CustomerQuickActions({ mobile, customerId }: Props) {
+export default function CustomerQuickActions({
+  mobile,
+  customerId,
+}: CustomerQuickActionsProps) {
   const actions = [
     {
       title: "Call",
-      icon: Phone,
       href: `tel:${mobile}`,
+      icon: Phone,
       color: "bg-emerald-100 text-emerald-700",
     },
     {
       title: "WhatsApp",
-      icon: MessageCircle,
       href: `https://wa.me/91${mobile}`,
+      icon: MessageCircle,
       color: "bg-green-100 text-green-700",
+      external: true,
     },
     {
-      title: "Invoice",
-      icon: Receipt,
+      title: "New Sale",
       href: `/sales/new?customer=${customerId}`,
+      icon: ReceiptText,
       color: "bg-blue-100 text-blue-700",
     },
     {
-      title: "Payment",
-      icon: Wallet,
-      href: "#",
-      color: "bg-orange-100 text-orange-700",
-    },
-    {
-      title: "Statement",
-      icon: FileText,
-      href: "#",
-      color: "bg-violet-100 text-violet-700",
-    },
-    {
       title: "Edit",
-      icon: Pencil,
       href: `/customers/${customerId}/edit`,
-      color: "bg-slate-100 text-slate-700",
+      icon: Pencil,
+      color: "bg-amber-100 text-amber-700",
     },
   ];
 
   return (
-    <div className="grid grid-cols-3 gap-4 lg:grid-cols-6">
-      {actions.map((item) => {
-        const Icon = item.icon;
+    <section className="space-y-3">
+      <div>
+        <h2 className="text-lg font-bold text-slate-900">Quick Actions</h2>
 
-        return (
-          <Link key={item.title} href={item.href} className="group">
-            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+        <p className="text-sm text-slate-500">
+          Perform common customer actions.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-4 gap-4">
+        {actions.map((action) => {
+          const Icon = action.icon;
+
+          return (
+            <Link
+              key={action.title}
+              href={action.href}
+              target={action.external ? "_blank" : undefined}
+              rel={action.external ? "noopener noreferrer" : undefined}
+            >
               <div
-                className={`mx-auto flex h-14 w-14 items-center justify-center rounded-2xl ${item.color}`}
+                className="
+                  group
+                  rounded-3xl
+                  border
+                  border-slate-200
+                  bg-white
+                  p-4
+                  shadow-sm
+                  transition-all
+                  duration-200
+                  hover:-translate-y-1
+                  hover:shadow-lg
+                "
               >
-                <Icon className="h-6 w-6" />
-              </div>
+                <div
+                  className={`
+                    mx-auto
+                    flex
+                    h-14
+                    w-14
+                    items-center
+                    justify-center
+                    rounded-2xl
+                    ${action.color}
+                    transition-transform
+                    duration-200
+                    group-hover:scale-105
+                  `}
+                >
+                  <Icon className="h-6 w-6" />
+                </div>
 
-              <p className="mt-4 text-center text-sm font-semibold text-slate-700">
-                {item.title}
-              </p>
-            </div>
-          </Link>
-        );
-      })}
-    </div>
+                <p className="mt-3 text-center text-xs font-semibold text-slate-700">
+                  {action.title}
+                </p>
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
   );
 }
