@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 
 import authService from "@/features/auth/services/auth.service";
 import { useAuthStore } from "@/features/auth/store/auth.store";
+import BootstrapService from "@/features/auth/services/bootstrap.service";
 
 export function useBootstrap() {
   const router = useRouter();
-
   const store = useAuthStore();
 
   useEffect(() => {
@@ -17,27 +17,17 @@ export function useBootstrap() {
     const bootstrap = async () => {
       try {
         /* ------------------------------------------------------------------ */
-        /*                            Splash Delay                            */
+        /* Splash delay                                                       */
         /* ------------------------------------------------------------------ */
 
         await new Promise((resolve) => setTimeout(resolve, 1800));
 
-        if (!mounted) return;
-
-        /* ------------------------------------------------------------------ */
-        /*                         Onboarding Check                           */
-        /* ------------------------------------------------------------------ */
-
-        const onboardingCompleted =
-          localStorage.getItem("onboarding-completed") === "true";
-
-        if (!onboardingCompleted) {
-          router.replace("/onboarding");
+        if (!mounted) {
           return;
         }
 
         /* ------------------------------------------------------------------ */
-        /*                      Authentication Check                          */
+        /* Authentication                                                     */
         /* ------------------------------------------------------------------ */
 
         const accessToken = localStorage.getItem("accessToken");
@@ -48,41 +38,61 @@ export function useBootstrap() {
         }
 
         /* ------------------------------------------------------------------ */
-        /*                        Load Current User                           */
+        /* Load current user                                                  */
         /* ------------------------------------------------------------------ */
 
         const user = await authService.me();
 
-        if (!mounted) return;
+        if (!mounted) {
+          return;
+        }
 
         store.setUser(user);
 
         /* ------------------------------------------------------------------ */
-        /*                     Security Check (Version 1.1)                   */
+        /* Determine application destination                                  */
         /* ------------------------------------------------------------------ */
 
-        // const security = await securityService.get();
-        //
-        // if (security.appLockEnabled) {
-        //   router.replace("/lock");
-        //   return;
-        // }
+        const result = await BootstrapService.initialize();
 
-        /* ------------------------------------------------------------------ */
-        /*                            Dashboard                              */
-        /* ------------------------------------------------------------------ */
+        if (!mounted) {
+          return;
+        }
 
-        router.replace("/dashboard");
+        switch (result.type) {
+          case "ONBOARDING":
+            router.replace("/onboarding");
+            return;
+
+          case "SELECT_BUSINESS":
+            router.replace("/business/select");
+            return;
+
+          case "DASHBOARD":
+            router.replace("/dashboard");
+            return;
+
+          default:
+            router.replace("/login");
+            return;
+        }
       } catch (error) {
         console.error("Bootstrap failed:", error);
 
+        if (!mounted) {
+          return;
+        }
+
         store.logout();
+
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
 
         router.replace("/login");
       }
     };
 
-    bootstrap();
+    void bootstrap();
 
     return () => {
       mounted = false;

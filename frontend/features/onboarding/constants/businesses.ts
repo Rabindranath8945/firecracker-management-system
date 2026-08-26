@@ -1,17 +1,26 @@
 import {
   Store,
   Pill,
-  Bike,
+  ShoppingCart,
   Shirt,
   Hammer,
   UtensilsCrossed,
   Laptop,
-  ShoppingBag,
+  BookOpen,
   type LucideIcon,
 } from "lucide-react";
 
 export interface BusinessType {
-  id: string;
+  id:
+    | "GENERAL_STORE"
+    | "MEDICAL"
+    | "GROCERY"
+    | "HARDWARE"
+    | "STATIONERY"
+    | "ELECTRONICS"
+    | "CLOTHING"
+    | "RESTAURANT";
+
   title: string;
   description: string;
   icon: LucideIcon;
@@ -20,59 +29,66 @@ export interface BusinessType {
 
 export const BUSINESSES: BusinessType[] = [
   {
-    id: "general",
+    id: "GENERAL_STORE",
     title: "General Store",
     description: "Groceries, FMCG, daily essentials and retail items.",
     icon: Store,
     available: true,
   },
+
   {
-    id: "medical",
+    id: "MEDICAL",
     title: "Medical Store",
     description: "Medicine and pharmacy management.",
     icon: Pill,
-    available: false,
+    available: true,
   },
+
   {
-    id: "cycle",
-    title: "Cycle Store",
-    description: "Bicycle sales, spare parts and service.",
-    icon: Bike,
-    available: false,
+    id: "GROCERY",
+    title: "Grocery",
+    description: "Grocery, food items and everyday household products.",
+    icon: ShoppingCart,
+    available: true,
   },
+
   {
-    id: "garments",
-    title: "Garments",
-    description: "Clothing and fashion retail management.",
-    icon: Shirt,
-    available: false,
-  },
-  {
-    id: "hardware",
+    id: "HARDWARE",
     title: "Hardware",
     description: "Hardware tools and building materials.",
     icon: Hammer,
-    available: false,
+    available: true,
   },
+
   {
-    id: "restaurant",
-    title: "Restaurant",
-    description: "Food orders, billing and kitchen management.",
-    icon: UtensilsCrossed,
-    available: false,
+    id: "STATIONERY",
+    title: "Stationery",
+    description: "Books, stationery, office and school supplies.",
+    icon: BookOpen,
+    available: true,
   },
+
   {
-    id: "electronics",
+    id: "ELECTRONICS",
     title: "Electronics",
     description: "Electronics and appliance retail.",
     icon: Laptop,
-    available: false,
+    available: true,
   },
+
   {
-    id: "supermarket",
-    title: "Supermarket",
-    description: "Large retail and supermarket operations.",
-    icon: ShoppingBag,
-    available: false,
+    id: "CLOTHING",
+    title: "Clothing",
+    description: "Clothing and fashion retail management.",
+    icon: Shirt,
+    available: true,
+  },
+
+  {
+    id: "RESTAURANT",
+    title: "Restaurant",
+    description: "Food orders, billing and kitchen management.",
+    icon: UtensilsCrossed,
+    available: true,
   },
 ] as const;

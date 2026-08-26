@@ -2,11 +2,19 @@
 
 import { useCallback, useEffect, useState } from "react";
 
+import { Capacitor } from "@capacitor/core";
+
 import dashboardService from "../services/dashboard.service";
+
+import { OFFLINE_DATA_CHANGED_EVENT } from "@/libs/offline/events/offline.events";
 
 import type { DashboardSummary } from "../types/dashboard.type";
 
 const DASHBOARD_CACHE_KEY = "erp_dashboard_cache";
+
+/* -------------------------------------------------------------------------- */
+/* WEB CACHE                                                                  */
+/* -------------------------------------------------------------------------- */
 
 function getCachedDashboard(): DashboardSummary | null {
   if (typeof window === "undefined") {
@@ -28,7 +36,7 @@ function getCachedDashboard(): DashboardSummary | null {
   }
 }
 
-function saveDashboardCache(dashboard: DashboardSummary) {
+function saveDashboardCache(dashboard: DashboardSummary): void {
   if (typeof window === "undefined") {
     return;
   }
@@ -40,6 +48,10 @@ function saveDashboardCache(dashboard: DashboardSummary) {
   }
 }
 
+/* -------------------------------------------------------------------------- */
+/* HOOK                                                                       */
+/* -------------------------------------------------------------------------- */
+
 export function useDashboard() {
   const [dashboard, setDashboard] = useState<DashboardSummary | null>(null);
 
@@ -47,56 +59,211 @@ export function useDashboard() {
 
   const [error, setError] = useState<string | null>(null);
 
-  const loadDashboard = useCallback(async () => {
+  const [isOffline, setIsOffline] = useState(false);
+
+  /* ------------------------------------------------------------------------ */
+  /* LOAD                                                                      */
+  /* ------------------------------------------------------------------------ */
+
+  const loadDashboard = useCallback(async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) {
+        setLoading(true);
+      }
+
       setError(null);
 
+      /*
+       * Native + offline = SQLite.
+       */
+      if (
+        Capacitor.isNativePlatform() &&
+        typeof navigator !== "undefined" &&
+        !navigator.onLine
+      ) {
+        const data = await dashboardService.getOfflineDashboard();
+
+        setDashboard(data);
+        setIsOffline(true);
+        setError(null);
+
+        return;
+      }
+
+      /*
+       * Online = existing backend API.
+       */
       const data = await dashboardService.getDashboard();
 
       setDashboard(data);
 
+      /*
+       * Keep web cache as a fallback.
+       */
       saveDashboardCache(data);
+
+      setIsOffline(false);
+      setError(null);
     } catch (error) {
       console.error("Dashboard request failed:", error);
 
       /*
-       * Keep using the last successfully loaded dashboard.
+       * Native fallback.
+       */
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const data = await dashboardService.getOfflineDashboard();
+
+          setDashboard(data);
+          setIsOffline(true);
+          setError(null);
+
+          return;
+        } catch (offlineError) {
+          console.error("Offline dashboard failed:", offlineError);
+        }
+      }
+
+      /*
+       * Web fallback.
        */
       const cachedDashboard = getCachedDashboard();
 
       if (cachedDashboard) {
         setDashboard(cachedDashboard);
+        setIsOffline(true);
+        setError(null);
+      } else {
+        setDashboard(null);
+        setIsOffline(true);
+        setError("Dashboard is currently unavailable.");
       }
-
-      setError("Dashboard is currently unavailable.");
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   }, []);
 
+  /* ------------------------------------------------------------------------ */
+  /* INITIAL LOAD                                                              */
+  /* ------------------------------------------------------------------------ */
+
   useEffect(() => {
-    /*
-     * Load cached dashboard immediately.
-     * This allows the ERP shell/header to work offline.
-     */
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (Capacitor.isNativePlatform()) {
+      setIsOffline(!navigator.onLine);
+
+      void loadDashboard(true);
+
+      return;
+    }
+
     const cachedDashboard = getCachedDashboard();
 
     if (cachedDashboard) {
       setDashboard(cachedDashboard);
       setLoading(false);
+
+      if (navigator.onLine) {
+        void loadDashboard(false);
+      } else {
+        setIsOffline(true);
+      }
+
+      return;
     }
 
-    /*
-     * Then try to refresh from backend.
-     */
-    void loadDashboard();
+    void loadDashboard(true);
   }, [loadDashboard]);
+
+  /* ------------------------------------------------------------------------ */
+  /* EVENTS                                                                    */
+  /* ------------------------------------------------------------------------ */
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const handleOffline = () => {
+      setIsOffline(true);
+
+      if (Capacitor.isNativePlatform()) {
+        void loadDashboard(false);
+
+        return;
+      }
+
+      const cachedDashboard = getCachedDashboard();
+
+      if (cachedDashboard) {
+        setDashboard(cachedDashboard);
+        setError(null);
+      }
+    };
+
+    const handleOnline = () => {
+      setIsOffline(false);
+
+      /*
+       * Keep the current Dashboard visible.
+       * Refresh silently.
+       */
+      void loadDashboard(false);
+    };
+
+    const handleOfflineDataChanged = () => {
+      if (!Capacitor.isNativePlatform()) {
+        return;
+      }
+
+      void dashboardService
+        .getOfflineDashboard()
+        .then((data) => {
+          setDashboard(data);
+          setIsOffline(!navigator.onLine);
+          setError(null);
+        })
+        .catch((error) => {
+          console.error("Failed to refresh offline dashboard:", error);
+        });
+    };
+
+    window.addEventListener("offline", handleOffline);
+
+    window.addEventListener("online", handleOnline);
+
+    window.addEventListener(
+      OFFLINE_DATA_CHANGED_EVENT,
+      handleOfflineDataChanged,
+    );
+
+    return () => {
+      window.removeEventListener("offline", handleOffline);
+
+      window.removeEventListener("online", handleOnline);
+
+      window.removeEventListener(
+        OFFLINE_DATA_CHANGED_EVENT,
+        handleOfflineDataChanged,
+      );
+    };
+  }, [loadDashboard]);
+
+  /* ------------------------------------------------------------------------ */
+  /* RETURN                                                                    */
+  /* ------------------------------------------------------------------------ */
 
   return {
     dashboard,
     loading,
     error,
-    refresh: loadDashboard,
+    isOffline,
+
+    refresh: () => loadDashboard(false),
   };
 }

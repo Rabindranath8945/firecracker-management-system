@@ -243,7 +243,9 @@ class ProductService {
     }
 
     try {
-      const response = await api.get<ProductResponse>(`/products/${id}`);
+      const response = await api.get<ProductResponse>(
+        `/products/view?id=${id}`,
+      );
 
       const product = response.data.data;
 
@@ -439,7 +441,10 @@ class ProductService {
       return updated;
     }
 
-    const response = await api.put<ProductResponse>(`/products/${id}`, data);
+    const response = await api.put<ProductResponse>(
+      `/products/view?id=${id}`,
+      data,
+    );
 
     const product = response.data.data;
 
@@ -471,7 +476,7 @@ class ProductService {
       return undefined;
     }
 
-    const response = await api.delete(`/products/${id}`);
+    const response = await api.delete(`/products/view?id=${id}`);
 
     await deleteOfflineProduct(id);
 

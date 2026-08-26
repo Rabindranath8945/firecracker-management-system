@@ -122,7 +122,7 @@ export default function PurchaseListItem({
           {/* Purchase Icon */}
 
           <Link
-            href={`/purchases/${purchase._id}`}
+            href={`/purchases/view?id=${purchase._id}`}
             aria-label={`View purchase ${purchase.purchaseNo}`}
             className="
               flex
@@ -152,7 +152,7 @@ export default function PurchaseListItem({
 
             <div className="flex items-start justify-between gap-3">
               <Link
-                href={`/purchases/${purchase._id}`}
+                href={`/purchases/view?id=${purchase._id}`}
                 className="min-w-0 flex-1"
               >
                 <h3 className="truncate text-[15px] font-bold text-slate-900 dark:text-foreground">
@@ -167,7 +167,7 @@ export default function PurchaseListItem({
               {/* Actions */}
 
               <div className="flex shrink-0 items-center gap-1">
-                <Link href={`/purchases/${purchase._id}`}>
+                <Link href={`/purchases/view?id=${purchase._id}`}>
                   <Button
                     type="button"
                     size="icon"
@@ -284,7 +284,7 @@ export default function PurchaseListItem({
               )}
 
               <Link
-                href={`/purchases/${purchase._id}`}
+                href={`/purchases/view?id=${purchase._id}`}
                 className="
                   flex
                   h-9

@@ -1,6 +1,7 @@
 import { getDatabase } from "../api/database";
 
 import type { Customer } from "@/features/customers/types/customer";
+import { notifyOfflineDataChanged } from "../events/offline.events";
 
 /* -------------------------------------------------------------------------- */
 /* TYPES                                                                      */
@@ -363,6 +364,7 @@ export async function createOfflineSale(
     /* -------------------------------------------------------------------- */
 
     await db.execute("COMMIT");
+    notifyOfflineDataChanged();
 
     return {
       id: saleId,
@@ -1155,6 +1157,7 @@ export async function updateOfflineSale(
     /* ---------------------------------------------------------------------- */
 
     await db.execute("COMMIT");
+    notifyOfflineDataChanged();
 
     return {
       id,
@@ -1292,6 +1295,7 @@ export async function deleteOfflineSale(id: string): Promise<void> {
     );
 
     await db.execute("COMMIT");
+    notifyOfflineDataChanged();
   } catch (error) {
     try {
       await db.execute("ROLLBACK");

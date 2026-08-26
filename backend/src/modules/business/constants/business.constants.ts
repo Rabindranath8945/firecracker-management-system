@@ -9,5 +9,4 @@ export const BUSINESS_TYPES = [
   "ELECTRONICS",
   "CLOTHING",
   "RESTAURANT",
-  "OTHER",
 ] as const;

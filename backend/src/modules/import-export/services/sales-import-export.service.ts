@@ -1,3 +1,5 @@
+"use client";
+
 import * as XLSX from "xlsx";
 import { Types } from "mongoose";
 

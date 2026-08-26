@@ -1,9 +1,11 @@
 import { z } from "zod";
 
+import { BUSINESS_TYPES } from "../constants/business.constants.js";
+
 export const createBusinessSchema = z.object({
   name: z.string().trim().min(2).max(100),
 
-  type: z.string(),
+  type: z.enum(BUSINESS_TYPES),
 
   phone: z.string().trim().optional(),
 

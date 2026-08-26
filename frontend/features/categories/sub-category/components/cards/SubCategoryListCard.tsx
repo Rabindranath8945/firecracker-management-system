@@ -121,7 +121,7 @@ export default function SubCategoryListCard({
           variant="ghost"
           className="h-9 rounded-none border-x border-slate-100 text-xs"
           onClick={() =>
-            router.push(`/categories/sub-category/${subCategory._id}/edit`)
+            router.push(`/categories/sub-category/edit?id=${subCategory._id}`)
           }
         >
           <Pencil className="mr-1 h-3.5 w-3.5 text-blue-600" />

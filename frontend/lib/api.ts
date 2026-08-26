@@ -1,7 +1,15 @@
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
 
+/* -------------------------------------------------------------------------- */
+/* API BASE URL                                                               */
+/* -------------------------------------------------------------------------- */
+
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000/api/v1";
+  process.env.NEXT_PUBLIC_API_URL || "https://one-hub-erp.onrender.com/api/v1/";
+
+/* -------------------------------------------------------------------------- */
+/* AXIOS INSTANCE                                                             */
+/* -------------------------------------------------------------------------- */
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -12,12 +20,13 @@ const api = axios.create({
 
   headers: {
     "Content-Type": "application/json",
+
     Accept: "application/json",
   },
 });
 
 /* -------------------------------------------------------------------------- */
-/* Types                                                                      */
+/* TYPES                                                                      */
 /* -------------------------------------------------------------------------- */
 
 interface RefreshResponse {
@@ -25,6 +34,7 @@ interface RefreshResponse {
 
   data: {
     accessToken: string;
+
     refreshToken: string;
   };
 }
@@ -34,13 +44,13 @@ type RetryableRequestConfig = InternalAxiosRequestConfig & {
 };
 
 /* -------------------------------------------------------------------------- */
-/* Request Interceptor                                                        */
+/* REQUEST INTERCEPTOR                                                        */
 /* -------------------------------------------------------------------------- */
 
 api.interceptors.request.use(
   (config) => {
     /* ---------------------------------------------------------------------- */
-    /* Access Token                                                           */
+    /* ACCESS TOKEN                                                           */
     /* ---------------------------------------------------------------------- */
 
     if (typeof window !== "undefined") {
@@ -52,49 +62,42 @@ api.interceptors.request.use(
     }
 
     /* ---------------------------------------------------------------------- */
-    /* FormData / OCR                                                          */
+    /* FORMDATA                                                               */
     /* ---------------------------------------------------------------------- */
 
     if (config.data instanceof FormData) {
-      /*
-       * Do not manually set Content-Type for FormData.
-       * The browser/Axios will automatically add:
-       *
-       * multipart/form-data; boundary=...
-       */
-
       delete config.headers["Content-Type"];
     }
 
     return config;
   },
 
-  (error) => {
-    return Promise.reject(error);
-  },
+  (error) => Promise.reject(error),
 );
 
 /* -------------------------------------------------------------------------- */
-/* Refresh State                                                              */
+/* REFRESH STATE                                                              */
 /* -------------------------------------------------------------------------- */
 
 let isRefreshing = false;
 
 interface PendingRequest {
   resolve: (token: string) => void;
+
   reject: (error: unknown) => void;
 }
 
 let pendingRequests: PendingRequest[] = [];
 
 /* -------------------------------------------------------------------------- */
-/* Process Pending Requests                                                   */
+/* PROCESS PENDING REQUESTS                                                   */
 /* -------------------------------------------------------------------------- */
 
 function processPendingRequests(error: unknown, token?: string) {
   pendingRequests.forEach(({ resolve, reject }) => {
     if (error) {
       reject(error);
+
       return;
     }
 
@@ -107,19 +110,17 @@ function processPendingRequests(error: unknown, token?: string) {
 }
 
 /* -------------------------------------------------------------------------- */
-/* Response Interceptor                                                       */
+/* RESPONSE INTERCEPTOR                                                       */
 /* -------------------------------------------------------------------------- */
 
 api.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
 
   async (error: AxiosError) => {
     const originalRequest = error.config as RetryableRequestConfig | undefined;
 
     /* ---------------------------------------------------------------------- */
-    /* Only handle 401                                                        */
+    /* ONLY HANDLE 401                                                        */
     /* ---------------------------------------------------------------------- */
 
     if (
@@ -133,7 +134,7 @@ api.interceptors.response.use(
     originalRequest._retry = true;
 
     /* ---------------------------------------------------------------------- */
-    /* Server-side request                                                    */
+    /* SERVER SIDE                                                             */
     /* ---------------------------------------------------------------------- */
 
     if (typeof window === "undefined") {
@@ -141,7 +142,7 @@ api.interceptors.response.use(
     }
 
     /* ---------------------------------------------------------------------- */
-    /* Get Refresh Token                                                      */
+    /* REFRESH TOKEN                                                           */
     /* ---------------------------------------------------------------------- */
 
     const refreshToken = localStorage.getItem("refreshToken");
@@ -155,7 +156,7 @@ api.interceptors.response.use(
     }
 
     /* ---------------------------------------------------------------------- */
-    /* Another request is already refreshing                                  */
+    /* WAIT FOR EXISTING REFRESH                                              */
     /* ---------------------------------------------------------------------- */
 
     if (isRefreshing) {
@@ -173,7 +174,7 @@ api.interceptors.response.use(
     }
 
     /* ---------------------------------------------------------------------- */
-    /* Start Refresh                                                           */
+    /* START REFRESH                                                           */
     /* ---------------------------------------------------------------------- */
 
     isRefreshing = true;
@@ -181,9 +182,11 @@ api.interceptors.response.use(
     try {
       const response = await axios.post<RefreshResponse>(
         `${API_BASE_URL}/auth/refresh`,
+
         {
           refreshToken,
         },
+
         {
           withCredentials: true,
 
@@ -198,7 +201,7 @@ api.interceptors.response.use(
       const { accessToken, refreshToken: newRefreshToken } = response.data.data;
 
       /* -------------------------------------------------------------------- */
-      /* Save Tokens                                                           */
+      /* SAVE TOKENS                                                          */
       /* -------------------------------------------------------------------- */
 
       localStorage.setItem("accessToken", accessToken);
@@ -206,13 +209,13 @@ api.interceptors.response.use(
       localStorage.setItem("refreshToken", newRefreshToken);
 
       /* -------------------------------------------------------------------- */
-      /* Retry Pending Requests                                               */
+      /* RETRY PENDING REQUESTS                                               */
       /* -------------------------------------------------------------------- */
 
       processPendingRequests(null, accessToken);
 
       /* -------------------------------------------------------------------- */
-      /* Retry Original Request                                               */
+      /* RETRY ORIGINAL REQUEST                                               */
       /* -------------------------------------------------------------------- */
 
       originalRequest.headers.Authorization = `Bearer ${accessToken}`;
@@ -220,7 +223,7 @@ api.interceptors.response.use(
       return api(originalRequest);
     } catch (refreshError) {
       /* -------------------------------------------------------------------- */
-      /* Refresh Failed                                                        */
+      /* REFRESH FAILED                                                       */
       /* -------------------------------------------------------------------- */
 
       processPendingRequests(refreshError);

@@ -23,7 +23,7 @@ export default function ProductListItem({
         {/* Product Image */}
 
         <Link
-          href={`/products/${product._id}`}
+          href={`/products/view?id=${product._id}`}
           className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-50"
         >
           <Package className="h-7 w-7 text-slate-500" />
@@ -35,14 +35,17 @@ export default function ProductListItem({
           {/* Header */}
 
           <div className="flex items-start justify-between gap-2">
-            <Link href={`/products/${product._id}`} className="min-w-0 flex-1">
+            <Link
+              href={`/products/view?id=${product._id}`}
+              className="min-w-0 flex-1"
+            >
               <h3 className="truncate text-[15px] font-semibold text-slate-900">
                 {product.name}
               </h3>
             </Link>
 
             <div className="flex items-center gap-1">
-              <Link href={`/products/${product._id}`}>
+              <Link href={`/products/view?id=${product._id}`}>
                 <Button
                   type="button"
                   size="icon"

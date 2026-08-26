@@ -1,7 +1,7 @@
 "use client";
 
 import { Pencil } from "lucide-react";
-import { useParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
@@ -18,11 +18,14 @@ import ProductHeroSkeleton from "../components/details/ProductHeroSkeleton";
 
 export default function ProductDetailsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const { id } = useParams<{ id: string }>();
+  const id = searchParams.get("id") ?? "";
 
   function handleEdit() {
-    router.push(`/products/${id}/edit`);
+    if (!id) return;
+
+    router.push(`/products/edit?id=${id}`);
   }
 
   const {
@@ -43,7 +46,7 @@ export default function ProductDetailsPage() {
     );
   }
 
-  if (isError || !product) {
+  if (!id || isError || !product) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
         <p className="text-slate-500">Unable to load product details.</p>

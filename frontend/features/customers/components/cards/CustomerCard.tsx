@@ -80,7 +80,7 @@ export default function CustomerCard({ customer, onDelete }: Props) {
           <Button
             variant="outline"
             className="flex-1 rounded-xl"
-            onClick={() => router.push(`/customers/${customer._id}`)}
+            onClick={() => router.push(`/customers/view?id=${customer._id}`)}
           >
             <User className="mr-2 h-4 w-4" />
             View
@@ -89,7 +89,7 @@ export default function CustomerCard({ customer, onDelete }: Props) {
           <Button
             variant="outline"
             className="rounded-xl"
-            onClick={() => router.push(`/customers/${customer._id}/edit`)}
+            onClick={() => router.push(`/customers/edit?id=${customer._id}`)}
           >
             <Pencil className="h-4 w-4" />
           </Button>

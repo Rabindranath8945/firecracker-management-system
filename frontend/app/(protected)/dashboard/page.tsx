@@ -12,7 +12,7 @@ import { useDashboard } from "@/features/dashboard/hooks/useDashboard";
 import Header from "@/components/layout/Header";
 
 export default function DashboardPage() {
-  const { dashboard, loading, error } = useDashboard();
+  const { dashboard, loading, error, isOffline } = useDashboard();
 
   /* ---------------------------------------------------------------------- */
   /* Loading                                                                */

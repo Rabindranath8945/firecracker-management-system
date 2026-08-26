@@ -16,7 +16,7 @@ interface BusinessSelectionScreenProps {
 export default function BusinessSelectionScreen({
   onNext,
 }: BusinessSelectionScreenProps) {
-  const [selected, setSelected] = useState("general");
+  const [selected, setSelected] = useState("GENERAL_STORE");
 
   return (
     <main className="relative flex min-h-screen flex-col overflow-hidden bg-white">
@@ -69,21 +69,17 @@ export default function BusinessSelectionScreen({
           <div className="mt-10 space-y-4">
             {BUSINESSES.map((business) => {
               const Icon = business.icon;
-
               const isSelected = selected === business.id;
 
               return (
                 <button
                   key={business.id}
                   type="button"
-                  disabled={!business.available}
                   onClick={() => setSelected(business.id)}
                   className={`w-full rounded-3xl border p-5 text-left transition-all duration-300 ${
-                    business.available
-                      ? isSelected
-                        ? "border-sky-500 bg-gradient-to-r from-sky-50 to-white shadow-lg shadow-sky-100"
-                        : "border-slate-200 bg-white hover:border-sky-300 hover:shadow-md"
-                      : "cursor-not-allowed border-slate-200 bg-slate-50 opacity-60"
+                    isSelected
+                      ? "border-sky-500 bg-gradient-to-r from-sky-50 to-white shadow-lg shadow-sky-100"
+                      : "border-slate-200 bg-white hover:border-sky-300 hover:shadow-md"
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -104,26 +100,18 @@ export default function BusinessSelectionScreen({
                         </h3>
 
                         <p className="mt-1 text-sm text-slate-500">
-                          {business.available
-                            ? "Ready to use"
-                            : "Coming in future updates"}
+                          Ready to use
                         </p>
                       </div>
                     </div>
 
-                    {business.available ? (
-                      isSelected ? (
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-500">
-                          <Check className="h-5 w-5 text-white" />
-                        </div>
-                      ) : (
-                        <Badge className="rounded-full bg-sky-100 text-sky-700 hover:bg-sky-100">
-                          Available
-                        </Badge>
-                      )
+                    {isSelected ? (
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-sky-500">
+                        <Check className="h-5 w-5 text-white" />
+                      </div>
                     ) : (
-                      <Badge variant="secondary" className="rounded-full px-3">
-                        Coming Soon
+                      <Badge className="rounded-full bg-sky-100 text-sky-700 hover:bg-sky-100">
+                        Available
                       </Badge>
                     )}
                   </div>
@@ -135,10 +123,9 @@ export default function BusinessSelectionScreen({
           {/* Info */}
           <div className="mt-6 rounded-2xl border border-sky-100 bg-sky-50 p-4">
             <p className="text-center text-sm leading-6 text-slate-600">
-              <span className="font-semibold text-sky-700">General Store</span>{" "}
-              is available in Version 1.0.
+              Select your business type to continue.
               <br />
-              More business categories will be added soon.
+              All business types use the same OneHub setup process.
             </p>
           </div>
 

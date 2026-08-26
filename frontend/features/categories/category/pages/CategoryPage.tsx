@@ -551,7 +551,7 @@ export default function CategoryPage() {
                       return;
                     }
 
-                    router.push(`/categories/${category.id}/edit`);
+                    router.push(`/categories/edit?id=${category.id}`);
                   }}
                   onDelete={() => handleDelete(category)}
                 />

@@ -37,7 +37,7 @@ export default function ProductDetailsHeader({
       {showEditButton && (
         <Button
           size="icon"
-          onClick={() => router.push(`/products/${id}/edit`)}
+          onClick={() => router.push(`/products/edit?id=${id}`)}
           className="h-12 w-12 rounded-2xl"
         >
           <Pencil className="h-5 w-5" />

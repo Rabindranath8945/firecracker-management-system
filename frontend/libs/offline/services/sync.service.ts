@@ -18,6 +18,8 @@ import {
   saveSubCategories,
 } from "../store/offline.storage";
 
+import { notifyOfflineDataChanged } from "../events/offline.events";
+
 import { reconcileOfflineSale } from "../store/offline.sales";
 
 import { reconcileOfflinePurchase } from "../store/offline.purchases";
@@ -677,5 +679,15 @@ export async function syncPendingItems(): Promise<void> {
 
   for (const item of items) {
     await syncItem(item);
+  }
+
+  /*
+   * Synchronization may have changed
+   * local SQLite data through reconciliation.
+   *
+   * Refresh derived UI such as Dashboard.
+   */
+  if (items.length > 0) {
+    notifyOfflineDataChanged();
   }
 }

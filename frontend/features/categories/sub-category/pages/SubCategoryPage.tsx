@@ -410,7 +410,7 @@ export default function SubCategoryPage() {
                     }
 
                     router.push(
-                      `/categories/sub-category/${subCategory._id}/edit`,
+                      `/categories/sub-category/edit?id=${subCategory._id}`,
                     );
                   }}
                   onDelete={() => handleDelete(subCategory)}

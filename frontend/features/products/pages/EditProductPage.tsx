@@ -46,13 +46,13 @@ export default function EditProductPage() {
       <PageHeader
         title="Edit Product"
         description="Update product information"
-        backHref={`/products/${id}`}
+        backHref={`/products/view?id=${id}`}
       />
 
       <ProductForm
         mode="edit"
         product={product}
-        onSuccess={() => router.push(`/products/${id}`)}
+        onSuccess={() => router.push(`/products/view?id=${id}`)}
       />
     </div>
   );

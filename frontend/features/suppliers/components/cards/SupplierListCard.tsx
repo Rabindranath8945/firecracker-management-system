@@ -39,11 +39,11 @@ export default function SupplierListCard({
     })}`;
 
   const handleView = () => {
-    router.push(`/suppliers/${supplier._id}`);
+    router.push(`/suppliers/view?id=${supplier._id}`);
   };
 
   const handleEdit = () => {
-    router.push(`/suppliers/${supplier._id}/edit`);
+    router.push(`/suppliers/edit?id=${supplier._id}`);
   };
 
   const handleDelete = () => {

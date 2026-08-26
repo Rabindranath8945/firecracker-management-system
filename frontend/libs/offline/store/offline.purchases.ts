@@ -6,6 +6,7 @@ import type {
   PaymentMethod,
   PaymentStatus,
 } from "@/features/purchases/types/purchase.types";
+import { notifyOfflineDataChanged } from "../events/offline.events";
 
 /* -------------------------------------------------------------------------- */
 /* OFFLINE TYPES                                                              */
@@ -520,6 +521,7 @@ export async function createOfflinePurchase(
     );
 
     await db.execute("COMMIT");
+    notifyOfflineDataChanged();
 
     return {
       id,
@@ -860,6 +862,7 @@ export async function updateOfflinePurchase(
     );
 
     await db.execute("COMMIT");
+    notifyOfflineDataChanged();
 
     return {
       id,
@@ -1007,6 +1010,7 @@ export async function deleteOfflinePurchase(id: string): Promise<void> {
     );
 
     await db.execute("COMMIT");
+    notifyOfflineDataChanged();
   } catch (error) {
     try {
       await db.execute("ROLLBACK");

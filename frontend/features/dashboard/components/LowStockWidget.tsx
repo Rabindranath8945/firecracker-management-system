@@ -182,7 +182,7 @@ export default function LowStockWidget({ dashboard }: LowStockWidgetProps) {
 
                 {/* Restock */}
 
-                <Link href={`/products/${item.id}`} className="block">
+                <Link href={`/products/view?id=${item.id}`} className="block">
                   <Button
                     type="button"
                     variant="outline"

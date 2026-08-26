@@ -24,7 +24,7 @@ export default function CustomerListCard({
       {/* Body */}
 
       <div
-        onClick={() => router.push(`/customers/${customer._id}`)}
+        onClick={() => router.push(`/customers/view?id=${customer._id}`)}
         className="cursor-pointer px-4 py-3"
       >
         <div className="flex items-start gap-3">
@@ -91,7 +91,7 @@ export default function CustomerListCard({
         <Button
           variant="ghost"
           className="h-9 rounded-none text-xs"
-          onClick={() => router.push(`/customers/${customer._id}`)}
+          onClick={() => router.push(`/customers/view?id=${customer._id}`)}
         >
           <Eye className="mr-1 h-3.5 w-3.5" />
           View
